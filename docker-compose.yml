@@ -1,0 +1,55 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: servify-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - PORT=3000
+    depends_on:
+      - postgres
+    networks:
+      - servify-network
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: servify-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+    networks:
+      - servify-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: servify-db
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - servify-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  servify-network:
+    driver: bridge
