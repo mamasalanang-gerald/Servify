@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const runMigrations = require('./migrate');
 const app = express();
 
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
@@ -23,6 +24,19 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
-});
+// Run migrations before starting the server
+async function startServer() {
+    try {
+        console.log('Running database migrations...');
+        await runMigrations();
+        
+        app.listen(process.env.PORT, () => {
+            console.log(`Server is running on port ${process.env.PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
