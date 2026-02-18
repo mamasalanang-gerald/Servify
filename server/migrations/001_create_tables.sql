@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    user_type TEXT NOT NULL,
+    user_type TEXT NOT NULL DEFAULT 'client',
     phone_number VARCHAR(20),
     profile_image TEXT,
     bio TEXT,
