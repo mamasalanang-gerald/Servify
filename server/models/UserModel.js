@@ -14,19 +14,19 @@ const createUser = async (full_name, email, password, phone_number) => {
 }
 
 const getAllUsers = async () => {
-    const query = 'SELECT * FROM users';
+    const query = 'SELECT id, full_name, email, phone_number, created_at FROM users';
     const { rows } = await pool.query(query);
     return rows;
 }
 
 const getUserById = async (id) => {
-    const query = 'SELECT * FROM users WHERE id = $1';
+    const query = 'SELECT id, full_name, email, phone_number, created_at FROM users WHERE id = $1';
     const { rows } = await pool.query(query, [id]);
     return rows[0];
 }
 
 const deleteUser = async (id) => {
-    const query = 'DELETE FROM users WHERE id = $1';
+    const query = 'DELETE FROM users WHERE id = $1 RETURNING *';
     const { rows } = await pool.query(query, [id]);
     return rows[0];
 }
