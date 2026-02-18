@@ -62,4 +62,3 @@ CREATE TABLE reviews (
     comment TEXT NULL,
     review_date TIMESTAMP DEFAULT NOW()
 );
-
