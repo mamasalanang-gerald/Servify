@@ -14,7 +14,8 @@ services:
       - DB_NAME=${DB_NAME}
       - PORT=3000
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - servify-network
     restart: unless-stopped
@@ -46,6 +47,11 @@ services:
     networks:
       - servify-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U servify"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:
