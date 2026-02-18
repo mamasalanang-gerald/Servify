@@ -4,6 +4,8 @@ const cors = require('cors');
 const runMigrations = require('./migrate');
 const app = express();
 
+process.stderr.write('Script starting...\n');
+
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 
 const corstOptions = {
@@ -27,14 +29,14 @@ app.get('/', (req, res) => {
 // Run migrations before starting the server
 async function startServer() {
     try {
-        console.log('Running database migrations...');
+        process.stderr.write('Running database migrations...\n');
         await runMigrations();
         
         app.listen(process.env.PORT, () => {
             console.log(`Server is running on port ${process.env.PORT}`);
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        process.stderr.write(`Failed to start server: ${error.message}\n`);
         process.exit(1);
     }
 }
