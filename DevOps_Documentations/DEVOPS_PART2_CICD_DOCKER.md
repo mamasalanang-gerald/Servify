@@ -1,0 +1,762 @@
+# 🚀 COMPLETE DEVOPS DOCUMENTATION - PART 2: CI/CD PIPELINE & DOCKER
+
+---
+
+## CI/CD PIPELINE DETAILED
+
+### GitHub Actions CI Workflow (.github/workflows/ci.yml)
+
+**Full Configuration:**
+
+```yaml
+name: CI - Build and Test
+
+on:
+  pull_request:
+    branches: ["main"]
+    types: [opened, synchronize, reopened]
+
+env:
+  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/pomodify-frontend
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/pomodify-backend
+  TAG_PR: pr-${{ github.event.pull_request.number }}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # STAGE 1: Lint and Validate
+  lint-and-validate:
+    name: Lint and Validate Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfiles
+        run: |
+          echo "✅ Validating frontend Dockerfile..."
+          if [ -f pomodify-frontend/Dockerfile ]; then
+            echo "Frontend Dockerfile found"
+          else
+            echo "❌ Frontend Dockerfile not found!"
+            exit 1
+          fi
+          
+          echo "✅ Validating backend Dockerfile..."
+          if [ -f pomodify-backend/Dockerfile ]; then
+            echo "Backend Dockerfile found"
+          else
+            echo "❌ Backend Dockerfile not found!"
+            exit 1
+          fi
+
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin main
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "✅ No conflicts with main branch"
+          else
+            echo "⚠️ Branch might have conflicts with main"
+          fi
+
+  # STAGE 2: Unit Tests
+  unit-tests:
+    name: Unit Tests (Frontend + Backend)
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: ./pomodify-frontend
+        run: npm ci
+
+      - name: Run frontend unit tests (Karma)
+        working-directory: ./pomodify-frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless --no-progress
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Run backend unit tests
+        working-directory: ./pomodify-backend
+        run: mvn -B -DskipITs test
+
+  # STAGE 3: Integration Tests
+  integration-tests:
+    name: Integration Tests (Testcontainers + Database)
+    needs: lint-and-validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Run backend integration tests with Testcontainers
+        working-directory: ./pomodify-backend
+        run: mvn -B verify
+
+  # STAGE 4: E2E Tests
+  e2e-tests:
+    name: E2E Tests (Playwright)
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: ./pomodify-frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./pomodify-frontend
+        run: npx playwright install --with-deps
+
+      - name: Start frontend dev server
+        working-directory: ./pomodify-frontend
+        run: npm start &
+        env:
+          NODE_ENV: test
+
+      - name: Wait for frontend to be ready
+        run: |
+          echo "Waiting for http://localhost:4200 to be ready..."
+          max_retries=30
+          retry_count=0
+          while [ $retry_count -lt $max_retries ]; do
+            if curl -s http://localhost:4200 > /dev/null; then
+              echo "Frontend is ready!"
+              exit 0
+            fi
+            echo "Attempt $((retry_count + 1))/$max_retries: Waiting for frontend..."
+            sleep 2
+            retry_count=$((retry_count + 1))
+          done
+          echo "Frontend did not start in time"
+          exit 1
+
+      - name: Run E2E tests with Playwright
+        working-directory: ./pomodify-frontend
+        timeout-minutes: 10
+        run: npx playwright test --timeout=30000
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:4200
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: pomodify-frontend/playwright-report/
+          retention-days: 7
+
+  # STAGE 5: Docker Build & Test
+  build-and-test:
+    name: Build and Test Docker Images
+    needs: [unit-tests, integration-tests, e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build frontend image
+        run: |
+          echo "🔨 Building frontend Docker image..."
+          docker build -f pomodify-frontend/Dockerfile \
+            -t $FRONTEND_IMAGE:$TAG_PR \
+            ./pomodify-frontend
+          echo "✅ Frontend image built successfully!"
+
+      - name: Build backend image
+        run: |
+          echo "🔨 Building backend Docker image..."
+          docker build -f pomodify-backend/Dockerfile \
+            -t $BACKEND_IMAGE:$TAG_PR \
+            ./pomodify-backend
+          echo "✅ Backend image built successfully!"
+
+      - name: Test frontend image
+        run: |
+          echo "🧪 Testing frontend container..."
+          docker run -d --name test-frontend -p 8080:80 $FRONTEND_IMAGE:$TAG_PR
+          sleep 5
+          if docker ps | grep -q test-frontend; then
+            echo "✅ Frontend container started successfully!"
+            docker stop test-frontend
+            docker rm test-frontend
+          else
+            echo "❌ Frontend container failed to start!"
+            docker logs test-frontend || true
+            exit 1
+          fi
+
+      - name: Test backend image
+        run: |
+          echo "🧪 Testing backend container..."
+          docker run -d --name test-backend \
+            -p 8081:8081 \
+            -e DB_HOST="pomodifydb.cvwkscysw9h2.ap-southeast-2.rds.amazonaws.com" \
+            -e DB_PORT="5432" \
+            -e DB_NAME="pomodifydb" \
+            -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+            -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            -e DB_URL="jdbc:postgresql://pomodifydb.cvwkscysw9h2.ap-southeast-2.rds.amazonaws.com:5432/pomodifydb" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            $BACKEND_IMAGE:$TAG_PR
+          sleep 15
+          if docker ps | grep -q test-backend; then
+            echo "✅ Backend container started successfully!"
+            docker logs test-backend
+            docker stop test-backend
+            docker rm test-backend
+          else
+            echo "❌ Backend container failed to start!"
+            docker logs test-backend || true
+            exit 1
+          fi
+
+  # STAGE 6: Security & Signing
+  build-and-secure:
+    name: Build, SBOM, Scan & Sign
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ${{ secrets.DOCKER_USERNAME }}
+      TAG_PR: pr-${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push backend image (temporary tag)
+        run: |
+          docker build -f pomodify-backend/Dockerfile -t $REGISTRY/pomodify-backend:$TAG_PR ./pomodify-backend
+          docker push $REGISTRY/pomodify-backend:$TAG_PR
+
+      - name: Build and push frontend image (temporary tag)
+        run: |
+          docker build -f pomodify-frontend/Dockerfile -t $REGISTRY/pomodify-frontend:$TAG_PR ./pomodify-frontend
+          docker push $REGISTRY/pomodify-frontend:$TAG_PR
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft version
+
+      - name: Generate SBOM for backend image
+        run: |
+          syft ${{ env.REGISTRY }}/pomodify-backend:${{ env.TAG_PR }} -o spdx-json > sbom-backend.json
+          echo "SBOM generated successfully"
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-backend
+          path: sbom-backend.json
+          retention-days: 7
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Scan backend image with Trivy
+        run: |
+          trivy image --format table --exit-code 1 --severity CRITICAL,HIGH ${{ env.REGISTRY }}/pomodify-backend:${{ env.TAG_PR }}
+
+      - name: Generate SBOM for frontend image
+        run: |
+          syft ${{ env.REGISTRY }}/pomodify-frontend:${{ env.TAG_PR }} -o spdx-json > sbom-frontend.json
+          echo "Frontend SBOM generated successfully"
+
+      - name: Upload Frontend SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-frontend
+          path: sbom-frontend.json
+          retention-days: 7
+
+      - name: Scan frontend image with Trivy
+        run: |
+          trivy image --format table --exit-code 1 --severity CRITICAL,HIGH ${{ env.REGISTRY }}/pomodify-frontend:${{ env.TAG_PR }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.4.0
+
+      - name: Sign backend image with cosign
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_KEY_B64: ${{ secrets.COSIGN_KEY_B64 }}
+        run: |
+          echo "$COSIGN_KEY_B64" | base64 -d > cosign.key
+          cosign sign --yes --key cosign.key ${{ env.REGISTRY }}/pomodify-backend:${{ env.TAG_PR }}
+          rm -f cosign.key
+
+      - name: Sign frontend image with cosign
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_KEY_B64: ${{ secrets.COSIGN_KEY_B64 }}
+        run: |
+          echo "$COSIGN_KEY_B64" | base64 -d > cosign.key
+          cosign sign --yes --key cosign.key ${{ env.REGISTRY }}/pomodify-frontend:${{ env.TAG_PR }}
+          rm -f cosign.key
+
+  # STAGE 7: CI Summary
+  ci-summary:
+    name: CI Summary
+    needs: [lint-and-validate, unit-tests, integration-tests, e2e-tests, build-and-test, build-and-secure]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine CI Status
+        id: status
+        run: |
+          if [ "${{ needs.lint-and-validate.result }}" = "failure" ] || \
+             [ "${{ needs.unit-tests.result }}" = "failure" ] || \
+             [ "${{ needs.integration-tests.result }}" = "failure" ] || \
+             [ "${{ needs.e2e-tests.result }}" = "failure" ] || \
+             [ "${{ needs.build-and-test.result }}" = "failure" ] || \
+             [ "${{ needs.build-and-secure.result }}" = "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: CI Passed
+        if: steps.status.outputs.status == 'success'
+        run: |
+          echo "════════════════════════════════════════"
+          echo "✅ All CI checks passed!"
+          echo "════════════════════════════════════════"
+          echo ""
+          echo "📋 Summary:"
+          echo "  ✅ Linting and validation - Passed"
+          echo "  ✅ Layer 1: Unit tests (frontend + backend) - Passed"
+          echo "  ✅ Layer 2: Integration tests (Testcontainers) - Passed"
+          echo "  ✅ Layer 3: E2E tests (Playwright) - Passed"
+          echo "  ✅ Docker builds - Passed"
+          echo "  ✅ Container tests - Passed"
+          echo "  ✅ Layer 4: SBOM generation & vulnerability scan - Passed"
+          echo "  ✅ Layer 4: Image signing with cosign - Passed"
+          echo ""
+          echo "🎉 This PR is ready to be merged into main!"
+          echo "🚀 Deployment will start automatically after merge"
+          echo "════════════════════════════════════════"
+
+      - name: CI Failed - Generate Error Report
+        if: steps.status.outputs.status == 'failure'
+        id: error_report
+        run: |
+          {
+            echo 'error_report<<EOF'
+            echo '## ❌ CI/CD Pipeline Failed'
+            echo ''
+            echo '**Build Details:**'
+            echo "- PR: #${{ github.event.pull_request.number }}"
+            echo "- Branch: \`${{ github.head_ref }}\`"
+            echo "- Commit: \`${{ github.event.pull_request.head.sha }}\`"
+            echo "- Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            echo ''
+            echo '### Failed Jobs:'
+            echo ''
+            
+            if [ "${{ needs.lint-and-validate.result }}" = "failure" ]; then
+              echo '❌ **Lint and Validate** - [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              echo '   - Dockerfile validation failed or merge conflicts detected'
+              echo ''
+            fi
+            
+            if [ "${{ needs.unit-tests.result }}" = "failure" ]; then
+              echo '❌ **Unit Tests** - [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              echo '   - Frontend (Karma) or Backend (Maven) unit tests failed'
+              echo ''
+            fi
+            
+            if [ "${{ needs.integration-tests.result }}" = "failure" ]; then
+              echo '❌ **Integration Tests** - [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              echo '   - Testcontainers-based integration tests failed'
+              echo '   - Check database connectivity and test assertions'
+              echo ''
+            fi
+            
+            if [ "${{ needs.e2e-tests.result }}" = "failure" ]; then
+              echo '❌ **E2E Tests** - [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              echo '   - Playwright E2E tests failed'
+              echo '   - Frontend server may not have started or test assertions failed'
+              echo ''
+            fi
+            
+            if [ "${{ needs.build-and-test.result }}" = "failure" ]; then
+              echo '❌ **Docker Build & Test** - [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              echo '   - Docker image build or container tests failed'
+              echo ''
+            fi
+            
+            if [ "${{ needs.build-and-secure.result }}" = "failure" ]; then
+              echo '❌ **Security Scanning** - [View Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              echo '   - Trivy vulnerability scan, SBOM generation, or image signing failed'
+              echo ''
+            fi
+            
+            echo '### Action Required:'
+            echo ''
+            echo '1. **Review the full logs** by clicking the '\''View Logs'\'' link above'
+            echo '2. **Identify the root cause** from the error messages'
+            echo '3. **Fix the issues** in your feature branch'
+            echo '4. **Push fixes** to update this PR'
+            echo '5. **Wait for CI to re-run** - it will automatically trigger on new commits'
+            echo ''
+            echo '### Troubleshooting Guide:'
+            echo ''
+            echo '**Unit Tests Failed?**'
+            echo '- Run \`mvn test\` locally in pomodify-backend'
+            echo '- Run \`npm test\` locally in pomodify-frontend'
+            echo ''
+            echo '**Integration Tests Failed?**'
+            echo '- Install Docker Desktop'
+            echo '- Run \`mvn verify\` to test with Testcontainers'
+            echo ''
+            echo '**E2E Tests Failed?**'
+            echo '- Run \`npx playwright test\` locally'
+            echo '- Check if frontend dev server starts properly'
+            echo ''
+            echo '**Docker Build Failed?**'
+            echo '- Verify Dockerfiles exist and are valid'
+            echo '- Check for missing dependencies in pom.xml or package.json'
+            echo ''
+            echo '**Security Scan Failed?**'
+            echo '- Review Trivy scan results for vulnerable dependencies'
+            echo '- Update vulnerable packages if necessary'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Issue on Failure
+        if: steps.status.outputs.status == 'failure'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          ERROR_REPORT: ${{ steps.error_report.outputs.error_report }}
+        with:
+          script: |
+            try {
+              const errorReport = process.env.ERROR_REPORT;
+
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `❌ CI/CD Pipeline Failed - PR #${{ github.event.pull_request.number }}`,
+                body: errorReport || 'CI/CD Pipeline failed. Please check the workflow logs for details.',
+                labels: ['ci-failure', 'automated'],
+                assignees: ['${{ github.event.pull_request.user.login }}']
+              });
+
+              console.log(`Created issue #${issue.data.number}`);
+
+              const prNumber = context.payload.pull_request?.number || context.issue?.number;
+              if (prNumber) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `⚠️ **CI/CD Pipeline Failed** ❌\n\nDetailed error report: #${issue.data.number}\n\nPlease review the issue and fix the failing checks.`
+                });
+              }
+            } catch (err) {
+              console.error('Failed to create GitHub issue:', err);
+            }
+
+      - name: Fail workflow on CI failure
+        if: steps.status.outputs.status == 'failure'
+        run: |
+          echo "❌ CI/CD pipeline failed. Check the GitHub issue for details."
+          exit 1
+```
+
+---
+
+## DOCKER CONFIGURATIONS
+
+### Backend Dockerfile (Multi-Stage Build)
+
+```dockerfile
+# Stage 1: Build with Maven
+FROM maven:3.9.4-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+
+# Copy only pom first to leverage Docker layer caching
+COPY pom.xml ./
+
+# Download dependencies (offline) to cache them
+RUN mvn -B -DskipTests dependency:go-offline
+
+# Copy source and build
+COPY src ./src
+RUN mvn -B -DskipTests package
+
+# Stage 2: Runtime (smaller image)
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# Install curl for health checks and upgrade packages
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy built jar from builder stage
+COPY --from=build /workspace/target/*.jar app.jar
+
+# Expose port
+EXPOSE 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD curl -f http://localhost:8081/actuator/health || exit 1
+
+# JVM tuning for containers
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-XX:+UseG1GC", \
+  "-XX:+ExitOnOutOfMemoryError", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]
+```
+
+### Frontend Dockerfile (Multi-Stage Build)
+
+```dockerfile
+# Stage 1: Build Angular
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Install dependencies first (cache layer)
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy source code
+COPY . .
+
+# Build Angular in production mode
+RUN npx ng build --configuration=production --source-map=false
+
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+
+# Update Alpine packages for security
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+
+# Copy built Angular files
+COPY --from=build /app/dist/pomodify-frontend/browser /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Nginx Configuration
+
+```nginx
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+    access_log /var/log/nginx/access.log main;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    client_max_body_size 20M;
+
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript 
+               application/json application/javascript application/xml+rss 
+               application/rss+xml application/atom+xml image/svg+xml 
+               text/x-component text/x-cross-domain-policy;
+
+    server {
+        listen 80;
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        resolver 127.0.0.11 valid=10s;
+
+        # Proxy API requests to backend
+        location /api/ {
+            set $backend "pomodify-backend:8081";
+            proxy_pass http://$backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+            proxy_cache_bypass $http_upgrade;
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 10s;
+            proxy_read_timeout 10s;
+        }
+
+        # Angular routing
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Cache busting for assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # Don't cache index.html
+        location = /index.html {
+            expires -1;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+    }
+}
+```
+
+---
+
+## DOCKER COMPOSE (Local Development)
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pomodify-postgres
+    environment:
+      POSTGRES_DB: pomodifydb
+      POSTGRES_USER: pomodify_user
+      POSTGRES_PASSWORD: pomodify_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pomodify-network
+
+  backend:
+    build:
+      context: ./pomodify-backend
+      dockerfile: Dockerfile
+    container_name: pomodify-backend
+    ports:
+      - "8081:8081"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/pomodifydb
+      DB_USERNAME: pomodify_user
+      DB_PASSWORD: pomodify_password
+      JWT_SECRET: your-secret-key-here-minimum-32-characters
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      - postgres
+    networks:
+      - pomodify-network
+
+  frontend:
+    build:
+      context: ./pomodify-frontend
+      dockerfile: Dockerfile
+    container_name: pomodify-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - pomodify-network
+
+volumes:
+  postgres_data:
+
+networks:
+  pomodify-network:
+    driver: bridge
+```
+
+---
+
+**Continue to PART 3 for Database, Deployment & Configuration...**
