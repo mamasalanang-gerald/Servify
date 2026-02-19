@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { register, login } = require('../Controllers/AuthController');
+const { register, login } = require('../controllers/AuthController');
 
 console.log('AuthRoutes loaded');
 
 
-router.post('/test', function(req, res) {
+router.get('/test', function(req, res) {
     console.log('=== TEST ROUTE WAS HIT ===');
     res.json({ message: 'Test route works!' });
 });
