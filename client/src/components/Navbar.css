@@ -1,0 +1,129 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 64px;
+  background: #fff;
+  border-bottom: 1px solid #eef0f4;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+/* Dark mode */
+html.dark .navbar {
+  background: #1a1f2e;
+  border-bottom-color: #2a3045;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: #2c3fd1;
+  color: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-family: 'Sora', sans-serif;
+}
+
+.logo-text {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #0f172a;
+  transition: color 0.3s;
+}
+
+html.dark .logo-text {
+  color: #f1f5f9;
+}
+
+.navbar-links {
+  display: flex;
+  list-style: none;
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  color: #4b5563;
+  font-size: 0.95rem;
+  font-family: 'DM Sans', sans-serif;
+  transition: color 0.2s;
+}
+
+html.dark .navbar-links a {
+  color: #94a3b8;
+}
+
+.navbar-links a:hover {
+  color: #2c3fd1;
+}
+
+html.dark .navbar-links a:hover {
+  color: #7b93ff;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+}
+
+html.dark .icon-btn {
+  color: #94a3b8;
+}
+
+html.dark .icon-btn:hover {
+  background: #2a3045;
+  color: #f1f5f9;
+}
+
+.signup-btn {
+  background: #2c3fd1;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.signup-btn:hover {
+  background: #1e2fa8;
+  transform: translateY(-1px);
+}
