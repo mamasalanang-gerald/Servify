@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const runMigrations = require('./migrate');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const app = express();
 
 process.stderr.write('Script starting...\n');
@@ -22,7 +23,9 @@ const corstOptions = {
 
 app.use(cors(corstOptions));
 app.use(express.json());
+
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 
 
 app.get('/', (req, res) => {
