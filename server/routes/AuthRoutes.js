@@ -11,10 +11,7 @@ router.get('/test', function(req, res) {
 });
 
 
-router.post('/register', function(req, res) {
-    console.log('=== REGISTER ROUTE WAS HIT ===');
-    console.log('Body:', req.body);
-    res.json({ message: 'Register endpoint works!' });
-});
+router.post('/register', register);
+router.post('/login', login);
 
 module.exports = router;

@@ -29,7 +29,7 @@ app.post('/direct-test', (req, res) => {
 
 app.use(cors(corstOptions));
 app.use(express.json());
-app.use('/api/auth', authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 
 app.get('/', (req, res) => {
