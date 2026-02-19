@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/mamasalanang-gerald/Servify/issues"
   },
-  "homepage": "https://github.com/mamasalanang-gerald/Servify#readme"
+  "homepage": "https://github.com/mamasalanang-gerald/Servify#readme",
+  "dependencies": {
+    "react-router-dom": "^7.13.0"
+  }
 }
