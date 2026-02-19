@@ -46,7 +46,7 @@ CREATE TABLE bookings (
     booking_date DATE NOT NULL,
     booking_time TIME NOT NULL,
     user_location VARCHAR NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
     total_price NUMERIC(10, 2) NOT NULL CHECK (total_price >= 0),
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
