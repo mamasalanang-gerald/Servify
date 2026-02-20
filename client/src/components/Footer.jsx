@@ -31,7 +31,6 @@ export default function Footer() {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© 2026 Servify. All rights reserved.</span>
       </div>
     </footer>
   );

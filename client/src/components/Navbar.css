@@ -22,6 +22,7 @@ html.dark .navbar {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  text-decoration: none;
 }
 
 .logo-icon {
@@ -75,6 +76,15 @@ html.dark .navbar-links a {
 }
 
 html.dark .navbar-links a:hover {
+  color: #7b93ff;
+}
+
+.navbar-links a.active {
+  color: #2c3fd1;
+  font-weight: 600;
+}
+
+html.dark .navbar-links a.active {
   color: #7b93ff;
 }
 
