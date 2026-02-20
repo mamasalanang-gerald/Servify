@@ -4,7 +4,13 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+# Install with increased timeout and retry logic
+RUN npm config set fetch-timeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+RUN npm ci --omit=dev || npm install
 
 COPY . .
 
