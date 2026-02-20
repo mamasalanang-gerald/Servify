@@ -85,9 +85,9 @@ jobs:
         working-directory: ./client
         run: npm ci
 
-      - name: 🔍 Run ESLint (optional)
+      - name: 🔍 Run ESLint
         working-directory: ./client
-        run: npm run lint || echo "⚠️ ESLint check skipped - will be fixed soon"
+        run: npm run lint
 
   # ═══════════════════════════════════════════════════════════════════
   # PHASE 3: BACKEND TESTS (~30s)
