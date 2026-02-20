@@ -29,6 +29,14 @@ const deleteUser = async (id) => {
     const query = 'DELETE FROM users WHERE id = $1 RETURNING *';
     const { rows } = await pool.query(query, [id]);
     return rows[0];
+
+}
+
+const updateUserType = async (id, user_type) => {
+    const query = `UPDATE users set user_type = $1, updated_at = NOW() 
+     WHERE id = $2 RETURNING id, full_name, email, user_type, updated_at`;
+     const { rows } = await pool.query(query, [user_type, id]);
+     return rows[0];
 }
 
 const findUserByEmail = async (email) => {
