@@ -137,3 +137,21 @@ html.dark .icon-btn:hover {
   background: #1e2fa8;
   transform: translateY(-1px);
 }
+
+.login-btn {
+  background: #2c3fd1;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.login-btn:hover {
+  background: #1e2fa8;
+  transform: translateY(-1px);
+}

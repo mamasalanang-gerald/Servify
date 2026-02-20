@@ -179,13 +179,33 @@ html.dark .navbar__icon-btn:hover {
   box-shadow: 0 4px 12px rgba(26, 58, 143, 0.25);
   white-space: nowrap;
 }
-
+.navbar__login-btn {
+  padding: 9px 22px;
+  background: linear-gradient(135deg, #1a3a8f, #2b52cc);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(26, 58, 143, 0.25);
+  white-space: nowrap;
+}
 .navbar__signup-btn:hover {
   opacity: 0.92;
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(26, 58, 143, 0.35);
 }
-
+.navbar__login-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(26, 58, 143, 0.35);
+}
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
   .navbar {

@@ -1,22 +1,3 @@
-<<<<<<< Updated upstream
-import React from 'react';
-import Navbar from '../components/Navbar';
-import LoginBox from '../components/LoginBox';
-import './styles/login.css';
-
-const LoginPage = () => {
-  return (
-    <div className="login-page">
-      <Navbar />
-      <main className="login-main">
-        <LoginBox />
-      </main>
-    </div>
-  );
-};
-
-export default LoginPage;
-=======
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -158,4 +139,3 @@ export default function LoginPage() {
     </div>
   );
 }
->>>>>>> Stashed changes
