@@ -20,9 +20,15 @@ const editServices = async(id, name, description, price, category) => {
     return result.rows[0];
 }
 
+const removeService = async(id) => {
+    const result = await pool.query('DELETE FROM services WHERE id = $1 RETURNING *', [id]);
+    return result.rows[0];
+}
+
 module.exports = {
     getServices,
     getServicesbyId,
     createServices,
-    editServices
+    editServices,
+    removeService
 }
