@@ -2,11 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const runMigrations = require('./migrate');
-const authRoutes = require('./routes/AuthRoutes');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const app = express();
-
-app.use(cors());
-app.use(express.json());
 
 process.stderr.write('Script starting...\n');
 
@@ -22,14 +20,12 @@ const corstOptions = {
     },
     optionsSuccessStatus: 200
 };
-app.post('/direct-test', (req, res) => {
-    console.log('=== DIRECT TEST ROUTE HIT ===');
-    res.json({ message: 'Direct route works!' });
-});
 
 app.use(cors(corstOptions));
 app.use(express.json());
-app.use('/api/auth', authRoutes);
+
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 
 
 app.get('/', (req, res) => {
