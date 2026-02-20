@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import ServicesFilter from '../components/ServicesFilter';
 import ServicesGrid from '../components/ServicesGrid';
