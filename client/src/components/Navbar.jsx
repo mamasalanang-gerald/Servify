@@ -70,4 +70,4 @@ export default function Navbar({ activePage = "" }) {
       </div>
     </nav>
   );
-}
+} 
