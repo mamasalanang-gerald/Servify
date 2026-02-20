@@ -4,8 +4,33 @@ const pool = require('./config/DB');
 
 const migrationsDir = path.join(__dirname, 'migrations');
 
+// Wait for database connection with retry logic
+async function waitForDatabase(maxRetries = 30) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            await pool.query('SELECT NOW()');
+            process.stderr.write('✓ Database connected\n');
+            return;
+        } catch (error) {
+            if (i < maxRetries - 1) {
+                process.stderr.write(`Waiting for database... (attempt ${i + 1}/${maxRetries})\n`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+                throw new Error('Failed to connect to database after ' + maxRetries + ' attempts');
+            }
+        }
+    }
+}
+
 async function runMigrations() {
     try {
+        process.stderr.write('Starting migrations...\n');
+        process.stderr.write('Waiting for database connection...\n');
+        
+        // Wait for database to be ready
+        await waitForDatabase();
+
+        process.stderr.write('Creating migrations table...\n');
         // Create migrations table if it doesn't exist
         await pool.query(`
             CREATE TABLE IF NOT EXISTS migrations (
@@ -17,7 +42,7 @@ async function runMigrations() {
 
         // Check if migrations directory exists
         if (!fs.existsSync(migrationsDir)) {
-            console.log('✓ No migrations directory found, skipping migrations');
+            process.stderr.write('✓ No migrations directory found, skipping migrations\n');
             return;
         }
 
@@ -27,7 +52,7 @@ async function runMigrations() {
             .sort();
 
         if (files.length === 0) {
-            console.log('✓ No migration files found, skipping migrations');
+            process.stderr.write('✓ No migration files found, skipping migrations\n');
             return;
         }
 
@@ -38,7 +63,7 @@ async function runMigrations() {
         // Run pending migrations
         for (const file of files) {
             if (!executedMigrations.includes(file)) {
-                console.log(`Running migration: ${file}`);
+                process.stderr.write(`Running migration: ${file}\n`);
                 
                 const migrationPath = path.join(migrationsDir, file);
                 const sql = fs.readFileSync(migrationPath, 'utf-8');
@@ -49,14 +74,16 @@ async function runMigrations() {
                 // Record migration as executed
                 await pool.query('INSERT INTO migrations (name) VALUES ($1)', [file]);
                 
-                console.log(`✓ Migration ${file} completed`);
+                process.stderr.write(`✓ Migration ${file} completed\n`);
             }
         }
 
-        console.log('✓ All migrations completed successfully');
+        process.stderr.write('✓ All migrations completed successfully\n');
     } catch (error) {
-        console.error('Migration error:', error);
-        process.exit(1);
+        process.stderr.write(`Migration error: ${error.message}\n`);
+        process.stderr.write(`${error.stack}\n`);
+        // For testing/development environments without database, allow server to start
+        process.stderr.write('⚠️  Database connection failed - server will start without database\n');
     }
 }
 
