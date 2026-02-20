@@ -141,13 +141,27 @@ jobs:
       - name: 🧪 Test backend container startup
         run: |
           echo "Testing backend container startup..."
-          docker run -d --name test-backend -p 3000:3000 servify-backend:test
-          sleep 3
+          docker run -d --name test-backend -p 3000:3000 \
+            -e NODE_ENV=test \
+            -e PORT=3000 \
+            servify-backend:test
+          
+          # Check container status and logs
+          sleep 5
+          
+          # Get container logs before checking
+          echo "Container logs:"
+          docker logs test-backend || true
+          
+          # Check if container is still running
           if docker ps | grep -q test-backend; then
             echo "✅ Backend container started successfully"
-            docker stop test-backend
+            docker stop test-backend && docker rm test-backend
           else
             echo "❌ Backend container failed"
+            echo "Checking what went wrong..."
+            docker logs test-backend || true
+            docker rm test-backend || true
             exit 1
           fi
 
@@ -155,14 +169,30 @@ jobs:
         run: |
           echo "Testing frontend container startup..."
           docker run -d --name test-frontend -p 5173:5173 servify-frontend:test
-          sleep 3
+          sleep 5
+          
+          # Get container logs to check for errors
+          echo "Container logs:"
+          docker logs test-frontend || true
+          
           if docker ps | grep -q test-frontend; then
             echo "✅ Frontend container started successfully"
-            docker stop test-frontend
+            docker stop test-frontend && docker rm test-frontend
           else
             echo "❌ Frontend container failed"
+            echo "Checking what went wrong..."
+            docker logs test-frontend || true
+            docker rm test-frontend || true
             exit 1
           fi
+
+      - name: 🧹 Cleanup test containers
+        if: always()
+        run: |
+          echo "Cleaning up test containers..."
+          docker stop test-backend test-frontend 2>/dev/null || true
+          docker rm test-backend test-frontend 2>/dev/null || true
+          echo "✅ Cleanup complete"
 
   # ═══════════════════════════════════════════════════════════════════
   # PHASE 5: CI SUMMARY (~10s)
