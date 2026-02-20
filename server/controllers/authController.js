@@ -40,23 +40,12 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    })
-
     res.status(200).json({ accessToken });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-const logout = async (req, res) => {
-    localStorage.removeItem('refreshToken');
-    res.status(200).json({ message: 'Logged out' });
-}
 
 const refresh = async (req, res) => {
     const { refreshToken } = req.body;
@@ -81,5 +70,5 @@ const refresh = async (req, res) => {
 
 
 
-module.exports = { register, login, logout, refresh };
+module.exports = { register, login, refresh };
 
