@@ -4,6 +4,7 @@ const cors = require('cors');
 const runMigrations = require('./migrate');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const servicesRoutes = require('./routes/servicesRoutes');
 const app = express();
 
 process.stderr.write('Script starting...\n');
@@ -27,6 +28,7 @@ app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/services", servicesRoutes);
 
 
 app.get('/', (req, res) => {
