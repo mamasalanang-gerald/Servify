@@ -1,31 +1,27 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-
 export default [
-  { ignores: ['dist'] },
+  {
+    ignores: ['dist', 'node_modules'],
+  },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
-      globals: globals.browser,
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        console: 'readonly',
+      },
       parserOptions: {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
         sourceType: 'module',
       },
     },
-    plugins: {
-      react: reactRefresh,
-      'react-hooks': reactHooks,
-    },
     rules: {
-      ...js.configs.recommended.rules,
-      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
-      'react/jsx-uses-react': 'off',
-      'react/react-in-jsx-scope': 'off',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
     },
   },
 ]
