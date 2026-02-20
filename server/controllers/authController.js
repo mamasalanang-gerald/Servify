@@ -36,9 +36,16 @@ const login = async (req, res) => {
 
     const refreshToken = jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET_REFRESH,
       { expiresIn: '7d' }
     );
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+    })
 
     res.status(200).json({ accessToken });
   } catch (err) {
@@ -46,5 +53,33 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const logout = async (req, res) => {
+    localStorage.removeItem('refreshToken');
+    res.status(200).json({ message: 'Logged out' });
+}
+
+const refresh = async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) return res.status(401).json({ message: 'No refresh token' });
+    jwt.verify(refreshToken, process.env.JWT_SECRET_REFRESH, (err, user) => {
+        if (err) return res.status(403).json({ message: 'Invalid refresh token' });
+        const accessToken = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        const newRefreshToken = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET_REFRESH,
+            { expiresIn: '7d' }
+        );
+        res.status(200).json({ accessToken, refreshToken: newRefreshToken });
+    });
+};
+
+
+
+module.exports = { register, login, logout, refresh };
 
