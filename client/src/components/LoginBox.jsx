@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const LoginBox = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -171,7 +171,7 @@ const LoginBox = () => {
           </div>
 
           <p className="login-card__register">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a href="/signup">Create one free</a>
           </p>
 

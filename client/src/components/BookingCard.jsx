@@ -1,5 +1,3 @@
-import React from 'react';
-
 const BookingCard = ({ booking }) => {
   return (
     <div className="booking-card">
