@@ -24,6 +24,12 @@ const DashboardPage = () => {
             <BookingList />
           </>
         );
+      case 'Saved Services':
+        return <SavedServices />;
+      case 'Profile':
+        return <ProfileSettings />;
+      case 'Settings':
+        return <AccountSettings />;
       default:
         return null;
     }
