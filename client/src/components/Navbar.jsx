@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
+import useAuth from "../hooks/useAuth";
+import LogoutButton from "./LogoutButton";
 import "../pages/styles/Navbar.css";
 
 export default function Navbar({ activePage = "" }) {
+  const { user, setUser } = useAuth();
+
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
@@ -15,6 +19,7 @@ export default function Navbar({ activePage = "" }) {
       localStorage.setItem("theme", "light");
     }
   }, [dark]);
+
 
   return (
     <nav className="navbar">
@@ -42,6 +47,7 @@ export default function Navbar({ activePage = "" }) {
       </ul>
 
       <div className="navbar__actions">
+        {/* Dark mode toggle — always visible */}
         <button
           className="navbar__icon-btn"
           onClick={() => setDark(!dark)}
@@ -59,16 +65,48 @@ export default function Navbar({ activePage = "" }) {
           )}
         </button>
 
-        <button className="navbar__icon-btn" aria-label="Account">
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </button>
+        {user ? (
+          /* ── Logged in: profile icon only ── */
+          <div className="navbar__profile-wrapper">
+            <button className="navbar__icon-btn navbar__profile-btn" aria-label="Account">
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </button>
 
-        <a href="/signup" className="navbar__signup-btn">Sign Up</a>
+            {/* Simple dropdown on hover/focus */}
+            <div className="navbar__profile-dropdown">
+              <span className="navbar__profile-email">{user.email}</span>
+              <span className="navbar__profile-role">{user.role}</span>
+              <hr className="navbar__profile-divider" />
+              <a
+                href={
+                  user.role === "admin"
+                    ? "/admin"
+                    : user.role === "provider"
+                    ? "/provider"
+                    : "/dashboard"
+                }
+                className="navbar__profile-link"
+              >
+                My Dashboard
+              </a>
+              <LogoutButton className="navbar__profile-logout" />
+            </div>
+          </div>
+        ) : (
+          /* ── Logged out: Login + Register buttons ── */
+          <>
+            <a href="/login" className="navbar__login-btn">
+              Log In
+            </a>
+            <a href="/signup" className="navbar__signup-btn">
+              Register
+            </a>
+          </>
+        )}
       </div>
     </nav>
   );
 }
-

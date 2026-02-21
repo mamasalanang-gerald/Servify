@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
@@ -8,11 +7,11 @@ import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 //pa remove nalang comment kapag want nyo itry yung login functionality.
 //nadedetect kasi na may hardcoded credentials.
 
-// const MOCK_USERS = [
-//   { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
-//   { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
-//   { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
-// ];
+const MOCK_USERS = [
+  { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
+  { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
+  { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
+];
 
 const ROLE_HOME = {
   user:     '/dashboard',
