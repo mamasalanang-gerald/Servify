@@ -1,4 +1,3 @@
-import React from 'react';
 import ServiceCard from './ServiceCard';
 
 import houseCleaningImg from '../assets/images/house_cleaning.jpg';
@@ -93,7 +92,7 @@ const ServicesGrid = ({ searchQuery }) => {
           ))
         ) : (
           <div className="services-grid__empty">
-            <p>No services found for "<strong>{searchQuery}</strong>"</p>
+            <p>No services found for &quot;<strong>{searchQuery}</strong>&quot;</p>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "../pages/styles/navbar.css";
+import "../pages/styles/Navbar.css";
 
 export default function Navbar({ activePage = "" }) {
   const [dark, setDark] = useState(() => {

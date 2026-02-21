@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardStats from '../components/DashboardStats';
@@ -24,12 +24,6 @@ const DashboardPage = () => {
             <BookingList />
           </>
         );
-      case 'Saved Services':
-        return <SavedServices />;
-      case 'Profile':
-        return <ProfileSettings />;
-      case 'Settings':
-        return <AccountSettings />;
       default:
         return null;
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const categories = [
   { name: 'Home Cleaning', count: 234 },
