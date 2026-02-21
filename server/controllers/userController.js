@@ -1,16 +1,29 @@
 const jwt = require('jsonwebtoken');
 const { getUserById, getAllUsers, updateUserType } = require('../models/userModel');
+const { deleteAllUserRefreshTokens, storeRefreshToken } = require('../models/refreshTokenModel');
 
 const getProfile = async (req, res) => {
-  const user = await getUserById(req.user.id);
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  res.status(200).json(user);
+  try{
+
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.status(200).json(user);
+
+  } catch(err){
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
 };
 
 const listUsers = async (req, res) => {
+    try {
     const users = await getAllUsers();
     if(!users) return res.status(404).json({ message: 'Users not found' });
     res.status(200).json(users);
+
+    } catch(err) {
+        return res.status(500).json({ message: 'Server error', error: err.message });
+    }
+   
 }
 
 const promoteRole = async (req, res) => {
@@ -18,16 +31,29 @@ const promoteRole = async (req, res) => {
         const user = await updateUserType(req.user.id, 'provider');
         if (!user) return res.status(404).json({ message: 'User not found' });
 
+       
         const payload = { id: user.id, email: user.email, role: user.user_type };
 
-        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
-        const refreshToken = jwt.sign(payload, process.env.JWT_SECRET_REFRESH, { expiresIn: '7d' });
+        
+        const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+        const newRefreshToken = jwt.sign(payload, process.env.JWT_SECRET_REFRESH, { expiresIn: '7d' });
+
+        
+        await deleteAllUserRefreshTokens(user.id);
+        await storeRefreshToken(user.id, newRefreshToken);
+
+        
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
 
         res.status(200).json({
             message: 'You are now a service provider',
             user,
-            accessToken,
-            refreshToken
+            accessToken: newAccessToken   
         });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
