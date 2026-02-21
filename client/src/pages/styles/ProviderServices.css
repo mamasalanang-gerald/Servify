@@ -1,0 +1,120 @@
+.services-wrapper { animation: fadeUp 0.35s ease; }
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* Service card */
+.svc-card { padding: 0; overflow: hidden; }
+
+.svc-card__strip {
+  height: 5px;
+  background: var(--border);
+}
+
+.svc-card__strip--active {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+.svc-card__body { padding: 18px 20px; }
+
+.svc-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.svc-card__title {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px 0;
+}
+
+.svc-card__category {
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 2px 9px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.svc-card__metrics {
+  display: flex;
+  gap: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.svc-card__metric-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.svc-card__metric-lbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.svc-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.svc-card__toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.svc-card__toggle-lbl {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.svc-card__actions { display: flex; gap: 6px; }
+
+/* Add placeholder */
+.svc-add-placeholder {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  transition: border-color var(--transition), color var(--transition);
+  font-family: var(--font);
+  font-size: 0.88rem;
+  font-weight: 600;
+  width: 100%;
+}
+
+.svc-add-placeholder:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* Modal small */
+.p-modal--sm { max-width: 420px; }
+
+.svc-delete-msg {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.6;
+}

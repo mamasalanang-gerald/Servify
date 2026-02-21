@@ -1,0 +1,68 @@
+.earnings-wrapper { display: flex; flex-direction: column; gap: 20px; animation: fadeUp 0.35s ease; }
+
+/* Summary row */
+.earnings-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+.earnings-stat { padding: 22px 20px; display: flex; flex-direction: column; gap: 6px; }
+.earnings-stat__dot { width: 10px; height: 10px; border-radius: 50%; margin-bottom: 4px; }
+.earnings-stat__value { font-size: 1.9rem; font-weight: 800; line-height: 1; letter-spacing: -0.5px; }
+.earnings-stat__label { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+.earnings-stat__sub   { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Monthly chart */
+.earnings-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 160px;
+}
+
+.earnings-chart__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.earnings-chart__val {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.earnings-chart__spacer {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.earnings-chart__bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: var(--accent-light);
+  transition: height 0.4s ease;
+  min-height: 4px;
+}
+
+.earnings-chart__bar--peak {
+  background: linear-gradient(180deg, var(--accent), var(--primary));
+}
+
+.earnings-chart__month {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Table helpers */
+.earnings-client { font-weight: 600; color: var(--text) !important; }
+.earnings-mono   { font-weight: 600; }
+.earnings-fee    { color: #dc2626 !important; }
+.earnings-net    { color: #16a34a !important; font-weight: 700 !important; }
+
+@media (max-width: 768px) {
+  .earnings-summary { grid-template-columns: 1fr; }
+}

@@ -1,3 +1,7 @@
+import React from 'react';
+import LogoutButton from './LogoutButton';
+import '../pages/styles/DashboardSidebar.css';
+
 const navItems = [
   {
     label: 'Bookings',
@@ -41,12 +45,14 @@ const navItems = [
 const DashboardSidebar = ({ activeNav, setActiveNav }) => {
   return (
     <aside className="dash-sidebar">
+      {/* Profile */}
       <div className="dash-profile">
         <div className="dash-profile__avatar">CD</div>
         <h3 className="dash-profile__name">Carlo Dela Cruz</h3>
         <p className="dash-profile__email">carlo.dcxgh@gmail.com</p>
       </div>
 
+      {/* Nav */}
       <nav className="dash-nav">
         {navItems.map((item) => (
           <button
@@ -59,6 +65,11 @@ const DashboardSidebar = ({ activeNav, setActiveNav }) => {
           </button>
         ))}
       </nav>
+
+      {/* Sign out — light variant since this sidebar is white */}
+      <div className="dash-sidebar__footer">
+        <LogoutButton className="logout-btn--light" />
+      </div>
     </aside>
   );
 };
