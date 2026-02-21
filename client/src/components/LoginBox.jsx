@@ -95,12 +95,12 @@ const LoginBox = () => {
           </div>
 
           {/* Dev hint */}
-          <div className="login-split__hint">
+          {/* <div className="login-split__hint">
             <p><strong>Test credentials:</strong></p>
             <p>User → user@servify.com / user123</p>
             <p>Provider → provider@servify.com / provider123</p>
             <p>Admin → admin@servify.com / admin123</p>
-          </div>
+          </div> */}
         </div>
         <div className="login-split__left-blob" />
         <div className="login-split__left-blob-2" />
