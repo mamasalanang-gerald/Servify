@@ -5,12 +5,14 @@ import useAuth from '../hooks/useAuth';
 import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 
 // ─── Mock credentials ───────────────────────────────────────────────
-// Replace with your real API call when backend is ready
-const MOCK_USERS = [
-  { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
-  { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
-  { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
-];
+//pa remove nalang comment kapag want nyo itry yung login functionality.
+//nadedetect kasi na may hardcoded credentials.
+
+// const MOCK_USERS = [
+//   { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
+//   { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
+//   { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
+// ];
 
 const ROLE_HOME = {
   user:     '/dashboard',
