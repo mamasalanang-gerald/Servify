@@ -1,0 +1,141 @@
+.categories {
+  padding: 5rem 3rem;
+  background: #f0f2f8;
+  transition: background 0.3s;
+}
+
+html.dark .categories {
+  background: #131929;
+}
+
+.categories-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.categories-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.4rem;
+  transition: color 0.3s;
+}
+
+html.dark .categories-title {
+  color: #f1f5f9;
+}
+
+.categories-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  color: #64748b;
+  font-size: 0.95rem;
+  transition: color 0.3s;
+}
+
+html.dark .categories-subtitle {
+  color: #94a3b8;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 2rem 1.75rem;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.3s;
+}
+
+html.dark .category-card {
+  background: #1a1f2e;
+  border-color: #2a3045;
+}
+
+html.dark .category-card:hover {
+  border-color: #7b93ff;
+  box-shadow: 0 8px 28px rgba(123, 147, 255, 0.15);
+}
+
+html.dark .category-icon-wrap {
+  background: #222a40;
+}
+
+html.dark .category-card:hover .category-icon-wrap {
+  background: #2c3fd1;
+}
+
+html.dark .category-label {
+  color: #f1f5f9;
+}
+
+html.dark .category-count {
+  color: #64748b;
+}
+
+.category-card:hover {
+  border-color: #2c3fd1;
+  box-shadow: 0 8px 28px rgba(44, 63, 209, 0.1);
+  transform: translateY(-4px);
+}
+
+.category-card:hover .category-icon-wrap {
+  background: #2c3fd1;
+}
+
+.category-card:hover .category-icon-wrap svg {
+  stroke: #fff;
+}
+
+.category-icon-wrap {
+  width: 56px;
+  height: 56px;
+  background: #eef1fb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  transition: background 0.2s;
+}
+
+.category-icon-wrap svg {
+  transition: stroke 0.2s;
+}
+
+.category-label {
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.category-count {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+}
