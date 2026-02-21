@@ -26,7 +26,7 @@ const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-    const payload = { id: user.id, email: user.email };
+    const payload = { id: user.id, email: user.email, role: user.user_type };
 
     const accessToken = jwt.sign(
       payload,
@@ -36,7 +36,7 @@ const login = async (req, res) => {
 
     const refreshToken = jwt.sign(
       payload,
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET_REFRESH,
       { expiresIn: '7d' }
     );
 
@@ -46,5 +46,29 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+
+const refresh = async (req, res) => {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) return res.status(401).json({ message: 'No refresh token' });
+    jwt.verify(refreshToken, process.env.JWT_SECRET_REFRESH, (err, user) => {
+        if (err) return res.status(403).json({ message: 'Invalid refresh token' });
+        const accessToken = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        const newRefreshToken = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET_REFRESH,
+            { expiresIn: '7d' }
+        );
+        res.status(200).json({ accessToken, refreshToken: newRefreshToken });
+    });
+};
+
+
+
+module.exports = { register, login, refresh };
 

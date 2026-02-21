@@ -4,7 +4,14 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+# Install with increased timeout and retry logic
+RUN npm config set fetch-timeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
+# Install ALL dependencies (including devDependencies) for building
+RUN npm ci
 
 COPY . .
 
@@ -13,6 +20,11 @@ RUN npm run build
 FROM node:20-alpine
 
 WORKDIR /app
+
+RUN npm config set fetch-timeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm config set fetch-retry-maxtimeout 120000
 
 RUN npm install -g serve
 
