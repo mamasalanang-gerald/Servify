@@ -30,7 +30,7 @@ const removeService = async (req, res) => {
 }
 
 module.exports = {
-    getAllServices,
+    getServices,
     getServicesbyId,
     createServices,
     editServices,

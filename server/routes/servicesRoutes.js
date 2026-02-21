@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getServices, getServicesbyId, createServices, editServices, removeService } = require('../controllers/servicesController');
 
-router.get('/', getAllServices);
+router.get('/', getServices);
 router.get('/:id', getServicesbyId);
 
 router.post('/create', createServices);
