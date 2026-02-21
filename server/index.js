@@ -1,13 +1,16 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
-const app = express();
 const runMigrations = require('./migrate');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const servicesRoutes = require('./routes/servicesRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+
 const app = express();
+
 
 process.stderr.write('Script starting...\n');
 
@@ -25,28 +28,20 @@ const corstOptions = {
     optionsSuccessStatus: 200
 };
 
-app.use(cors());
+app.use(cors(corstOptions));
 app.use(express.json());
+app.use(cookieParser());
 
-const authRoutes = require('./routes/authRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
 
-if(bookingRoutes) console.log("valid")
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/services", servicesRoutes);
-
-app.use('/api/auth', authRoutes);
-app.use('/api/bookings', bookingRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 
 app.get('/', (req, res) => {
     res.send('Servify API is running!');
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
 // Run migrations before starting the server
 async function startServer() {
     try {

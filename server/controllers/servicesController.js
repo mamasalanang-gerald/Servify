@@ -13,12 +13,16 @@ const getServicesbyId = async (req, res) => {
 };
 
 const createServices = async (req, res) => {
-    const service = await createServiceInDB(req.body);
+    const { provider_id, category_id, title, description, price, service_type, location } = req.body;
+
+    const service = await createServiceInDB(provider_id, category_id, title, description, price, service_type, location);
     res.status(201).json(service);
 };
 
 const editServices = async (req, res) => {
-    const service = await editServiceInDB(req.params.id, req.body);
+    const { title, description, price, service_type, location } = req.body;
+
+    const service = await editServiceInDB(req.params.id, title, description, price, service_type, location);
     if (!service) return res.status(404).json({ message: 'There are no services to edit' });
     res.status(200).json(service);
 };
