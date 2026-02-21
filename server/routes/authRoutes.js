@@ -4,6 +4,8 @@ const { register, login, refresh } = require('../controllers/authController');
 
 
 console.log('AuthRoutes loaded');
+console.log('register:', register);
+console.log('login:', login);
 
 
 router.post('/register', register);
