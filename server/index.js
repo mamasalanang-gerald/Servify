@@ -38,8 +38,13 @@ app.get('/', (req, res) => {
 // Run migrations before starting the server
 async function startServer() {
     try {
-        process.stderr.write('Running database migrations...\n');
-        await runMigrations();
+        // Skip migrations in test environment
+        if (process.env.NODE_ENV !== 'test') {
+            process.stderr.write('Running database migrations...\n');
+            await runMigrations();
+        } else {
+            process.stderr.write('Skipping migrations in test environment\n');
+        }
         
         app.listen(process.env.PORT, () => {
             console.log(`Server is running on port ${process.env.PORT}`);
