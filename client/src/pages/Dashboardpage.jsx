@@ -3,12 +3,18 @@ import Navbar from '../components/Navbar';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardStats from '../components/DashboardStats';
 import BookingList from '../components/BookingList';
+import SavedServices from '../components/SavedServices';
+import ProfileSettings from '../components/ProfileSettings';
+import AccountSettings from '../components/AccountSettings';
 
 import './styles/dashboard.css';
 
 const DashboardPage = () => {
   const [activeNav, setActiveNav] = useState('Bookings');
 
+
+
+  
   const renderContent = () => {
     switch (activeNav) {
       case 'Bookings':

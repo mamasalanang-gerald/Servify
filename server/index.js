@@ -5,34 +5,35 @@ const runMigrations = require('./migrate');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const servicesRoutes = require('./routes/servicesRoutes');
+
 const app = express();
 
 process.stderr.write('Script starting...\n');
 
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 
-const corstOptions = {
+const corsOptions = {
     origin: function (origin, callback) {
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin){
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
             callback(null, true);
-        } else { 
+        } else {
             callback(new Error('Not allowed by CORS'));
         }
-    }, 
+    },
     credentials: true,
     optionsSuccessStatus: 200
 };
 
-app.use(cors(corstOptions));
+app.use(cors(corsOptions));
 app.use(express.json());
 
+// Setup routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/services", servicesRoutes);
 
-
 app.get('/', (req, res) => {
-    res.send('Hello World!');
+    res.send('Servify API is running!');
 });
 
 // Run migrations before starting the server
@@ -45,9 +46,10 @@ async function startServer() {
         } else {
             process.stderr.write('Skipping migrations in test environment\n');
         }
-        
-        app.listen(process.env.PORT, () => {
-            console.log(`Server is running on port ${process.env.PORT}`);
+
+        const PORT = process.env.PORT || 3000;
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
         });
     } catch (error) {
         process.stderr.write(`Failed to start server: ${error.message}\n`);
@@ -56,3 +58,4 @@ async function startServer() {
 }
 
 startServer();
+

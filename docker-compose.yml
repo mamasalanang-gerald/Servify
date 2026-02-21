@@ -13,6 +13,9 @@ services:
       - DB_PORT=5432
       - DB_NAME=${DB_NAME}
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET_REFRESH=${JWT_SECRET_REFRESH}
+      - NODE_ENV=development
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,15 +43,17 @@ services:
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST_AUTH_METHOD=md5
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./SQLfiles:/docker-entrypoint-initdb.d
     networks:
       - servify-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U servify"]
+      test: ["CMD-SHELL", "pg_isready -U servify -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10

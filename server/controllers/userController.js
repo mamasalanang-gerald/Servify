@@ -1,4 +1,5 @@
-const { getUserById, getAllUsers } = require('../models/userModel');
+const jwt = require('jsonwebtoken');
+const { getUserById, getAllUsers, updateUserType } = require('../models/userModel');
 
 const getProfile = async (req, res) => {
   const user = await getUserById(req.user.id);
@@ -12,4 +13,45 @@ const listUsers = async (req, res) => {
     res.status(200).json(users);
 }
 
-module.exports = { getProfile, listUsers };
+const promoteRole = async (req, res) => {
+    try {
+        const user = await updateUserType(req.user.id, 'provider');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const payload = { id: user.id, email: user.email, role: user.user_type };
+
+        const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign(payload, process.env.JWT_SECRET_REFRESH, { expiresIn: '7d' });
+
+        res.status(200).json({
+            message: 'You are now a service provider',
+            user,
+            accessToken,
+            refreshToken
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+const changeUserRole = async (req, res) => {
+    try {
+        const { user_type } = req.body;
+        const allowedRoles = ['client', 'provider', 'admin'];
+        if (!allowedRoles.includes(user_type)) {
+            return res.status(400).json({ message: `Invalid role. Must be one of: ${allowedRoles.join(', ')}` });
+        }
+
+        const user = await updateUserType(req.params.id, user_type);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.status(200).json({
+            message: 'User role changed successfully',
+            user
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+module.exports = { getProfile, listUsers, promoteRole, changeUserRole };
