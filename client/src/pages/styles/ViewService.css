@@ -1,0 +1,239 @@
+/* ViewService.css — place at src/pages/styles/ViewService.css */
+
+.vs-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555e6d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0 0 20px 0;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+.vs-back:hover { color: #2b4fff; }
+
+.vs-wrapper {
+  padding: 28px 32px;
+  max-width: 1100px;
+  animation: vsFadeIn 0.3s ease;
+}
+@keyframes vsFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero */
+.vs-hero { display: flex; gap: 28px; margin-bottom: 28px; align-items: flex-start; }
+
+.vs-hero__img-wrap {
+  position: relative;
+  width: 380px;
+  min-width: 380px;
+  height: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+.vs-hero__img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.vs-hero__img-wrap:hover .vs-hero__img { transform: scale(1.04); }
+.vs-hero__overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 55%);
+  pointer-events: none;
+}
+.vs-hero__save {
+  position: absolute; top: 12px; right: 12px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #fff; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #d1d5db; box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+  transition: color 0.2s, transform 0.2s;
+}
+.vs-hero__save.saved { color: #ef4444; }
+.vs-hero__save:hover { transform: scale(1.1); }
+.vs-hero__category {
+  position: absolute; bottom: 12px; left: 12px;
+  background: rgba(255,255,255,0.93); color: #2b4fff;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
+}
+
+.vs-hero__info { flex: 1; display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.vs-hero__title { font-size: 1.7rem; font-weight: 700; color: #1a2236; margin: 0; line-height: 1.25; }
+.vs-hero__meta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.vs-hero__rating { display: flex; align-items: center; gap: 2px; }
+.vs-star { color: #d1d5db; font-size: 1rem; line-height: 1; }
+.vs-star--filled { color: #f59e0b; }
+.vs-star--half { color: #f59e0b; opacity: 0.5; }
+.vs-hero__rating-score { font-weight: 700; color: #1a2236; margin-left: 5px; font-size: 0.9rem; }
+.vs-hero__rating-count { color: #8a94a6; font-size: 0.83rem; }
+.vs-hero__price { font-size: 0.93rem; color: #555e6d; }
+.vs-hero__price strong { color: #1a2236; font-size: 1.05rem; font-weight: 700; }
+
+.vs-provider-pill {
+  display: flex; align-items: center; gap: 12px;
+  background: #f4f6fb; border-radius: 12px; padding: 12px 16px;
+}
+.vs-provider-pill__avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #2b4fff; color: #fff;
+  font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.vs-provider-pill__info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.vs-provider-pill__name { font-size: 0.88rem; font-weight: 600; color: #1a2236; }
+.vs-provider-pill__sub { font-size: 0.76rem; color: #8a94a6; }
+.vs-provider-pill__badge {
+  background: #e8f5e9; color: #2e7d32;
+  font-size: 0.7rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; letter-spacing: 0.03em;
+}
+
+/* Body */
+.vs-body { display: grid; grid-template-columns: 1fr 310px; gap: 24px; align-items: start; }
+
+/* Content card */
+.vs-content { background: #fff; border-radius: 16px; border: 1px solid #e8ecf2; overflow: hidden; }
+.vs-tabs { display: flex; border-bottom: 1px solid #e8ecf2; padding: 0 24px; }
+.vs-tabs__tab {
+  background: none; border: none; cursor: pointer;
+  padding: 15px 14px 13px; font-size: 0.88rem; font-weight: 500; color: #8a94a6;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex; align-items: center; gap: 6px; font-family: inherit;
+}
+.vs-tabs__tab.active { color: #2b4fff; border-bottom-color: #2b4fff; font-weight: 600; }
+.vs-tabs__count {
+  background: #eef0ff; color: #2b4fff;
+  font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+}
+.vs-tab-panel { padding: 24px; animation: vsFadeIn 0.2s ease; }
+.vs-description { color: #555e6d; font-size: 0.91rem; line-height: 1.75; margin: 0 0 24px 0; }
+.vs-section-heading { font-size: 0.97rem; font-weight: 700; color: #1a2236; margin: 0 0 12px 0; }
+
+/* Includes */
+.vs-includes { list-style: none; margin: 0 0 28px 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.vs-includes__item { display: flex; align-items: flex-start; gap: 10px; font-size: 0.87rem; color: #555e6d; line-height: 1.5; }
+.vs-includes__check {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #eef0ff; color: #2b4fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+
+/* Packages */
+.vs-packages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.vs-pkg {
+  position: relative; display: flex; flex-direction: column;
+  align-items: flex-start; gap: 3px; padding: 14px;
+  border: 2px solid #e8ecf2; border-radius: 12px; background: #fff;
+  cursor: pointer; text-align: left;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s; font-family: inherit;
+}
+.vs-pkg:hover { border-color: #a8b4ff; transform: translateY(-2px); }
+.vs-pkg.selected { border-color: #2b4fff; background: #f5f6ff; }
+.vs-pkg__check {
+  position: absolute; top: 10px; right: 10px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #2b4fff; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.vs-pkg__label { font-size: 0.7rem; font-weight: 700; color: #8a94a6; text-transform: uppercase; letter-spacing: 0.06em; }
+.vs-pkg.selected .vs-pkg__label { color: #2b4fff; }
+.vs-pkg__price { font-size: 1.25rem; font-weight: 800; color: #1a2236; }
+.vs-pkg__duration { font-size: 0.75rem; color: #8a94a6; font-weight: 500; }
+.vs-pkg__desc { font-size: 0.75rem; color: #555e6d; margin-top: 3px; }
+
+/* Reviews */
+.vs-rating-summary {
+  display: flex; align-items: center; gap: 20px;
+  background: #f4f6fb; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;
+}
+.vs-rating-summary__big { font-size: 2.8rem; font-weight: 800; color: #1a2236; line-height: 1; }
+.vs-rating-summary__stars { display: flex; gap: 2px; font-size: 1.15rem; margin-bottom: 4px; }
+.vs-rating-summary__label { font-size: 0.8rem; color: #8a94a6; }
+.vs-reviews { display: flex; flex-direction: column; gap: 14px; }
+.vs-review { padding: 16px; border: 1px solid #e8ecf2; border-radius: 12px; }
+.vs-review__header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.vs-review__avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #2b4fff; color: #fff;
+  font-size: 0.72rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.vs-review__meta { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.vs-review__name { font-size: 0.86rem; font-weight: 600; color: #1a2236; }
+.vs-review__date { font-size: 0.75rem; color: #8a94a6; }
+.vs-review__stars { display: flex; gap: 2px; font-size: 0.82rem; }
+.vs-review__text { font-size: 0.86rem; color: #555e6d; line-height: 1.6; margin: 0; }
+
+/* Booking card */
+.vs-booking-card {
+  background: #fff; border: 1px solid #e8ecf2; border-radius: 16px;
+  overflow: hidden; position: sticky; top: 24px;
+  box-shadow: 0 4px 20px rgba(43,79,255,0.07);
+}
+.vs-booking-card__header {
+  background: linear-gradient(135deg, #2b4fff 0%, #4f6fff 100%);
+  padding: 20px 22px; display: flex; flex-direction: column; gap: 4px;
+}
+.vs-booking-card__price { font-size: 1.9rem; font-weight: 800; color: #fff; line-height: 1; }
+.vs-booking-card__pkg { font-size: 0.8rem; color: rgba(255,255,255,0.72); }
+.vs-booking-success {
+  display: flex; align-items: center; gap: 8px;
+  background: #e8f5e9; color: #2e7d32;
+  font-size: 0.83rem; font-weight: 500; padding: 11px 22px;
+  animation: vsFadeIn 0.3s ease;
+}
+.vs-booking-form { padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
+.vs-booking-form__group { display: flex; flex-direction: column; gap: 7px; }
+.vs-booking-form__label { font-size: 0.81rem; font-weight: 600; color: #1a2236; }
+.vs-booking-form__input {
+  padding: 9px 12px; border: 1.5px solid #e8ecf2; border-radius: 9px;
+  font-size: 0.86rem; color: #1a2236; outline: none;
+  transition: border-color 0.2s; font-family: inherit;
+  width: 100%; box-sizing: border-box;
+}
+.vs-booking-form__input:focus { border-color: #2b4fff; }
+.vs-time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.vs-time-slot {
+  padding: 7px 4px; border: 1.5px solid #e8ecf2; border-radius: 8px;
+  background: #fff; font-size: 0.75rem; font-weight: 500; color: #555e6d;
+  cursor: pointer; transition: all 0.15s; text-align: center; font-family: inherit;
+}
+.vs-time-slot:hover { border-color: #a8b4ff; color: #2b4fff; }
+.vs-time-slot.selected { border-color: #2b4fff; background: #eef0ff; color: #2b4fff; font-weight: 700; }
+.vs-booking-summary {
+  background: #f4f6fb; border-radius: 10px; padding: 13px 15px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.vs-booking-summary__row { display: flex; justify-content: space-between; font-size: 0.83rem; color: #555e6d; }
+.vs-booking-summary__row--total {
+  font-weight: 700; color: #1a2236; font-size: 0.92rem;
+  padding-top: 7px; border-top: 1px solid #e8ecf2; margin-top: 2px;
+}
+.vs-booking-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, #2b4fff 0%, #4f6fff 100%);
+  color: #fff; border: none; border-radius: 11px;
+  font-size: 0.97rem; font-weight: 700; cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(43,79,255,0.28); font-family: inherit;
+}
+
+.vs-booking-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.vs-booking-btn:active { transform: translateY(0); }
+.vs-booking-note { text-align: center; font-size: 0.73rem; color: #8a94a6; margin: 0; }
+
+@media (max-width: 900px) {
+  .vs-body { grid-template-columns: 1fr; }
+  .vs-booking-card { position: static; }
+  .vs-hero { flex-direction: column; }
+  .vs-hero__img-wrap { width: 100%; min-width: unset; height: 220px; }
+  .vs-packages { grid-template-columns: 1fr; }
+  .vs-wrapper { padding: 20px 16px; }
+}
