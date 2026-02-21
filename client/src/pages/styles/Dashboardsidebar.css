@@ -38,6 +38,15 @@
   font-weight: 800;
   margin: 0 auto 14px;
   box-shadow: 0 6px 20px rgba(26, 58, 143, 0.28);
+  transition: all var(--transition);
+}
+
+/* Guest avatar — muted, dashed border, no gradient */
+.dash-profile__avatar--guest {
+  background: var(--bg);
+  color: var(--text-muted);
+  box-shadow: none;
+  border: 2px dashed var(--border);
 }
 
 .dash-profile__name {
@@ -89,13 +98,20 @@
   font-weight: 600;
 }
 
+/* Guest nav — dimmed, non-interactive */
+.dash-nav__item--guest {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+
 .dash-nav__icon {
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
 
-/* ---- Footer (sign out) ---- */
+/* ---- Footer (sign out / guest CTAs) ---- */
 .dash-sidebar__footer {
   margin-top: 16px;
   padding-top: 16px;
@@ -115,8 +131,55 @@
 }
 
 .dash-sidebar__footer .logout-btn:hover {
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
+}
+
+/* ---- Guest footer auth buttons ---- */
+.dash-sidebar__guest-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.dash-sidebar__auth-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all var(--transition);
+  border: 1.5px solid transparent;
+}
+
+.dash-sidebar__auth-btn--login {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.dash-sidebar__auth-btn--login:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(26, 58, 143, 0.25);
+}
+
+.dash-sidebar__auth-btn--signup {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+.dash-sidebar__auth-btn--signup:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  transform: translateY(-1px);
 }
 
 /* ---- Responsive ---- */

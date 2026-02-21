@@ -473,3 +473,115 @@ html.dark .sdp__package--active { background: #1e3a5f; }
   .sdp__title { font-size: 1.4rem; }
   .sdp__panel { padding: 18px 14px; }
 }
+
+/* ── Login prompt modal ── */
+.sdp__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: sdpFadeUp 0.2s ease both;
+}
+
+.sdp__modal {
+  background: var(--card, #fff);
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: var(--radius, 16px);
+  padding: 40px 32px 32px;
+  max-width: 400px;
+  width: calc(100% - 48px);
+  box-shadow: 0 20px 60px rgba(26, 58, 143, 0.18);
+  position: relative;
+  text-align: center;
+  animation: sdpFadeUp 0.25s ease both;
+}
+
+.sdp__modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #64748b);
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s, background 0.2s;
+}
+.sdp__modal-close:hover {
+  color: var(--text, #0f172a);
+  background: var(--bg, #f1f5f9);
+}
+
+.sdp__modal-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-light, #eef2ff);
+  border: 1.5px solid rgba(43, 82, 204, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.sdp__modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-family: var(--font, 'Plus Jakarta Sans', sans-serif);
+  color: var(--text, #0f172a);
+  margin-bottom: 10px;
+}
+
+.sdp__modal-text {
+  font-size: 0.9rem;
+  font-family: var(--font, 'Plus Jakarta Sans', sans-serif);
+  line-height: 1.65;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 24px;
+}
+
+.sdp__modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sdp__modal-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--radius-sm, 10px);
+  font-family: var(--font, 'Plus Jakarta Sans', sans-serif);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s;
+}
+
+.sdp__modal-btn--primary {
+  background: linear-gradient(135deg, var(--primary, #1a3a8f), var(--accent, #2b52cc));
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(26, 58, 143, 0.3);
+}
+.sdp__modal-btn--primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.sdp__modal-btn--secondary {
+  background: none;
+  border: 1.5px solid var(--border, #e2e8f0);
+  color: var(--text, #0f172a);
+}
+.sdp__modal-btn--secondary:hover {
+  border-color: var(--accent, #2b52cc);
+  color: var(--accent, #2b52cc);
+  background: var(--accent-light, #eef2ff);
+}

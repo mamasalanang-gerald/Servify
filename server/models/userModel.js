@@ -50,5 +50,6 @@ module.exports = {
     getAllUsers,
     getUserById,
     deleteUser,
-    findUserByEmail
+    findUserByEmail,
+    updateUserType
 }

@@ -7,11 +7,11 @@ import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 //pa remove nalang comment kapag want nyo itry yung login functionality.
 //nadedetect kasi na may hardcoded credentials.
 
-const MOCK_USERS = [
-  { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
-  { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
-  { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
-];
+// const MOCK_USERS = [
+//   { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
+//   { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
+//   { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
+// ];
 
 const ROLE_HOME = {
   user:     '/dashboard',
@@ -95,12 +95,12 @@ const LoginBox = () => {
           </div>
 
           {/* Dev hint */}
-          <div className="login-split__hint">
+          {/* <div className="login-split__hint">
             <p><strong>Test credentials:</strong></p>
             <p>User → user@servify.com / user123</p>
             <p>Provider → provider@servify.com / provider123</p>
             <p>Admin → admin@servify.com / admin123</p>
-          </div>
+          </div> */}
         </div>
         <div className="login-split__left-blob" />
         <div className="login-split__left-blob-2" />
