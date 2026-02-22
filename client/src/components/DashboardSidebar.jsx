@@ -99,6 +99,13 @@ const DashboardSidebar = ({ activeNav, setActiveNav }) => {
         ))}
       </nav>
 
+      {/* Footer - Logout Button */}
+      {!isGuest && (
+        <div className="border-t border-border p-4">
+          <LogoutButton />
+        </div>
+      )}
+
     </aside>
   );
 };
