@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage             from './pages/LoginPage';
-import DashboardPage         from './pages/DashboardPage';
+import DashboardPage         from './pages/Dashboardpage';
 import ServicesPage          from './pages/ServicesPage';
 import LandingPage           from './pages/LandingPage';
 import SavedServices         from './components/SavedServices';
 import ProfileSettings       from './components/ProfileSettings';
 import AccountSettings       from './components/AccountSettings';
 import ViewService           from './components/ViewService';
-import ProviderDashboardPage from './pages/ProviderDashboardPage';
+import ProviderDashboardPage from './pages/Providerdashboardpage';
 import AdminDashboardPage    from './pages/AdminDashboardPage';
 import useAuth               from './hooks/useAuth';
 import useRole               from './hooks/useRole';
@@ -34,6 +34,14 @@ function App() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/provider" element={<ProviderDashboardPage />} />
         <Route path="/signup" element={<RegisterPage />} />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
   )
