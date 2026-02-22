@@ -9,42 +9,80 @@ import AccountSettings       from './components/AccountSettings';
 import ViewService           from './components/ViewService';
 import ProviderDashboardPage from './pages/Providerdashboardpage';
 import AdminDashboardPage    from './pages/AdminDashboardPage';
-import useAuth               from './hooks/useAuth';
-import useRole               from './hooks/useRole';
-import RegisterPage from './pages/RegisterPage';
-
-const ProtectedRoute = ({ children, requiredRole }) => {
-  const { isLoggedIn } = useAuth();
-  const { hasRole, homeRoute } = useRole();
-
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
-  if (requiredRole && !hasRole(requiredRole)) return <Navigate to={homeRoute} replace />;
-
-  return children;
-};
-// ────────────────────────────────────────────────────────────────────
+import RegisterPage          from './pages/RegisterPage';
+import ProtectedRoute        from './components/ProtectedRoute';
+import { authService }       from './services/authService';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/provider" element={<ProviderDashboardPage />} />
         <Route path="/signup" element={<RegisterPage />} />
-        <Route 
-          path="/admin" 
+
+        {/* Protected routes - User */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requiredRole="user">
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/services"
+          element={
+            <ProtectedRoute requiredRole="user">
+              <ServicesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected routes - Provider */}
+        <Route
+          path="/provider"
+          element={
+            <ProtectedRoute requiredRole="provider">
+              <ProviderDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected routes - Admin */}
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute requiredRole="admin">
               <AdminDashboardPage />
             </ProtectedRoute>
-          } 
+          }
+        />
+
+        {/* Catch all - redirect to appropriate dashboard or landing */}
+        <Route
+          path="*"
+          element={
+            authService.isAuthenticated() ? (
+              <Navigate 
+                to={
+                  authService.getUser()?.role === 'admin' 
+                    ? '/admin' 
+                    : authService.getUser()?.role === 'provider' 
+                    ? '/provider' 
+                    : '/dashboard'  // client or user goes to dashboard
+                } 
+                replace 
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
         />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
