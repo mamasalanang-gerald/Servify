@@ -11,7 +11,7 @@ RUN npm config set fetch-timeout 120000 && \
     npm config set fetch-retry-maxtimeout 120000
 
 # Install ALL dependencies (including devDependencies) for building
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
