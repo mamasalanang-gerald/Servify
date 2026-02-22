@@ -1,6 +1,7 @@
 import React from 'react';
 import LogoutButton from './LogoutButton';
-import '../pages/styles/Providersidebar.css';
+import { cn } from '../lib/utils';
+import { Badge } from './ui/badge';
 
 const navItems = [
   {
@@ -66,40 +67,53 @@ const navItems = [
 
 const ProviderSidebar = ({ activeNav, setActiveNav }) => {
   return (
-    <aside className="p-sidebar">
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-card">
       {/* Brand */}
-      <div className="p-sidebar__brand">
-        <div className="p-sidebar__brand-icon">S</div>
-        <span className="p-sidebar__brand-name">Servify</span>
-        <span className="p-sidebar__brand-tag">Pro</span>
+      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
+          S
+        </div>
+        <span className="text-xl font-bold text-foreground">Servify</span>
+        <Badge variant="secondary" className="ml-auto bg-primary/10 text-primary hover:bg-primary/10">Pro</Badge>
       </div>
 
       {/* Provider info */}
-      <div className="p-sidebar__provider">
-        <div className="p-sidebar__avatar">JD</div>
-        <div>
-          <div className="p-sidebar__pname">Juan dela Cruz</div>
-          <div className="p-sidebar__psub">Service Provider</div>
+      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
+          JD
+        </div>
+        <div className="flex-1">
+          <div className="font-semibold text-foreground">Juan dela Cruz</div>
+          <div className="text-sm text-muted-foreground">Service Provider</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="p-nav">
+      <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => (
           <button
             key={item.label}
-            className={`p-nav__item ${activeNav === item.label ? 'active' : ''}`}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+              activeNav === item.label
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
             onClick={() => setActiveNav(item.label)}
           >
-            {item.icon}
-            {item.label}
-            {item.badge && <span className="p-nav__badge">{item.badge}</span>}
+            <span className="flex-shrink-0">{item.icon}</span>
+            <span className="flex-1 text-left">{item.label}</span>
+            {item.badge && (
+              <Badge variant="secondary" className="ml-auto bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-400">
+                {item.badge}
+              </Badge>
+            )}
           </button>
         ))}
       </nav>
 
-      {/* Footer — uses shared LogoutButton */}
-      <div className="p-sidebar__footer">
+      {/* Footer */}
+      <div className="border-t border-border p-4">
         <LogoutButton />
       </div>
     </aside>

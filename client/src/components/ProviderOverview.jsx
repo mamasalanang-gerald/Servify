@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
-import '../pages/styles/ProviderOverview.css';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { 
+  DollarSign, 
+  Calendar, 
+  Clock, 
+  Star, 
+  Plus, 
+  CalendarCheck, 
+  MessageSquare 
+} from 'lucide-react';
 
 const recentBookings = [
   { id: 1, client: 'Maria Santos',  service: 'Deep House Cleaning', date: 'Feb 22, 2026', amount: '₱149', status: 'pending' },
-  { id: 2, client: 'Rico Buendia',  service: 'Deep House Cleaning', date: 'Feb 20, 2026', amount: '₱149', status: 'confirmed' },
-  { id: 3, client: 'Lena Macaraeg', service: 'Standard Clean',      date: 'Feb 18, 2026', amount: '₱89',  status: 'completed' },
-  { id: 4, client: 'James Torres',  service: 'Deep House Cleaning', date: 'Feb 15, 2026', amount: '₱229', status: 'completed' },
+  { id: 2, client: 'Rico Buendia',  service: 'Deep House Cleaning', date: 'Feb 15, 2026', amount: '₱229', status: 'completed' },
   { id: 5, client: 'Ana Reyes',     service: 'Standard Clean',      date: 'Feb 12, 2026', amount: '₱89',  status: 'cancelled' },
 ];
 
@@ -20,146 +29,254 @@ const weeklyData = [
 ];
 const maxVal = Math.max(...weeklyData.map((d) => d.amount));
 
-const statusMap = {
-  pending:   { label: 'Pending',   cls: 'p-badge--pending' },
-  confirmed: { label: 'Confirmed', cls: 'p-badge--confirmed' },
-  completed: { label: 'Completed', cls: 'p-badge--completed' },
-  cancelled: { label: 'Cancelled', cls: 'p-badge--cancelled' },
+const statusConfig = {
+  pending:   { label: 'Pending',   variant: 'warning' },
+  confirmed: { label: 'Confirmed', variant: 'default' },
+  completed: { label: 'Completed', variant: 'success' },
+  cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
 
 const ProviderOverview = () => {
   const [chartPeriod, setChartPeriod] = useState('Week');
 
+  const stats = [
+    {
+      label: 'Total Earnings',
+      value: '₱12,480',
+      change: '+18%',
+      up: true,
+      icon: DollarSign,
+      iconBg: 'bg-green-100',
+      iconColor: 'text-green-600',
+    },
+    {
+      label: 'Total Bookings',
+      value: '84',
+      change: '+12%',
+      up: true,
+      icon: Calendar,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+    },
+    {
+      label: 'Pending Requests',
+      value: '3',
+      change: '+2',
+      up: false,
+      icon: Clock,
+      iconBg: 'bg-yellow-100',
+      iconColor: 'text-yellow-600',
+    },
+    {
+      label: 'Avg. Rating',
+      value: '4.9',
+      change: '+0.1',
+      up: true,
+      icon: Star,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+    },
+  ];
+
+  const quickActions = [
+    { label: 'Add New Service', icon: Plus, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+    { label: 'View Pending (3)', icon: Clock, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
+    { label: 'Update Availability', icon: CalendarCheck, iconBg: 'bg-green-100', iconColor: 'text-green-600' },
+    { label: 'View All Reviews', icon: MessageSquare, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+  ];
+
   return (
-    <div className="overview-wrapper">
-      {/* Stats */}
-      <div className="overview-stats">
-        {[
-        {
-          label: 'Total Earnings', value: '₱12,480', change: '+18%', up: true,
-          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
-          cls: 'stat-icon--green',
-        },
-        {
-          label: 'Total Bookings', value: '84', change: '+12%', up: true,
-          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-          cls: 'stat-icon--blue',
-        },
-        {
-          label: 'Pending Requests', value: '3', change: '+2', up: false,
-          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-          cls: 'stat-icon--yellow',
-        },
-        {
-          label: 'Avg. Rating', value: '4.9', change: '+0.1', up: true,
-          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-          cls: 'stat-icon--blue',
-        },
-      ].map((s) => (
-        <div className="overview-stat p-card" key={s.label}>
-          <div className="overview-stat__top">
-            <div className={`overview-stat__icon ${s.cls}`}>{s.icon}</div>
-            <span className={`overview-stat__change ${s.up ? 'change--up' : 'change--down'}`}>
-              {s.up ? '↑' : '↓'} {s.change}
-            </span>
-          </div>
-          <div className="overview-stat__value">{s.value}</div>
-          <div className="overview-stat__label">{s.label}</div>
-        </div>
-      ))}
+    <div className="space-y-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${stat.iconBg}`}>
+                    <Icon className={`h-5 w-5 ${stat.iconColor}`} />
+                  </div>
+                  <span className={`text-sm font-semibold ${stat.up ? 'text-green-600' : 'text-red-600'}`}>
+                    {stat.up ? '↑' : '↓'} {stat.change}
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {stat.label}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Chart + Quick Actions */}
-      <div className="overview-mid">
-        {/* Earnings chart */}
-        <div className="p-card">
-          <div className="p-card__header">
-            <h3 className="p-card__title">Earnings Overview</h3>
-            <div className="p-tabs" style={{ margin: 0 }}>
-              {['Week', 'Month'].map((p) => (
-                <button key={p} className={`p-tab ${chartPeriod === p ? 'active' : ''}`} onClick={() => setChartPeriod(p)}>{p}</button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Earnings Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-bold">Earnings Overview</CardTitle>
+            <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              {['Week', 'Month'].map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setChartPeriod(period)}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    chartPeriod === period
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  {period}
+                </button>
               ))}
             </div>
-          </div>
-          <div className="p-card__body">
-            <div className="overview-chart">
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end justify-between gap-2 h-48 mb-4">
               {weeklyData.map((d) => (
-                <div key={d.day} className="overview-chart__col">
-                  <span className="overview-chart__val">{d.amount > 0 ? `₱${d.amount}` : ''}</span>
-                  <div className="overview-chart__spacer">
+                <div key={d.day} className="flex flex-col items-center flex-1 h-full">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 h-5">
+                    {d.amount > 0 ? `₱${d.amount}` : ''}
+                  </span>
+                  <div className="flex-1 w-full flex items-end justify-center">
                     <div
-                      className={`overview-chart__bar ${d.amount === maxVal ? 'overview-chart__bar--peak' : ''}`}
+                      className={`w-full max-w-[32px] rounded-t-lg transition-all ${
+                        d.amount === maxVal
+                          ? 'bg-gradient-to-t from-blue-600 to-blue-500'
+                          : 'bg-gradient-to-t from-blue-400 to-blue-300'
+                      }`}
                       style={{ height: d.amount > 0 ? `${(d.amount / maxVal) * 100}%` : '4px' }}
                     />
                   </div>
-                  <span className="overview-chart__day">{d.day}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                    {d.day}
+                  </span>
                 </div>
               ))}
             </div>
-            <div className="overview-chart__footer">
-              <span>This week</span>
-              <span className="overview-chart__total">₱1,083</span>
+            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">This week</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">₱1,083</span>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Quick actions */}
-        <div className="p-card">
-          <div className="p-card__header"><h3 className="p-card__title">Quick Actions</h3></div>
-          <div className="p-card__body overview-actions">
-            {[
-              { label: 'Add New Service',     emoji: '＋', color: '#2b52cc', bg: '#eef2ff' },
-              { label: 'View Pending (3)',     emoji: '⏳', color: '#b45309', bg: '#fef3c7' },
-              { label: 'Update Availability', emoji: '📅', color: '#059669', bg: '#dcfce7' },
-              { label: 'View All Reviews',    emoji: '⭐', color: '#2b52cc', bg: '#eef2ff' },
-            ].map((a) => (
-              <button key={a.label} className="overview-action-btn">
-                <span className="overview-action-btn__icon" style={{ background: a.bg, color: a.color }}>{a.emoji}</span>
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={action.label}
+                  variant="outline"
+                  className="w-full justify-start gap-3 h-auto py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <div className={`p-2 rounded-lg ${action.iconBg}`}>
+                    <Icon className={`h-4 w-4 ${action.iconColor}`} />
+                  </div>
+                  <span className="text-sm font-medium">{action.label}</span>
+                </Button>
+              );
+            })}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Bookings */}
-      <div className="p-card overview-bookings">
-        <div className="p-card__header">
-          <h3 className="p-card__title">Recent Bookings</h3>
-          <span className="overview-view-all">View All →</span>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="p-table">
-            <thead>
-              <tr><th>Client</th><th>Service</th><th>Date</th><th>Amount</th><th>Status</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-              {recentBookings.map((b) => {
-                const s = statusMap[b.status];
-                return (
-                  <tr key={b.id}>
-                    <td className="overview-client">{b.client}</td>
-                    <td>{b.service}</td>
-                    <td>{b.date}</td>
-                    <td className="overview-amount">{b.amount}</td>
-                    <td><span className={`p-badge ${s.cls}`}><span className="p-badge__dot" />{s.label}</span></td>
-                    <td>
-                      {b.status === 'pending' ? (
-                        <div className="overview-row-actions">
-                          <button className="p-btn p-btn--ghost p-btn--sm">Accept</button>
-                          <button className="p-btn p-btn--danger p-btn--sm">Decline</button>
-                        </div>
-                      ) : (
-                        <button className="p-btn p-btn--ghost p-btn--sm">Details</button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-bold">Recent Bookings</CardTitle>
+          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+            View All →
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                    Client
+                  </th>
+                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                    Service
+                  </th>
+                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                    Date
+                  </th>
+                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                    Amount
+                  </th>
+                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                    Status
+                  </th>
+                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentBookings.map((booking) => {
+                  const statusInfo = statusConfig[booking.status];
+                  return (
+                    <tr
+                      key={booking.id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {booking.client}
+                      </td>
+                      <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                        {booking.service}
+                      </td>
+                      <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                        {booking.date}
+                      </td>
+                      <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {booking.amount}
+                      </td>
+                      <td className="py-4 px-4">
+                        <Badge
+                          variant={statusInfo.variant}
+                          className="flex items-center gap-1.5 w-fit"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                          {statusInfo.label}
+                        </Badge>
+                      </td>
+                      <td className="py-4 px-4">
+                        {booking.status === 'pending' ? (
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" className="text-blue-600 hover:bg-blue-50">
+                              Accept
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50">
+                              Decline
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button size="sm" variant="outline" className="text-blue-600 hover:bg-blue-50">
+                            Details
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
