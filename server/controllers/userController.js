@@ -46,12 +46,13 @@ const listUsers = async (req, res) => {
 
 const promoteRole = async (req, res) => {
     try {
+        
+        if (req.user_type === 'provider') return res.status(400).json({ message: 'User is already a provider' });
+
         const user = await updateUserType(req.user.id, 'provider');
+
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        if (user.user_type === 'provider') return res.status(400).json({ message: 'User is already a provider' });
-
-       
         const payload = { id: user.id, email: user.email, role: user.user_type };
 
         
