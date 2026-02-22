@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import '../pages/styles/ProviderServices.css';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Input } from './ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Plus } from 'lucide-react';
 
 const initialServices = [
   { id: 1, title: 'Deep House Cleaning', category: 'Cleaning', price: 89,  bookings: 52, rating: 4.9, status: 'active' },
@@ -40,120 +46,150 @@ const ProviderServices = () => {
   const handleDelete = (id) => { setServices(services.filter((s) => s.id !== id)); setDeleteConfirm(null); };
 
   return (
-    <div className="services-wrapper">
-      <div className="services-grid">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {services.map((svc) => (
-          <div key={svc.id} className="svc-card p-card">
-            <div className={`svc-card__strip ${svc.status === 'active' ? 'svc-card__strip--active' : ''}`} />
-            <div className="svc-card__body">
-              <div className="svc-card__head">
+          <Card key={svc.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+            <div className={`absolute top-0 left-0 right-0 h-1 ${svc.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`} />
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="svc-card__title">{svc.title}</h3>
-                  <span className="svc-card__category">{svc.category}</span>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{svc.title}</h3>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{svc.category}</span>
                 </div>
-                <span className={`p-badge ${svc.status === 'active' ? 'p-badge--active' : 'p-badge--paused'}`}>
-                  <span className="p-badge__dot" />{svc.status === 'active' ? 'Active' : 'Paused'}
-                </span>
+                <Badge variant={svc.status === 'active' ? 'success' : 'secondary'} className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                  {svc.status === 'active' ? 'Active' : 'Paused'}
+                </Badge>
               </div>
 
-              <div className="svc-card__metrics">
-                <div className="svc-card__metric">
-                  <div className="svc-card__metric-val">₱{svc.price}</div>
-                  <div className="svc-card__metric-lbl">Starting price</div>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-gray-100">₱{svc.price}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Starting price</div>
                 </div>
-                <div className="svc-card__metric">
-                  <div className="svc-card__metric-val">{svc.bookings}</div>
-                  <div className="svc-card__metric-lbl">Bookings</div>
+                <div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{svc.bookings}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Bookings</div>
                 </div>
-                <div className="svc-card__metric">
-                  <div className="svc-card__metric-val">{svc.rating > 0 ? svc.rating : '—'}</div>
-                  <div className="svc-card__metric-lbl">Rating</div>
+                <div>
+                  <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{svc.rating > 0 ? svc.rating : '—'}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Rating</div>
                 </div>
               </div>
 
-              <div className="svc-card__footer">
-                <div className="svc-card__toggle-wrap">
-                  <label className="p-toggle">
-                    <input type="checkbox" checked={svc.status === 'active'} onChange={() => toggleStatus(svc.id)} />
-                    <span className="p-toggle__track" />
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={svc.status === 'active'} 
+                      onChange={() => toggleStatus(svc.id)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   </label>
-                  <span className="svc-card__toggle-lbl">{svc.status === 'active' ? 'Listed' : 'Hidden'}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{svc.status === 'active' ? 'Listed' : 'Hidden'}</span>
                 </div>
-                <div className="svc-card__actions">
-                  <button className="p-btn p-btn--ghost p-btn--sm" onClick={() => openEdit(svc)}>Edit</button>
-                  <button className="p-btn p-btn--danger p-btn--sm" onClick={() => setDeleteConfirm(svc.id)}>Delete</button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openEdit(svc)}>Edit</Button>
+                  <Button variant="destructive" size="sm" onClick={() => setDeleteConfirm(svc.id)}>Delete</Button>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
 
-        <button className="svc-add-placeholder" onClick={openAdd}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>Add New Service</span>
+        <button 
+          onClick={openAdd}
+          className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all cursor-pointer min-h-[280px]"
+        >
+          <Plus className="h-7 w-7 text-gray-400" />
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Add New Service</span>
         </button>
       </div>
 
-      {showModal && (
-        <div className="p-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="p-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="p-modal__header">
-              <h2 className="p-modal__title">{editTarget ? 'Edit Service' : 'Add New Service'}</h2>
-              <button className="p-modal__close" onClick={() => setShowModal(false)}>✕</button>
+      {/* Add/Edit Modal */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{editTarget ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Title</label>
+              <Input 
+                placeholder="e.g. Deep House Cleaning" 
+                value={form.title} 
+                onChange={(e) => setForm({ ...form, title: e.target.value })} 
+              />
             </div>
-            <div className="p-modal__body">
-              <div className="p-form__group">
-                <label className="p-form__label">Service Title</label>
-                <input className="p-form__input" placeholder="e.g. Deep House Cleaning" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                <Select value={form.category} onValueChange={(value) => setForm({ ...form, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="p-form__row">
-                <div className="p-form__group">
-                  <label className="p-form__label">Category</label>
-                  <select className="p-form__select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                    {categories.map((c) => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="p-form__group">
-                  <label className="p-form__label">Starting Price (₱)</label>
-                  <input className="p-form__input" type="number" placeholder="89" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-                </div>
-              </div>
-              <div className="p-form__group">
-                <label className="p-form__label">Description</label>
-                <textarea className="p-form__textarea" placeholder="Describe your service..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-              </div>
-              <div className="p-form__group">
-                <label className="p-form__label">Estimated Duration</label>
-                <input className="p-form__input" placeholder="e.g. 3–5 hours" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Starting Price (₱)</label>
+                <Input 
+                  type="number" 
+                  placeholder="89" 
+                  value={form.price} 
+                  onChange={(e) => setForm({ ...form, price: e.target.value })} 
+                />
               </div>
             </div>
-            <div className="p-modal__footer">
-              <button className="p-btn p-btn--ghost" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="p-btn p-btn--primary" onClick={handleSave}>{editTarget ? 'Save Changes' : 'Add Service'}</button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <textarea 
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Describe your service..." 
+                value={form.description} 
+                onChange={(e) => setForm({ ...form, description: e.target.value })} 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Duration</label>
+              <Input 
+                placeholder="e.g. 3–5 hours" 
+                value={form.duration} 
+                onChange={(e) => setForm({ ...form, duration: e.target.value })} 
+              />
             </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button onClick={handleSave}>{editTarget ? 'Save Changes' : 'Add Service'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {deleteConfirm && (
-        <div className="p-modal-overlay" onClick={() => setDeleteConfirm(null)}>
-          <div className="p-modal p-modal--sm" onClick={(e) => e.stopPropagation()}>
-            <div className="p-modal__header">
-              <h2 className="p-modal__title">Delete Service?</h2>
-              <button className="p-modal__close" onClick={() => setDeleteConfirm(null)}>✕</button>
-            </div>
-            <div className="p-modal__body">
-              <p className="svc-delete-msg">This will permanently remove the service. This action cannot be undone.</p>
-            </div>
-            <div className="p-modal__footer">
-              <button className="p-btn p-btn--ghost" onClick={() => setDeleteConfirm(null)}>Cancel</button>
-              <button className="p-btn p-btn--danger" onClick={() => handleDelete(deleteConfirm)}>Yes, Delete</button>
-            </div>
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Service?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              This will permanently remove the service. This action cannot be undone.
+            </p>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => handleDelete(deleteConfirm)}>Yes, Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
