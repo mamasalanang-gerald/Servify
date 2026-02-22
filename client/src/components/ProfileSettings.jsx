@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import '../pages/styles/ProfileSettings.css';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 const ProfileSettings = () => {
   const [form, setForm] = useState({
@@ -23,48 +24,48 @@ const ProfileSettings = () => {
   };
 
   return (
-    <div className="dash-section">
-      <h2 className="dash-section__title">Profile Settings</h2>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-foreground">Profile Settings</h2>
 
-      <form className="profile-form" onSubmit={handleSubmit}>
-        <div className="profile-form__row">
-          <div className="profile-form__group">
-            <label className="profile-form__label">First Name</label>
-            <input type="text" name="firstName" className="profile-form__input" value={form.firstName} onChange={handleChange} />
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">First Name</label>
+            <Input type="text" name="firstName" value={form.firstName} onChange={handleChange} />
           </div>
-          <div className="profile-form__group">
-            <label className="profile-form__label">Last Name</label>
-            <input type="text" name="lastName" className="profile-form__input" value={form.lastName} onChange={handleChange} />
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Last Name</label>
+            <Input type="text" name="lastName" value={form.lastName} onChange={handleChange} />
           </div>
         </div>
 
-        <div className="profile-form__group">
-          <label className="profile-form__label">Email</label>
-          <input type="email" name="email" className="profile-form__input" value={form.email} onChange={handleChange} />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Email</label>
+          <Input type="email" name="email" value={form.email} onChange={handleChange} />
         </div>
 
-        <div className="profile-form__group">
-          <label className="profile-form__label">Phone</label>
-          <input type="text" name="phone" className="profile-form__input" value={form.phone} onChange={handleChange} />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Phone</label>
+          <Input type="text" name="phone" value={form.phone} onChange={handleChange} />
         </div>
 
-        <div className="profile-form__group">
-          <label className="profile-form__label">Address</label>
-          <input type="text" name="address" className="profile-form__input" value={form.address} onChange={handleChange} />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Address</label>
+          <Input type="text" name="address" value={form.address} onChange={handleChange} />
         </div>
 
-        <div className="profile-form__footer">
-          <button type="submit" className="profile-form__btn">
+        <div className="flex items-center gap-4">
+          <Button type="submit">
             {saved ? (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mr-2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
                 Saved!
               </>
             ) : 'Save Changes'}
-          </button>
-          {saved && <span className="profile-form__success">Changes saved successfully.</span>}
+          </Button>
+          {saved && <span className="text-sm text-green-600 dark:text-green-400">Changes saved successfully.</span>}
         </div>
       </form>
     </div>
