@@ -1,193 +1,202 @@
-import React, { useState } from 'react';
-import LogoutButton from '../components/LogoutButton';
-import './styles/AdminDashboard.css';
+import { useState, useEffect } from 'react';
+import AdminSidebar from '../components/admin/AdminSidebar';
+import AdminTopbar from '../components/admin/AdminTopbar';
+import UserManagement from '../components/admin/UserManagement';
+import ProviderManagement from '../components/admin/ProviderManagement';
+import ServiceModeration from '../components/admin/ServiceModeration';
+import BookingMonitoring from '../components/admin/BookingMonitoring';
+import ReviewModeration from '../components/admin/ReviewModeration';
+import CategoryManagement from '../components/admin/CategoryManagement';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
+import { adminService } from '@/services/adminService';
+import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 
-const navItems = [
-  {
-    label: 'Overview',
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Users',
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Providers',
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-        <path d="M2 17l10 5 10-5" />
-        <path d="M2 12l10 5 10-5" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Bookings',
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Reports',
-    icon: (
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <line x1="18" y1="20" x2="18" y2="10" />
-        <line x1="12" y1="20" x2="12" y2="4" />
-        <line x1="6"  y1="20" x2="6"  y2="14" />
-      </svg>
-    ),
-  },
-];
-
-const stats = [
-  { label: 'Total Users',     value: '12,480', change: '+8%',  up: true  },
-  { label: 'Total Providers', value: '3,240',  change: '+12%', up: true  },
-  { label: 'Bookings Today',  value: '284',    change: '+5%',  up: true  },
-  { label: 'Open Reports',    value: '7',      change: '+3',   up: false },
-];
-
-const recentUsers = [
-  { id: 1, name: 'Maria Santos',   email: 'maria@email.com',   role: 'user',     joined: 'Feb 20, 2026', status: 'active'  },
-  { id: 2, name: 'Juan dela Cruz', email: 'juan@email.com',    role: 'provider', joined: 'Feb 19, 2026', status: 'active'  },
-  { id: 3, name: 'Rico Buendia',   email: 'rico@email.com',    role: 'user',     joined: 'Feb 18, 2026', status: 'active'  },
-  { id: 4, name: 'Lena Macaraeg',  email: 'lena@email.com',    role: 'provider', joined: 'Feb 17, 2026', status: 'suspended'},
-  { id: 5, name: 'Ana Reyes',      email: 'ana@email.com',     role: 'user',     joined: 'Feb 15, 2026', status: 'active'  },
-];
+const pageMeta = {
+  'Overview': { title: 'Overview', sub: 'Dashboard overview and key metrics' },
+  'Users': { title: 'Users', sub: 'Manage user accounts' },
+  'Providers': { title: 'Providers', sub: 'Manage service providers' },
+  'Services': { title: 'Services', sub: 'Moderate service listings' },
+  'Bookings': { title: 'Bookings', sub: 'Monitor booking requests' },
+  'Reviews': { title: 'Reviews', sub: 'Moderate user reviews' },
+  'Categories': { title: 'Categories', sub: 'Manage service categories' },
+};
 
 const AdminDashboardPage = () => {
   const [activeNav, setActiveNav] = useState('Overview');
+  const [metrics, setMetrics] = useState(null);
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const { toast } = useToast();
+  const meta = pageMeta[activeNav];
+
+  useEffect(() => {
+    if (activeNav === 'Overview') {
+      fetchDashboardMetrics();
+    }
+  }, [activeNav]);
+
+  const fetchDashboardMetrics = async () => {
+    try {
+      setLoadingMetrics(true);
+      const response = await adminService.getDashboardMetrics();
+      setMetrics(response.data);
+      
+      // Fetch recent users
+      const usersResponse = await adminService.getUsers({ page: 1, limit: 5 });
+      setRecentUsers(usersResponse.data || []);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to fetch dashboard metrics',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingMetrics(false);
+    }
+  };
+
+  const renderContent = () => {
+    switch (activeNav) {
+      case 'Overview':
+        return (
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            {loadingMetrics ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : metrics ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.totalUsers || 0}</div>
+                    <p className="text-xs text-muted-foreground">+8% from last month</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Providers</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.totalProviders || 0}</div>
+                    <p className="text-xs text-muted-foreground">+12% from last month</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Bookings Today</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.bookingsToday || 0}</div>
+                    <p className="text-xs text-muted-foreground">+5% from yesterday</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Open Reports</CardTitle>
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.openReports || 0}</div>
+                    <p className="text-xs text-muted-foreground">+3 from yesterday</p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : null}
+
+            {/* Recent Users Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Joined</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentUsers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan="5" className="text-center py-8 text-muted-foreground">
+                            No users found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        recentUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={user.role === 'provider' ? 'default' : 'secondary'}>
+                                {user.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
+                                {user.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      case 'Users':
+        return <UserManagement />;
+      case 'Providers':
+        return <ProviderManagement />;
+      case 'Services':
+        return <ServiceModeration />;
+      case 'Bookings':
+        return <BookingMonitoring />;
+      case 'Reviews':
+        return <ReviewModeration />;
+      case 'Categories':
+        return <CategoryManagement />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="admin-page">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="admin-sidebar">
-        {/* Brand */}
-        <a href="/" className="admin-sidebar__brand">
-          <div className="admin-sidebar__brand-icon">S</div>
-          <span className="admin-sidebar__brand-name">Servify</span>
-          <span className="admin-sidebar__brand-tag">Admin</span>
-        </a>
-
-        {/* Admin info */}
-        <div className="admin-sidebar__user">
-          <div className="admin-sidebar__avatar">AD</div>
-          <div>
-            <div className="admin-sidebar__uname">Admin User</div>
-            <div className="admin-sidebar__usub">Super Administrator</div>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="admin-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              className={`admin-nav__item ${activeNav === item.label ? 'active' : ''}`}
-              onClick={() => setActiveNav(item.label)}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Footer — reuses shared LogoutButton */}
-        <div className="admin-sidebar__footer">
-          <LogoutButton />
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="admin-main">
-        {/* Topbar */}
-        <div className="admin-topbar">
-          <div>
-            <div className="admin-topbar__title">{activeNav}</div>
-            <div className="admin-topbar__sub">Servify Admin Panel · Feb 21, 2026</div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="admin-content">
-          {/* Stats */}
-          <div className="admin-stats">
-            {stats.map((s) => (
-              <div key={s.label} className="admin-stat">
-                <div className="admin-stat__top">
-                  <span className={`admin-stat__change ${s.up ? 'up' : 'down'}`}>
-                    {s.up ? '↑' : '↓'} {s.change}
-                  </span>
-                </div>
-                <div className="admin-stat__value">{s.value}</div>
-                <div className="admin-stat__label">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Recent users table */}
-          <div className="admin-card">
-            <div className="admin-card__header">
-              <h3 className="admin-card__title">Recent Users</h3>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Joined</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td className="admin-table__name">{u.name}</td>
-                      <td>{u.email}</td>
-                      <td>
-                        <span className={`admin-badge admin-badge--${u.role}`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td>{u.joined}</td>
-                      <td>
-                        <span className={`admin-badge admin-badge--${u.status}`}>
-                          <span className="admin-badge__dot" />
-                          {u.status}
-                        </span>
-                      </td>
-                      <td>
-                        <button className="admin-btn admin-btn--sm admin-btn--ghost">View</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      <AdminSidebar activeNav={activeNav} setActiveNav={setActiveNav} />
+      
+      {/* Main content */}
+      <div className="flex-1 flex flex-col ml-60">
+        <AdminTopbar title={meta.title} subtitle={meta.sub} />
+        <main className="flex-1 overflow-auto p-6">
+          {renderContent()}
+        </main>
       </div>
+      <Toaster />
     </div>
   );
 };
