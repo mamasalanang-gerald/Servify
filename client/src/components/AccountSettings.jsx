@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import '../pages/styles/AccountSettings.css';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 
 const AccountSettings = () => {
   const [notifications, setNotifications] = useState({
@@ -33,29 +35,37 @@ const AccountSettings = () => {
   };
 
   return (
-    <div className="dash-section">
-      <h2 className="dash-section__title">Settings</h2>
+    <div className="space-y-8">
+      <h2 className="text-2xl font-bold text-foreground">Settings</h2>
 
       {/* Notifications */}
-      <div className="settings-block">
-        <h3 className="settings-block__title">Notifications</h3>
-        <p className="settings-block__desc">Manage how you receive updates and alerts.</p>
+      <div className="space-y-4 rounded-lg border border-border bg-card p-6">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Notifications</h3>
+          <p className="text-sm text-muted-foreground">Manage how you receive updates and alerts.</p>
+        </div>
 
-        <div className="settings-toggles">
+        <div className="space-y-4">
           {[
             { key: 'emailBookings', label: 'Email — Booking confirmations' },
             { key: 'emailPromotions', label: 'Email — Promotions & offers' },
             { key: 'smsReminders', label: 'SMS — Appointment reminders' },
             { key: 'smsUpdates', label: 'SMS — Service updates' },
           ].map(({ key, label }) => (
-            <div className="settings-toggle" key={key}>
-              <span className="settings-toggle__label">{label}</span>
+            <div className="flex items-center justify-between" key={key}>
+              <span className="text-sm font-medium text-foreground">{label}</span>
               <button
-                className={`settings-toggle__btn ${notifications[key] ? 'active' : ''}`}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  notifications[key] ? "bg-primary" : "bg-muted"
+                )}
                 onClick={() => toggleNotif(key)}
                 aria-label={label}
               >
-                <span className="settings-toggle__knob" />
+                <span className={cn(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                  notifications[key] ? "translate-x-6" : "translate-x-1"
+                )} />
               </button>
             </div>
           ))}
@@ -63,67 +73,68 @@ const AccountSettings = () => {
       </div>
 
       {/* Change Password */}
-      <div className="settings-block">
-        <h3 className="settings-block__title">Change Password</h3>
-        <p className="settings-block__desc">Update your password to keep your account secure.</p>
+      <div className="space-y-4 rounded-lg border border-border bg-card p-6">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Change Password</h3>
+          <p className="text-sm text-muted-foreground">Update your password to keep your account secure.</p>
+        </div>
 
-        <form className="profile-form" onSubmit={handlePasswordSubmit}>
-          <div className="profile-form__group">
-            <label className="profile-form__label">Current Password</label>
-            <input
+        <form className="space-y-6" onSubmit={handlePasswordSubmit}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Current Password</label>
+            <Input
               type="password"
               name="current"
-              className="profile-form__input"
               placeholder="Enter current password"
               value={passwords.current}
               onChange={handlePasswordChange}
             />
           </div>
-          <div className="profile-form__row">
-            <div className="profile-form__group">
-              <label className="profile-form__label">New Password</label>
-              <input
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">New Password</label>
+              <Input
                 type="password"
                 name="newPass"
-                className="profile-form__input"
                 placeholder="Enter new password"
                 value={passwords.newPass}
                 onChange={handlePasswordChange}
               />
             </div>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Confirm Password</label>
-              <input
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Confirm Password</label>
+              <Input
                 type="password"
                 name="confirm"
-                className="profile-form__input"
                 placeholder="Confirm new password"
                 value={passwords.confirm}
                 onChange={handlePasswordChange}
               />
             </div>
           </div>
-          <div className="profile-form__footer">
-            <button type="submit" className="profile-form__btn">
+          <div className="flex items-center gap-4">
+            <Button type="submit">
               {pwSaved ? (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mr-2">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                   Password Updated!
                 </>
               ) : 'Update Password'}
-            </button>
-            {pwSaved && <span className="profile-form__success">Password updated successfully.</span>}
+            </Button>
+            {pwSaved && <span className="text-sm text-green-600 dark:text-green-400">Password updated successfully.</span>}
           </div>
         </form>
       </div>
 
       {/* Danger Zone */}
-      <div className="settings-block settings-block--danger">
-        <h3 className="settings-block__title settings-block__title--danger">Danger Zone</h3>
-        <p className="settings-block__desc">These actions are irreversible. Please proceed with caution.</p>
-        <button className="settings-danger-btn">Delete Account</button>
+      <div className="space-y-4 rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900/30 dark:bg-red-950/20">
+        <div>
+          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400">Danger Zone</h3>
+          <p className="text-sm text-red-600/80 dark:text-red-400/80">These actions are irreversible. Please proceed with caution.</p>
+        </div>
+        <Button variant="destructive">Delete Account</Button>
       </div>
     </div>
   );

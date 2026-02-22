@@ -11,9 +11,13 @@ RUN npm config set fetch-timeout 120000 && \
     npm config set fetch-retry-maxtimeout 120000
 
 # Install ALL dependencies (including devDependencies) for building
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 COPY . .
+
+# Set API URL for production build
+ARG VITE_API_URL=http://localhost:3000/api/v1
+ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
 

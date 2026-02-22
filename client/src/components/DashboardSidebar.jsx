@@ -1,3 +1,8 @@
+import React from 'react';
+import LogoutButton from './LogoutButton';
+import useAuth from '../hooks/useAuth';
+import { cn } from '../lib/utils';
+
 const navItems = [
   {
     label: 'Bookings',
@@ -39,26 +44,68 @@ const navItems = [
 ];
 
 const DashboardSidebar = ({ activeNav, setActiveNav }) => {
+  const { user } = useAuth();
+  const isGuest = !user;
+
+  const displayName  = isGuest ? 'Guest'         : (user.name || user.email?.split('@')[0] || 'User');
+  const displayEmail = isGuest ? 'Not logged in' : user.email;
+  const initials     = isGuest ? null             : displayName.slice(0, 2).toUpperCase();
+
   return (
-    <aside className="dash-sidebar">
-      <div className="dash-profile">
-        <div className="dash-profile__avatar">CD</div>
-        <h3 className="dash-profile__name">Carlo Dela Cruz</h3>
-        <p className="dash-profile__email">carlo.dcxgh@gmail.com</p>
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-card">
+
+      {/* Profile */}
+      <div className="flex flex-col items-center border-b border-border px-6 py-8">
+        <div className={cn(
+          "mb-4 flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold",
+          isGuest 
+            ? "bg-muted text-muted-foreground" 
+            : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+        )}>
+          {isGuest ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          ) : initials}
+        </div>
+        <h3 className="mb-1 text-lg font-semibold text-foreground">{displayName}</h3>
+        <p className="text-sm text-muted-foreground">{displayEmail}</p>
       </div>
 
-      <nav className="dash-nav">
+      {/* Nav */}
+      <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => (
           <button
             key={item.label}
-            className={`dash-nav__item ${activeNav === item.label ? 'active' : ''}`}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+              activeNav === item.label
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              isGuest && "cursor-not-allowed opacity-60"
+            )}
             onClick={() => setActiveNav(item.label)}
           >
-            <span className="dash-nav__icon">{item.icon}</span>
+            <span className="flex-shrink-0">{item.icon}</span>
             {item.label}
+            {isGuest && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-auto flex-shrink-0 opacity-40">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            )}
           </button>
         ))}
       </nav>
+
+      {/* Footer - Logout Button */}
+      {!isGuest && (
+        <div className="border-t border-border p-4">
+          <LogoutButton />
+        </div>
+      )}
+
     </aside>
   );
 };

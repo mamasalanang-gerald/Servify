@@ -23,9 +23,16 @@ const createBooking = async (req, res) => {
 const getClientBookings = async (req, res) => {
 	try {
 		const { clientId } = req.params;
+		
+		// Validate clientId exists
+		if (!clientId) {
+			return res.status(400).json({ message: 'Client ID is required' });
+		}
+		
 		const bookings = await bookingModel.getBookingsByClientId(clientId);
-		res.status(200).json(bookings);
+		res.status(200).json(bookings || []);
 	} catch (err) {
+		console.error('Error fetching client bookings:', err);
 		res.status(500).json({ message: 'Error fetching client bookings', error: err.message });
 	}
 };

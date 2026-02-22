@@ -1,70 +1,131 @@
-import React, { useState } from 'react';
-import '../pages/styles/ProfileSettings.css';
+import React, { useState, useEffect } from 'react';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { userService } from '../services/userService';
+import { authService } from '../services/authService';
 
 const ProfileSettings = () => {
   const [form, setForm] = useState({
-    firstName: 'Carlo',
-    lastName: 'Dela Cruz',
-    email: 'Carlo.dcxgh@gmail.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St, New York, NY 10001',
+    full_name: '',
+    email: '',
+    phone_number: '',
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const profile = await userService.getProfile();
+        setForm({
+          full_name: profile.full_name || '',
+          email: profile.email || '',
+          phone_number: profile.phone_number || '',
+        });
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setSaved(false);
+    setError(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    setError(null);
+
+    try {
+      await userService.updateProfile(form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="dash-section">
-      <h2 className="dash-section__title">Profile Settings</h2>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-foreground">Profile Settings</h2>
 
-      <form className="profile-form" onSubmit={handleSubmit}>
-        <div className="profile-form__row">
-          <div className="profile-form__group">
-            <label className="profile-form__label">First Name</label>
-            <input type="text" name="firstName" className="profile-form__input" value={form.firstName} onChange={handleChange} />
-          </div>
-          <div className="profile-form__group">
-            <label className="profile-form__label">Last Name</label>
-            <input type="text" name="lastName" className="profile-form__input" value={form.lastName} onChange={handleChange} />
-          </div>
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {error}
+        </div>
+      )}
+
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Full Name</label>
+          <Input 
+            type="text" 
+            name="full_name" 
+            value={form.full_name} 
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <div className="profile-form__group">
-          <label className="profile-form__label">Email</label>
-          <input type="email" name="email" className="profile-form__input" value={form.email} onChange={handleChange} />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Email</label>
+          <Input 
+            type="email" 
+            name="email" 
+            value={form.email} 
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <div className="profile-form__group">
-          <label className="profile-form__label">Phone</label>
-          <input type="text" name="phone" className="profile-form__input" value={form.phone} onChange={handleChange} />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Phone</label>
+          <Input 
+            type="text" 
+            name="phone_number" 
+            value={form.phone_number} 
+            onChange={handleChange}
+          />
         </div>
 
-        <div className="profile-form__group">
-          <label className="profile-form__label">Address</label>
-          <input type="text" name="address" className="profile-form__input" value={form.address} onChange={handleChange} />
-        </div>
-
-        <div className="profile-form__footer">
-          <button type="submit" className="profile-form__btn">
-            {saved ? (
+        <div className="flex items-center gap-4">
+          <Button type="submit" disabled={saving}>
+            {saving ? (
               <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Saving...
+              </>
+            ) : saved ? (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mr-2">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
                 Saved!
               </>
             ) : 'Save Changes'}
-          </button>
-          {saved && <span className="profile-form__success">Changes saved successfully.</span>}
+          </Button>
+          {saved && <span className="text-sm text-green-600 dark:text-green-400">Changes saved successfully.</span>}
         </div>
       </form>
     </div>

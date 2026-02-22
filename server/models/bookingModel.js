@@ -83,7 +83,7 @@ const getBookingsByClientId = async (client_id) => {
             ORDER BY b.booking_date DESC, b.booking_time DESC
         `;
         const { rows } = await pool.query(query, [client_id]);
-        return rows;
+        return rows || [];
     } catch (error) {
         console.error("Error fetching client bookings:", error.message);
         throw error;
