@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import "./PopularCategories.css";
 
 const categories = [
   {
@@ -87,21 +86,31 @@ export default function PopularCategories() {
   const navigate = useNavigate();
 
   return (
-    <section className="categories">
-      <div className="categories-header">
-        <h2 className="categories-title">Popular Categories</h2>
-        <p className="categories-subtitle">Explore services across various categories</p>
+    <section className="py-20 px-12 bg-[#f0f2f8] dark:bg-[#131929] transition-colors">
+      <div className="text-center mb-10">
+        <h2 className="font-heading text-[2rem] font-bold text-app-text dark:text-[#f1f5f9] mb-1.5 transition-colors">
+          Popular Categories
+        </h2>
+        <p className="font-sans text-app-text-muted dark:text-[#94a3b8] text-[0.95rem] transition-colors">
+          Explore services across various categories
+        </p>
       </div>
-      <div className="categories-grid">
+      <div className="grid grid-cols-4 gap-5 max-w-[1100px] mx-auto md:grid-cols-2 sm:grid-cols-1">
         {categories.map((cat) => (
           <div
             key={cat.label}
-            className="category-card"
+            className="flex flex-col items-center text-center gap-2 py-8 px-7 rounded-2xl border-[1.5px] border-app-border dark:border-[#2a3045] bg-white dark:bg-[#1a1f2e] cursor-pointer transition-all hover:border-app-accent dark:hover:border-[#7b93ff] hover:shadow-[0_8px_28px_rgba(44,63,209,0.1)] dark:hover:shadow-[0_8px_28px_rgba(123,147,255,0.15)] hover:-translate-y-1 [&:hover_.category-icon-wrap]:bg-app-accent dark:[&:hover_.category-icon-wrap]:bg-app-accent [&:hover_.category-icon-wrap_svg]:stroke-white"
             onClick={() => navigate('/services', { state: { category: cat.label } })}
           >
-            <div className="category-icon-wrap">{cat.icon}</div>
-            <span className="category-label">{cat.label}</span>
-            <span className="category-count">{cat.count}</span>
+            <div className="category-icon-wrap w-14 h-14 bg-[#eef1fb] dark:bg-[#222a40] rounded-full flex items-center justify-center mb-3 transition-colors">
+              {cat.icon}
+            </div>
+            <span className="font-heading font-semibold text-base text-app-text dark:text-[#f1f5f9] transition-colors">
+              {cat.label}
+            </span>
+            <span className="font-sans text-[0.85rem] text-[#94a3b8] dark:text-[#64748b] transition-colors">
+              {cat.count}
+            </span>
           </div>
         ))}
       </div>

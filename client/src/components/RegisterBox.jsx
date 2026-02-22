@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 
 // Password validation rules
 const PASSWORD_RULES = [
@@ -79,65 +82,69 @@ const RegisterBox = () => {
   );
 
   return (
-    <div className="login-split">
+    <div className="grid min-h-screen lg:grid-cols-2">
       {/* ── Left decorative panel ── */}
-      <div className="login-split__left">
-        <div className="login-split__left-content">
-          <div className="login-split__brand">
-            <div className="login-split__brand-icon">S</div>
-            <span>Servify</span>
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 lg:block">
+        <div className="relative z-10 flex h-full flex-col justify-center px-12 xl:px-16">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-2xl font-bold text-white backdrop-blur-sm">
+              S
+            </div>
+            <span className="text-2xl font-bold text-white">Servify</span>
           </div>
-          <h2 className="login-split__tagline">
+          <h2 className="mb-4 text-4xl font-bold leading-tight text-white xl:text-5xl">
             Join thousands who trust Servify every day.
           </h2>
-          <p className="login-split__desc">
+          <p className="mb-10 max-w-md text-lg leading-relaxed text-blue-100">
             Create your free account and get instant access to verified professionals ready to help you anytime, anywhere.
           </p>
-          <div className="login-split__features">
+          <div className="space-y-4">
             {[
               'Free to join — no hidden fees',
               'Browse 3,200+ verified providers',
               'Secure bookings & payments',
             ].map((f) => (
-              <div key={f} className="login-split__feature">
-                <div className="login-split__feature-icon">
+              <div key={f} className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <span>{f}</span>
+                <span className="text-base text-white">{f}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="login-split__left-blob" />
-        <div className="login-split__left-blob-2" />
+        <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
       {/* ── Right form panel ── */}
-      <div className="login-split__right">
-        <div className="login-card" style={{ maxWidth: 500 }}>
-          <div className="login-card__header">
-            <div className="login-card__logo-icon">S</div>
-            <h1 className="login-card__title">Create an account</h1>
-            <p className="login-card__subtitle">It's free and only takes a minute</p>
+      <div className="flex items-center justify-center bg-background p-6 sm:p-8">
+        <div className="w-full max-w-[500px]">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-2xl font-bold text-primary">
+              S
+            </div>
+            <h1 className="mb-2 text-3xl font-bold text-foreground">Create an account</h1>
+            <p className="text-sm text-muted-foreground">It's free and only takes a minute</p>
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
 
             {/* Full Name */}
-            <div className="login-form__group">
-              <label className="login-form__label" htmlFor="fullName">Full name</label>
-              <div className="login-form__input-wrapper">
-                <span className="login-form__input-icon">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="fullName">Full name</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
-                <input
+                <Input
                   id="fullName" name="fullName" type="text"
-                  className="login-form__input"
+                  className="pl-10"
                   placeholder="Juan dela Cruz"
                   value={formData.fullName}
                   onChange={handleChange}
@@ -147,18 +154,18 @@ const RegisterBox = () => {
             </div>
 
             {/* Email */}
-            <div className="login-form__group">
-              <label className="login-form__label" htmlFor="email">Email address</label>
-              <div className="login-form__input-wrapper">
-                <span className="login-form__input-icon">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="email">Email address</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
                 </span>
-                <input
+                <Input
                   id="email" name="email" type="email"
-                  className="login-form__input"
+                  className="pl-10"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -168,20 +175,20 @@ const RegisterBox = () => {
             </div>
 
             {/* Phone (optional) */}
-            <div className="login-form__group">
-              <label className="login-form__label" htmlFor="phone">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="phone">
                 Phone number
-                <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6, fontSize: '0.8rem' }}>(optional)</span>
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(optional)</span>
               </label>
-              <div className="login-form__input-wrapper">
-                <span className="login-form__input-icon">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.07 6.07l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                 </span>
-                <input
+                <Input
                   id="phone" name="phone" type="tel"
-                  className="login-form__input"
+                  className="pl-10"
                   placeholder="+63 900 000 0000"
                   value={formData.phone}
                   onChange={handleChange}
@@ -191,19 +198,19 @@ const RegisterBox = () => {
             </div>
 
             {/* Password */}
-            <div className="login-form__group">
-              <label className="login-form__label" htmlFor="password">Password</label>
-              <div className="login-form__input-wrapper">
-                <span className="login-form__input-icon">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="password">Password</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </span>
-                <input
+                <Input
                   id="password" name="password"
                   type={showPassword ? 'text' : 'password'}
-                  className="login-form__input"
+                  className="pl-10 pr-10"
                   placeholder="Create a strong password"
                   value={formData.password}
                   onChange={handleChange}
@@ -213,7 +220,7 @@ const RegisterBox = () => {
                 />
                 <button
                   type="button"
-                  className="login-form__toggle-pw"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label="Toggle password visibility"
                 >
@@ -223,19 +230,18 @@ const RegisterBox = () => {
 
               {/* Strength bar */}
               {formData.password && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                <div className="mt-2">
+                  <div className="mb-1.5 flex gap-1">
                     {[1,2,3,4,5].map((i) => (
-                      <div key={i} style={{
-                        flex: 1,
-                        height: 4,
-                        borderRadius: 99,
-                        background: i <= passwordStrength ? strengthColor : 'var(--border)',
-                        transition: 'background 0.3s',
+                      <div key={i} className={cn(
+                        "h-1 flex-1 rounded-full transition-colors",
+                        i <= passwordStrength ? "" : "bg-border"
+                      )} style={{
+                        backgroundColor: i <= passwordStrength ? strengthColor : undefined
                       }} />
                     ))}
                   </div>
-                  <span style={{ fontSize: '0.78rem', color: strengthColor, fontWeight: 600 }}>
+                  <span className="text-xs font-semibold" style={{ color: strengthColor }}>
                     {strengthLabel}
                   </span>
                 </div>
@@ -243,12 +249,15 @@ const RegisterBox = () => {
 
               {/* Requirements checklist */}
               {(passwordFocused || formData.password) && (
-                <div className="register-requirements">
+                <div className="mt-2.5 animate-in fade-in slide-in-from-top-2 duration-200 grid grid-cols-2 gap-x-3 gap-y-1.5 rounded-md border border-border bg-accent/50 p-3">
                   {PASSWORD_RULES.map((rule) => {
                     const passed = rule.test(formData.password);
                     return (
-                      <span key={rule.id} className={`register-req-item ${passed ? 'passed' : ''}`}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <span key={rule.id} className={cn(
+                        "flex items-center gap-1.5 text-xs font-medium transition-colors",
+                        passed ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                      )}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
                           {passed
                             ? <polyline points="20 6 9 17 4 12" />
                             : <circle cx="12" cy="12" r="10" />}
@@ -262,24 +271,25 @@ const RegisterBox = () => {
             </div>
 
             {/* Confirm Password */}
-            <div className="login-form__group">
-              <label className="login-form__label" htmlFor="confirmPassword">Confirm password</label>
-              <div className="login-form__input-wrapper">
-                <span className="login-form__input-icon">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="confirmPassword">Confirm password</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                   </svg>
                 </span>
-                <input
+                <Input
                   id="confirmPassword" name="confirmPassword"
                   type={showConfirm ? 'text' : 'password'}
-                  className={`login-form__input ${
-                    formData.confirmPassword
-                      ? formData.password === formData.confirmPassword
-                        ? 'input--valid'
-                        : 'input--invalid'
-                      : ''
-                  }`}
+                  className={cn(
+                    "pl-10 pr-10",
+                    formData.confirmPassword && (
+                      formData.password === formData.confirmPassword
+                        ? "border-green-500 focus-visible:ring-green-500/20"
+                        : "border-red-500 focus-visible:ring-red-500/20"
+                    )
+                  )}
                   placeholder="Re-enter your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -287,7 +297,7 @@ const RegisterBox = () => {
                 />
                 <button
                   type="button"
-                  className="login-form__toggle-pw"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => setShowConfirm(!showConfirm)}
                   aria-label="Toggle confirm password visibility"
                 >
@@ -295,7 +305,7 @@ const RegisterBox = () => {
                 </button>
               </div>
               {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <span style={{ fontSize: '0.78rem', color: '#ef4444', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span className="flex items-center gap-1 text-xs text-red-500">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
@@ -303,7 +313,7 @@ const RegisterBox = () => {
                 </span>
               )}
               {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                <span style={{ fontSize: '0.78rem', color: '#22c55e', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
@@ -313,7 +323,7 @@ const RegisterBox = () => {
             </div>
 
             {error && (
-              <div className="login-form__error">
+              <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-600 dark:border-red-900/30 dark:bg-red-950/20 dark:text-red-400">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
@@ -323,50 +333,67 @@ const RegisterBox = () => {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
-              className={`login-form__submit ${loading ? 'loading' : ''}`}
+              className="w-full"
               disabled={loading}
             >
-              {loading ? <span className="login-form__spinner" /> : 'Create Account'}
-            </button>
+              {loading ? (
+                <>
+                  <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Creating account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
           </form>
 
-          <div className="login-card__divider"><span>or sign up with</span></div>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background px-2 text-muted-foreground">or sign up with</span>
+            </div>
+          </div>
 
-          <div className="login-card__socials">
-            <button className="login-social-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24">
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" type="button" className="w-full">
+              <svg width="18" height="18" viewBox="0 0 24 24" className="mr-2">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
               Google
-            </button>
-            <button className="login-social-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            </Button>
+            <Button variant="outline" type="button" className="w-full">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="mr-2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               Facebook
-            </button>
+            </Button>
           </div>
 
-          <p className="login-card__register">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <a href="/login">Sign in</a>
+            <a href="/login" className="font-medium text-primary underline-offset-4 hover:underline">Sign in</a>
           </p>
 
-          <div className="login-card__trust">
-            <span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
               Verified Providers
             </span>
-            <span>
+            <span className="flex items-center gap-1.5">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               Secure Payments
             </span>
-            <span>
+            <span className="flex items-center gap-1.5">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
               24/7 Support
             </span>
