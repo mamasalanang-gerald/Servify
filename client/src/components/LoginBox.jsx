@@ -3,16 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 
-// ─── Mock credentials ───────────────────────────────────────────────
-//pa remove nalang comment kapag want nyo itry yung login functionality.
-//nadedetect kasi na may hardcoded credentials.
-
-// const MOCK_USERS = [
-//   { email: 'user@servify.com',     password: 'user123',     role: 'user'     },
-//   { email: 'provider@servify.com', password: 'provider123', role: 'provider' },
-//   { email: 'admin@servify.com',    password: 'admin123',    role: 'admin'    },
-// ];
-
 const ROLE_HOME = {
   user:     '/dashboard',
   provider: '/provider',
@@ -42,24 +32,30 @@ const LoginBox = () => {
     setLoading(true);
     setError('');
 
-    // Simulate network delay — remove when using real API
-    await new Promise((res) => setTimeout(res, 1000));
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-    const match = MOCK_USERS.find(
-      (u) => u.email === formData.email && u.password === formData.password
-    );
+      const data = await response.json();
 
-    if (!match) {
+      if (!response.ok) {
+        setError(data.message || 'Invalid email or password. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Save session via useAuth
+      setUser({ role: data.user.user_type, email: data.user.email, accessToken: data.accessToken });
+
       setLoading(false);
-      setError('Invalid email or password. Please try again.');
-      return;
+      navigate(ROLE_HOME[data.user.user_type]);
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      setLoading(false);
     }
-
-    // Save session via useAuth (not localStorage directly)
-    setUser({ role: match.role, email: match.email });
-
-    setLoading(false);
-    navigate(ROLE_HOME[match.role]);
   };
 
   return (
