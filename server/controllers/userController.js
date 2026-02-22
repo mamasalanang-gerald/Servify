@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { getUserById, getAllUsers, updateUserType } = require('../models/userModel');
+const { getUserById, getAllUsers, updateUserType, updateUserProfile } = require('../models/userModel');
 const { deleteAllUserRefreshTokens, storeRefreshToken } = require('../models/helper/refreshTokenModel');
 
 const getProfile = async (req, res) => {
@@ -10,6 +10,24 @@ const getProfile = async (req, res) => {
     res.status(200).json(user);
 
   } catch(err){
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { full_name, email, phone_number } = req.body;
+    
+    // Validate required fields
+    if (!full_name || !email) {
+      return res.status(400).json({ message: 'Full name and email are required' });
+    }
+
+    const user = await updateUserProfile(req.user.id, { full_name, email, phone_number });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    res.status(200).json({ message: 'Profile updated successfully', user });
+  } catch (err) {
     return res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -85,4 +103,4 @@ const changeUserRole = async (req, res) => {
     }
 };
 
-module.exports = { getProfile, listUsers, promoteRole, changeUserRole };
+module.exports = { getProfile, updateProfile, listUsers, promoteRole, changeUserRole };
