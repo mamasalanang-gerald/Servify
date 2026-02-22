@@ -24,7 +24,7 @@ const getClientBookings = async (req, res) => {
 	try {
 		const { clientId } = req.params;
 
-		if (req.user.id !== clientId && req.user_type !== 'admin') return res.status(403).json({ message: 'Forbidden: You can only view your own bookings' });
+		if (String(req.user.id) !== String(clientId) && req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden: You can only view your own bookings' });
 
 		const bookings = await bookingModel.getBookingsByClientId(clientId);
 		res.status(200).json(bookings);
@@ -37,7 +37,7 @@ const getProviderBookings = async (req, res) => {
 	try {
 		const { providerId } = req.params;
 
-		if (req.user.id !== providerId && req.user_type !== 'admin') return res.status(403).json({ message: 'Forbidden: You can only view your own bookings' });
+		if (String(req.user.id) !== String(providerId) && req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden: You can only view your own bookings' });
 
 		const bookings = await bookingModel.getBookingsByProviderId(providerId);
 		res.status(200).json(bookings);
