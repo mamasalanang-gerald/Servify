@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { createUser, findUserByEmail } = require('../models/userModel');
-const { storeRefreshToken, findRefreshToken, deleteRefreshToken, deleteAllUserRefreshTokens } = require('../models/refreshTokenModel');
+const { createUser, findUserByEmail, getUserById } = require('../models/userModel');
+const { storeRefreshToken, findRefreshToken, deleteRefreshToken, deleteAllUserRefreshTokens } = require('../models/helper/refreshTokenModel');
 
 const register = async (req, res) => {
   const { full_name, email, password, phone_number } = req.body;
@@ -78,7 +78,7 @@ const refresh = async (req, res) => {
     
     try{
 
-      const storedTokens = await findRefreshToken(decoded.id);
+    const storedTokens = await findRefreshToken(decoded.id);
     let matchedToken = null;
     
     for (const stored of storedTokens) {
@@ -96,15 +96,21 @@ const refresh = async (req, res) => {
 
     await deleteRefreshToken(decoded.id, matchedToken.token_hash);
 
+    const user = await getUserById(decoded.id);
+    if (!user) {
+        await deleteAllUserRefreshTokens(decoded.id);
+        return res.status(403).json({ message: 'User not found' });
+    }
+
    
     const newAccessToken = jwt.sign(
-        { id: decoded.id, email: decoded.email, role: decoded.role },
+        { id: user.id, email: user.email, role: user.user_type },
         process.env.JWT_SECRET,
         { expiresIn: '15m' }
     );
 
     const newRefreshToken = jwt.sign(
-        { id: decoded.id, email: decoded.email, role: decoded.role },
+        { id: user.id, email: user.email, role: user.user_type },
         process.env.JWT_SECRET_REFRESH,
         { expiresIn: '7d' }
     );
