@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ const ProviderManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const { toast } = useToast();
 
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminService.getUsers({ page, limit: 10, role: 'provider' });
@@ -32,11 +32,11 @@ const ProviderManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, toast]);
 
   useEffect(() => {
     fetchProviders();
-  }, [page]);
+  }, [fetchProviders]);
 
   const handleVerify = async (providerId) => {
     try {

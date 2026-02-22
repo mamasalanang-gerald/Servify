@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,7 +17,7 @@ const BookingMonitoring = () => {
   const [showModal, setShowModal] = useState(false);
   const { toast } = useToast();
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminService.getBookings({ 
@@ -36,11 +36,11 @@ const BookingMonitoring = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter, toast]);
 
   useEffect(() => {
     fetchBookings();
-  }, [page, statusFilter]);
+  }, [fetchBookings]);
 
   const getStatusBadge = (status) => {
     switch (status) {

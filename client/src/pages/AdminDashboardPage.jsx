@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminTopbar from '../components/admin/AdminTopbar';
 import UserManagement from '../components/admin/UserManagement';
@@ -33,13 +33,7 @@ const AdminDashboardPage = () => {
   const { toast } = useToast();
   const meta = pageMeta[activeNav];
 
-  useEffect(() => {
-    if (activeNav === 'Overview') {
-      fetchDashboardMetrics();
-    }
-  }, [activeNav]);
-
-  const fetchDashboardMetrics = async () => {
+  const fetchDashboardMetrics = useCallback(async () => {
     try {
       setLoadingMetrics(true);
       const response = await adminService.getDashboardMetrics();
@@ -57,7 +51,13 @@ const AdminDashboardPage = () => {
     } finally {
       setLoadingMetrics(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (activeNav === 'Overview') {
+      fetchDashboardMetrics();
+    }
+  }, [activeNav, fetchDashboardMetrics]);
 
   const renderContent = () => {
     switch (activeNav) {

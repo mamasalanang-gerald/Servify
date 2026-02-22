@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,11 +20,7 @@ const ReviewModeration = () => {
   const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchReviews();
-  }, [page, ratingFilter]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const params = { page, limit: 10 };
@@ -43,7 +39,11 @@ const ReviewModeration = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, ratingFilter, toast]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleDeleteReview = async (reviewId) => {
     try {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,7 @@ const UserManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminService.getUsers({ 
@@ -38,11 +38,11 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, roleFilter, toast]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, roleFilter]);
+  }, [fetchUsers]);
 
   const handleActivate = async (userId) => {
     try {

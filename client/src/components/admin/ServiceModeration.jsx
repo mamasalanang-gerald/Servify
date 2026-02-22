@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,7 @@ const ServiceModeration = () => {
   const [showModal, setShowModal] = useState(false);
   const { toast } = useToast();
 
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
       const response = await adminService.getServices({ page, limit: 10 });
@@ -32,11 +32,11 @@ const ServiceModeration = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, toast]);
 
   useEffect(() => {
     fetchServices();
-  }, [page]);
+  }, [fetchServices]);
 
   const handleToggleStatus = async (serviceId) => {
     try {
