@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import '../pages/styles/LogoutButton.css';
+import { Button } from './ui/button';
 
 const LogoutButton = ({ confirm = true, className = '' }) => {
   const navigate        = useNavigate();
@@ -25,7 +25,7 @@ const LogoutButton = ({ confirm = true, className = '' }) => {
     <>
       {/* The button — stays inside the sidebar */}
       <button
-        className={`logout-btn ${className}`}
+        className={`flex items-center gap-2 bg-transparent border-none cursor-pointer text-xs text-white/35 hover:text-red-500 transition-colors p-0 w-full ${className}`}
         onClick={handleClick}
         type="button"
       >
@@ -39,32 +39,33 @@ const LogoutButton = ({ confirm = true, className = '' }) => {
 
       {/* Modal — portaled to document.body so it always covers the full screen */}
       {show && createPortal(
-        <div className="logout-overlay" onClick={() => setShow(false)}>
-          <div className="logout-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="logout-modal__icon">
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[9999] p-5 animate-in fade-in duration-200" onClick={() => setShow(false)}>
+          <div className="bg-white rounded-2xl p-8 pt-9 w-full max-w-[340px] text-center shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
             </div>
-            <h3 className="logout-modal__title">Sign out?</h3>
-            <p className="logout-modal__msg">You'll be redirected to the login page.</p>
-            <div className="logout-modal__actions">
-              <button
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Sign out?</h3>
+            <p className="text-sm text-slate-600 mb-6">You'll be redirected to the login page.</p>
+            <div className="flex gap-2.5">
+              <Button
                 type="button"
-                className="logout-modal__cancel"
+                variant="outline"
+                className="flex-1"
                 onClick={() => setShow(false)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="logout-modal__confirm"
+                className="flex-1 bg-red-500 hover:bg-red-600"
                 onClick={doLogout}
               >
                 Yes, Sign Out
-              </button>
+              </Button>
             </div>
           </div>
         </div>,

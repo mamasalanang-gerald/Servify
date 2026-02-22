@@ -7,26 +7,31 @@ import SavedServices from '../components/SavedServices';
 import ProfileSettings from '../components/ProfileSettings';
 import AccountSettings from '../components/AccountSettings';
 import useAuth from '../hooks/useAuth';
-
-import './styles/dashboard.css';
+import { Button } from '../components/ui/button';
 
 /* ─── Full-area blur overlay shown when not logged in ─── */
 const GuestOverlay = () => (
-  <div className="dash-guest-overlay">
-    <div className="dash-guest-card">
-      <div className="dash-guest-card__icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+  <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div className="mx-4 max-w-md space-y-6 rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
       </div>
-      <h2 className="dash-guest-card__title">Sign in to view your Dashboard</h2>
-      <p className="dash-guest-card__desc">
-        Access your bookings, saved services, profile, and account settings by logging in or creating a free account.
-      </p>
-      <div className="dash-guest-card__actions">
-        <a href="/login"  className="dash-guest-card__btn dash-guest-card__btn--primary">Log In</a>
-        <a href="/signup" className="dash-guest-card__btn dash-guest-card__btn--secondary">Create Account</a>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">Sign in to view your Dashboard</h2>
+        <p className="text-sm text-muted-foreground">
+          Access your bookings, saved services, profile, and account settings by logging in or creating a free account.
+        </p>
+      </div>
+      <div className="flex gap-3">
+        <Button asChild className="flex-1">
+          <a href="/login">Log In</a>
+        </Button>
+        <Button asChild variant="outline" className="flex-1">
+          <a href="/signup">Create Account</a>
+        </Button>
       </div>
     </div>
   </div>
@@ -41,10 +46,10 @@ const DashboardPage = () => {
     switch (activeNav) {
       case 'Bookings':
         return (
-          <>
+          <div className="space-y-6">
             <DashboardStats />
             <BookingList />
-          </>
+          </div>
         );
       case 'Saved Services':
         return <SavedServices />;
@@ -58,20 +63,22 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="dashboard-page">
+    <div className="min-h-screen bg-background">
       <Navbar activePage="dashboard" />
 
-      <div className="dashboard-layout">
+      <div className="flex">
         <DashboardSidebar activeNav={activeNav} setActiveNav={setActiveNav} />
 
         {/* Wrapper positions the blur + overlay relative to just the main content area */}
-        <div className="dashboard-main-wrapper">
-          <main className={`dashboard-main ${isGuest ? 'dashboard-main--blurred' : ''}`}>
-            <div className="dashboard-header">
-              <h1 className="dashboard-header__title">My Dashboard</h1>
-              <p className="dashboard-header__sub">Manage your bookings and account settings</p>
+        <div className="relative flex-1">
+          <main className={isGuest ? "blur-sm" : ""}>
+            <div className="border-b border-border bg-card px-8 py-6">
+              <h1 className="text-3xl font-bold text-foreground">My Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Manage your bookings and account settings</p>
             </div>
-            {renderContent()}
+            <div className="p-8">
+              {renderContent()}
+            </div>
           </main>
 
           {isGuest && <GuestOverlay />}
