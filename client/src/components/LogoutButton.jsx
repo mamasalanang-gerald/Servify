@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 import { Button } from './ui/button';
 
 const LogoutButton = ({ confirm = true, className = '' }) => {
   const navigate        = useNavigate();
   const [show, setShow] = useState(false);
 
-  const doLogout = () => {
-    localStorage.removeItem('servify_role');
-    localStorage.removeItem('servify_email');
+  const doLogout = async () => {
+    await authService.logout();
     navigate('/login', { replace: true });
   };
 
@@ -25,11 +25,11 @@ const LogoutButton = ({ confirm = true, className = '' }) => {
     <>
       {/* The button — stays inside the sidebar */}
       <button
-        className={`flex items-center gap-2 bg-transparent border-none cursor-pointer text-xs text-white/35 hover:text-red-500 transition-colors p-0 w-full ${className}`}
+        className={`flex items-center gap-2 w-full rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-colors ${className}`}
         onClick={handleClick}
         type="button"
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" y1="12" x2="9" y2="12" />

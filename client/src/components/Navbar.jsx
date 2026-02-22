@@ -1,11 +1,17 @@
 import { useState, useEffect } from "react";
-import useAuth from "../hooks/useAuth";
+import { authService } from "../services/authService";
 import LogoutButton from "./LogoutButton";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Navbar({ activePage = "" }) {
-  const { user } = useAuth();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Get user from authService
+    const currentUser = authService.getUser();
+    setUser(currentUser);
+  }, []);
 
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("theme") === "dark";
