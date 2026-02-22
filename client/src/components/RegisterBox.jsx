@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
@@ -73,12 +74,15 @@ const RegisterBox = () => {
     }
 
     setLoading(true);
-    // Simulate network delay — replace with real API call
-    await new Promise((res) => setTimeout(res, 1200));
-    setLoading(false);
 
-    // On success, navigate to login (or wherever)
-    navigate('/login');
+    try {
+      await authService.register(formData);
+      setLoading(false);
+      navigate('/login');
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (

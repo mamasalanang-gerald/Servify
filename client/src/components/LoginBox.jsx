@@ -1,19 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
+import { authService } from '../services/authService';
 import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
 const ROLE_HOME = {
-  user:     '/dashboard',
+  client:   '/dashboard',
   provider: '/provider',
   admin:    '/admin',
 };
 
 const LoginBox = () => {
   const navigate  = useNavigate();
-  const { setUser } = useAuth();
 
   useRedirectIfAuth();
 
@@ -33,25 +32,16 @@ const LoginBox = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Invalid email or password. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      setUser({ role: data.user.user_type, email: data.user.email, accessToken: data.accessToken });
+      console.log('Attempting login with:', formData.email);
+      const data = await authService.login(formData);
+      console.log('Login response:', data);
+      console.log('User type:', data.user.user_type);
+      console.log('Navigating to:', ROLE_HOME[data.user.user_type]);
       setLoading(false);
       navigate(ROLE_HOME[data.user.user_type]);
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      console.error('Login error:', err);
+      setError(err.message || 'An error occurred. Please try again.');
       setLoading(false);
     }
   };
