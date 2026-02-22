@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import '../pages/styles/ProviderEarnings.css';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 
 const transactions = [
   { id: 1, date: 'Feb 18, 2026', client: 'Lena Macaraeg', service: 'Standard Clean',      gross: 89,  fee: 9,  net: 80  },
@@ -30,98 +31,147 @@ const maxM = Math.max(...monthlyData.map((d) => d.net));
 const ProviderEarnings = () => {
   const [activeTab, setActiveTab] = useState('Transactions');
 
+  const summaryStats = [
+    { label: 'Total Earned',   value: '₱12,480', sub: 'All time',           color: 'bg-green-500' },
+    { label: 'This Month',     value: '₱920',    sub: 'Feb 2026',           color: 'bg-blue-500' },
+    { label: 'Pending Payout', value: '₱920',    sub: 'Est. Mar 1 release', color: 'bg-yellow-500' },
+  ];
+
   return (
-    <div className="earnings-wrapper">
-      {/* Summary cards */}
-      <div className="earnings-summary">
-        {[
-          { label: 'Total Earned',   value: '₱12,480', sub: 'All time',           color: '#16a34a' },
-          { label: 'This Month',     value: '₱920',    sub: 'Feb 2026',           color: '#2b52cc' },
-          { label: 'Pending Payout', value: '₱920',    sub: 'Est. Mar 1 release', color: '#f59e0b' },
-        ].map((s) => (
-          <div key={s.label} className="earnings-stat p-card">
-            <div className="earnings-stat__dot" style={{ background: s.color }} />
-            <div className="earnings-stat__value" style={{ color: s.color }}>{s.value}</div>
-            <div className="earnings-stat__label">{s.label}</div>
-            <div className="earnings-stat__sub">{s.sub}</div>
-          </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {summaryStats.map((s) => (
+          <Card key={s.label} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className={`w-2 h-2 rounded-full ${s.color} mb-4`} />
+              <div className={`text-3xl font-bold mb-2 ${s.color.replace('bg-', 'text-')}`}>
+                {s.value}
+              </div>
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                {s.label}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {s.sub}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Monthly chart */}
-      <div className="p-card">
-        <div className="p-card__header"><h3 className="p-card__title">Monthly Earnings (Net)</h3></div>
-        <div className="p-card__body">
-          <div className="earnings-chart">
+      <Card>
+        <CardHeader>
+          <CardTitle>Monthly Earnings (Net)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end justify-between gap-4 h-64">
             {monthlyData.map((d) => (
-              <div key={d.month} className="earnings-chart__col">
-                <span className="earnings-chart__val">₱{d.net}</span>
-                <div className="earnings-chart__spacer">
+              <div key={d.month} className="flex flex-col items-center flex-1 h-full">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 h-5">
+                  {d.net > 0 ? `₱${d.net}` : ''}
+                </span>
+                <div className="flex-1 w-full flex items-end justify-center">
                   <div
-                    className={`earnings-chart__bar ${d.net === maxM ? 'earnings-chart__bar--peak' : ''}`}
-                    style={{ height: `${(d.net / maxM) * 100}%` }}
+                    className={`w-full max-w-[48px] rounded-t-lg transition-all ${
+                      d.net === maxM
+                        ? 'bg-gradient-to-t from-blue-600 to-blue-500'
+                        : 'bg-gradient-to-t from-blue-400 to-blue-300'
+                    }`}
+                    style={{ height: d.net > 0 ? `${(d.net / maxM) * 100}%` : '4px' }}
                   />
                 </div>
-                <span className="earnings-chart__month">{d.month}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 mt-3">
+                  {d.month}
+                </span>
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Tabs */}
-      <div className="p-tabs">
+      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
         {['Transactions', 'Payouts'].map((t) => (
-          <button key={t} className={`p-tab ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>{t}</button>
+          <button
+            key={t}
+            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+              activeTab === t
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+            onClick={() => setActiveTab(t)}
+          >
+            {t}
+            {activeTab === t && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+            )}
+          </button>
         ))}
       </div>
 
-      {/* Transactions table */}
       {activeTab === 'Transactions' && (
-        <div className="p-card">
-          <div style={{ overflowX: 'auto' }}>
-            <table className="p-table">
-              <thead>
-                <tr><th>Date</th><th>Client</th><th>Service</th><th>Gross</th><th>Platform Fee</th><th>Net Earned</th></tr>
-              </thead>
-              <tbody>
-                {transactions.map((t) => (
-                  <tr key={t.id}>
-                    <td>{t.date}</td>
-                    <td className="earnings-client">{t.client}</td>
-                    <td>{t.service}</td>
-                    <td className="earnings-mono">₱{t.gross}</td>
-                    <td className="earnings-mono earnings-fee">−₱{t.fee}</td>
-                    <td className="earnings-mono earnings-net">₱{t.net}</td>
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Date</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Client</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Service</th>
+                    <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Gross</th>
+                    <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Platform Fee</th>
+                    <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Net Earned</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {transactions.map((t) => (
+                    <tr key={t.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <td className="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">{t.date}</td>
+                      <td className="py-4 px-6 text-sm font-medium text-gray-900 dark:text-gray-100">{t.client}</td>
+                      <td className="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">{t.service}</td>
+                      <td className="py-4 px-6 text-sm text-right font-mono text-gray-900 dark:text-gray-100">₱{t.gross}</td>
+                      <td className="py-4 px-6 text-sm text-right font-mono text-red-600 dark:text-red-400">−₱{t.fee}</td>
+                      <td className="py-4 px-6 text-sm text-right font-mono font-semibold text-green-600 dark:text-green-400">₱{t.net}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Payouts table */}
       {activeTab === 'Payouts' && (
-        <div className="p-card">
-          <div style={{ overflowX: 'auto' }}>
-            <table className="p-table">
-              <thead>
-                <tr><th>Date</th><th>Method</th><th>Amount</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {payouts.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.date}</td>
-                    <td className="earnings-client">{p.method}</td>
-                    <td className="earnings-mono">{p.amount}</td>
-                    <td><span className="p-badge p-badge--completed"><span className="p-badge__dot" />Completed</span></td>
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Date</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Method</th>
+                    <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Amount</th>
+                    <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {payouts.map((p) => (
+                    <tr key={p.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <td className="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">{p.date}</td>
+                      <td className="py-4 px-6 text-sm font-medium text-gray-900 dark:text-gray-100">{p.method}</td>
+                      <td className="py-4 px-6 text-sm text-right font-mono font-semibold text-gray-900 dark:text-gray-100">{p.amount}</td>
+                      <td className="py-4 px-6">
+                        <Badge variant="success" className="flex items-center gap-1.5 w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                          Completed
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import '../pages/styles/ProviderReviews.css';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 const initialReviews = [
   { id: 1, client: 'Maria Santos',  avatar: 'MS', service: 'Deep House Cleaning', rating: 5, date: 'Feb 18, 2026', text: 'Absolutely fantastic! The team was thorough and professional. My kitchen looks brand new. Will definitely book again!', reply: '' },
@@ -17,9 +19,9 @@ const ratingCounts = [5, 4, 3, 2, 1].map((n) => ({
 
 const avgRating = (initialReviews.reduce((s, r) => s + r.rating, 0) / initialReviews.length).toFixed(1);
 
-const renderStars = (n, size = '1rem') =>
+const renderStars = (n, size = 'text-base') =>
   Array.from({ length: 5 }, (_, i) => (
-    <span key={i} style={{ color: i < n ? '#f59e0b' : '#d1d5db', fontSize: size }}>★</span>
+    <span key={i} className={`${i < n ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600'} ${size}`}>★</span>
   ));
 
 const ProviderReviews = () => {
@@ -36,85 +38,105 @@ const ProviderReviews = () => {
   const filtered = filter === 0 ? reviewList : reviewList.filter((r) => r.rating === filter);
 
   return (
-    <div className="reviews-wrapper">
-      <div className="reviews-layout">
-        {/* Left: summary + filter */}
-        <div className="reviews-aside">
-          <div className="p-card reviews-summary">
-            <div className="reviews-summary__big">{avgRating}</div>
-            <div className="reviews-summary__stars">{renderStars(Math.round(avgRating), '1.3rem')}</div>
-            <div className="reviews-summary__count">{initialReviews.length} reviews</div>
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Left: summary + filter */}
+      <div className="lg:col-span-1 space-y-6">
+        <Card>
+          <CardContent className="flex flex-col items-center p-6">
+            <div className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-2">{avgRating}</div>
+            <div className="flex mb-2">{renderStars(Math.round(avgRating), 'text-xl')}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{initialReviews.length} reviews</div>
+          </CardContent>
+        </Card>
 
-          <div className="p-card reviews-filter">
-            <h3 className="reviews-filter__title">Filter by Rating</h3>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Filter by Rating</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
             <button
-              className={`reviews-filter__all ${filter === 0 ? 'active' : ''}`}
+              className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${
+                filter === 0
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+              }`}
               onClick={() => setFilter(0)}
             >
-              <span>All Reviews</span>
-              <span>{initialReviews.length}</span>
+              <span className="text-sm font-medium">All Reviews</span>
+              <span className="text-sm font-semibold">{initialReviews.length}</span>
             </button>
             {ratingCounts.map(({ star, count }) => (
               <button
                 key={star}
-                className={`reviews-filter__row ${filter === star ? 'active' : ''}`}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                  filter === star
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                }`}
                 onClick={() => setFilter(star)}
               >
-                <span className="reviews-filter__star">{star}★</span>
-                <div className="reviews-filter__bar">
-                  <div className="reviews-filter__fill" style={{ width: `${(count / initialReviews.length) * 100}%` }} />
+                <span className="text-sm font-medium min-w-[30px]">{star}★</span>
+                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-yellow-500 rounded-full" 
+                    style={{ width: `${(count / initialReviews.length) * 100}%` }} 
+                  />
                 </div>
-                <span className="reviews-filter__num">{count}</span>
+                <span className="text-sm font-semibold min-w-[20px] text-right">{count}</span>
               </button>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Right: review cards */}
-        <div className="reviews-list">
-          {filtered.length === 0 && (
-            <div className="p-empty">
-              <div className="p-empty__icon">⭐</div>
-              <div className="p-empty__text">No reviews for this rating</div>
-            </div>
-          )}
+      {/* Right: review cards */}
+      <div className="lg:col-span-3 space-y-4">
+        {filtered.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="text-4xl mb-3">⭐</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">No reviews for this rating</div>
+            </CardContent>
+          </Card>
+        )}
 
-          {filtered.map((r) => (
-            <div key={r.id} className="review-card p-card">
-              <div className="review-card__header">
-                <div className="review-card__avatar">{r.avatar}</div>
-                <div className="review-card__meta">
-                  <div className="review-card__name">{r.client}</div>
-                  <div className="review-card__sub">{r.service} · {r.date}</div>
+        {filtered.map((r) => (
+          <Card key={r.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
+                  {r.avatar}
                 </div>
-                <div className="review-card__stars">{renderStars(r.rating, '0.9rem')}</div>
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900 dark:text-gray-100">{r.client}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{r.service} · {r.date}</div>
+                </div>
+                <div className="flex">{renderStars(r.rating, 'text-sm')}</div>
               </div>
 
-              <p className="review-card__text">{r.text}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{r.text}</p>
 
               {r.reply && (
-                <div className="review-card__reply">
-                  <div className="review-card__reply-label">Your Reply</div>
-                  <p className="review-card__reply-text">{r.reply}</p>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                  <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Your Reply</div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{r.reply}</p>
                 </div>
               )}
 
               {!r.reply && (
-                <div className="review-card__reply-input">
-                  <input
-                    className="p-form__input"
+                <div className="flex gap-2">
+                  <Input
                     placeholder="Write a reply..."
                     value={replyDraft[r.id] || ''}
                     onChange={(e) => setReplyDraft({ ...replyDraft, [r.id]: e.target.value })}
                     onKeyDown={(e) => e.key === 'Enter' && submitReply(r.id)}
                   />
-                  <button className="p-btn p-btn--ghost p-btn--sm" onClick={() => submitReply(r.id)}>Reply</button>
+                  <Button size="sm" variant="outline" onClick={() => submitReply(r.id)}>Reply</Button>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
