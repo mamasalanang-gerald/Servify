@@ -1,4 +1,4 @@
-const pool = require('../config/DB');
+const pool = require('../../config/DB');
 const bcrypt = require('bcrypt');
 
 const storeRefreshToken = async (userId, refreshToken) => {

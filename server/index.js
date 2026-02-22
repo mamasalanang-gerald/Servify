@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const servicesRoutes = require('./routes/servicesRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/services", servicesRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/categories', categoryRoutes);
 
 app.get('/', (req, res) => {
     res.send('Servify API is running!');

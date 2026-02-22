@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { getUserById, getAllUsers, updateUserType } = require('../models/userModel');
-const { deleteAllUserRefreshTokens, storeRefreshToken } = require('../models/refreshTokenModel');
+const { deleteAllUserRefreshTokens, storeRefreshToken } = require('../models/helper/refreshTokenModel');
 
 const getProfile = async (req, res) => {
   try{
@@ -30,6 +30,8 @@ const promoteRole = async (req, res) => {
     try {
         const user = await updateUserType(req.user.id, 'provider');
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (user.user_type === 'provider') return res.status(400).json({ message: 'User is already a provider' });
 
        
         const payload = { id: user.id, email: user.email, role: user.user_type };
@@ -70,6 +72,9 @@ const changeUserRole = async (req, res) => {
 
         const user = await updateUserType(req.params.id, user_type);
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+         await deleteAllUserRefreshTokens(user.id);
+         
 
         res.status(200).json({
             message: 'User role changed successfully',
