@@ -1,14 +1,19 @@
+import { Card } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { cn } from '../lib/utils';
+
 const BookingCard = ({ booking }) => {
   return (
-    <div className="booking-card">
-      <div className="booking-card__img">
-        <img src={booking.img} alt={booking.title} />
+    <Card className="flex items-center gap-4 p-4 transition-shadow hover:shadow-md">
+      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg">
+        <img src={booking.img} alt={booking.title} className="h-full w-full object-cover" />
       </div>
-      <div className="booking-card__info">
-        <h4 className="booking-card__title">{booking.title}</h4>
-        <p className="booking-card__sub">{booking.subtitle}</p>
-        <div className="booking-card__meta">
-          <span className="booking-card__date">
+      <div className="flex-1 space-y-1">
+        <h4 className="font-semibold text-foreground">{booking.title}</h4>
+        <p className="text-sm text-muted-foreground">{booking.subtitle}</p>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
@@ -17,17 +22,26 @@ const BookingCard = ({ booking }) => {
             </svg>
             {booking.date}
           </span>
-          <span className={`booking-card__status booking-card__status--${booking.status}`}>
+          <Badge 
+            variant={booking.status === 'upcoming' ? 'default' : 'secondary'}
+            className={cn(
+              "capitalize",
+              booking.status === 'upcoming' && "bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-400",
+              booking.status === 'completed' && "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-400"
+            )}
+          >
             {booking.status}
-          </span>
+          </Badge>
         </div>
       </div>
-      <div className="booking-card__right">
-        <div className="booking-card__total-label">Total</div>
-        <div className="booking-card__total">{booking.total}</div>
-        <button className="booking-card__btn">View Details</button>
+      <div className="flex flex-col items-end gap-2">
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">Total</div>
+          <div className="text-xl font-bold text-foreground">{booking.total}</div>
+        </div>
+        <Button variant="outline" size="sm">View Details</Button>
       </div>
-    </div>
+    </Card>
   );
 };
 

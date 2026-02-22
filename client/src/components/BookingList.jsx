@@ -1,5 +1,8 @@
   import React, { useState } from 'react';
   import BookingCard from './BookingCard';
+  import { Card } from './ui/card';
+  import { Button } from './ui/button';
+  import { cn } from '../lib/utils';
 
   import houseCleaningImg from '../assets/images/house_cleaning.jpg'
   import spaImg from '../assets/images/spa_massage.jpg'
@@ -56,25 +59,31 @@
     const bookings = activeTab === 'Upcoming' ? upcomingBookings : historyBookings;
 
     return (
-      <div className="booking-list">
-        <div className="booking-list__tabs">
+      <Card className="p-6">
+        <div className="mb-6 flex gap-2 border-b border-border">
           {['Upcoming', 'History'].map((tab) => (
-            <button
+            <Button
               key={tab}
-              className={`booking-list__tab ${activeTab === tab ? 'active' : ''}`}
+              variant="ghost"
+              className={cn(
+                "relative rounded-none border-b-2 px-4 py-2",
+                activeTab === tab
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
               onClick={() => setActiveTab(tab)}
             >
               {tab}
-            </button>
+            </Button>
           ))}
         </div>
 
-        <div className="booking-list__items">
+        <div className="space-y-4">
           {bookings.map((booking) => (
             <BookingCard key={booking.id} booking={booking} />
           ))}
         </div>
-      </div>
+      </Card>
     );
   };
 

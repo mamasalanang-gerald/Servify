@@ -1,3 +1,5 @@
+import { Card } from './ui/card';
+
 const stats = [
   {
     label: 'Upcoming',
@@ -37,15 +39,17 @@ const stats = [
 
 const DashboardStats = () => {
   return (
-    <div className="dash-stats">
+    <div className="grid gap-6 md:grid-cols-3">
       {stats.map((stat, i) => (
-        <div className="dash-stat-card" key={i}>
-          <div className="dash-stat-card__info">
-            <span className="dash-stat-card__label">{stat.label}</span>
-            <span className="dash-stat-card__value" style={{ color: stat.color }}>{stat.value}</span>
+        <Card key={i} className="p-6 transition-shadow hover:shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
+              <span className="block text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</span>
+            </div>
+            <div className="flex-shrink-0">{stat.icon}</div>
           </div>
-          <div className="dash-stat-card__icon">{stat.icon}</div>
-        </div>
+        </Card>
       ))}
     </div>
   );
