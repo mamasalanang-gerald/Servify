@@ -6,7 +6,7 @@ import ProviderBookings from '../components/ProviderBookings';
 import ProviderEarnings from '../components/ProviderEarnings';
 import ProviderProfile  from '../components/ProviderProfile';
 import ProviderReviews  from '../components/ProviderReviews';
-import './styles/ProviderDashboard.css';
+import './styles/Providerdashboard.css';
 
 const pageMeta = {
   'Dashboard':           { title: 'Dashboard',           sub: "Welcome back, Juan! Here's your overview." },

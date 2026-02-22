@@ -1,6 +1,6 @@
 import React from 'react';
 import LogoutButton from './LogoutButton';
-import '../pages/styles/ProviderSidebar.css';
+import '../pages/styles/Providersidebar.css';
 
 const navItems = [
   {

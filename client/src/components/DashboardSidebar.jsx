@@ -1,7 +1,7 @@
 import React from 'react';
 import LogoutButton from './LogoutButton';
 import useAuth from '../hooks/useAuth';
-import '../pages/styles/DashboardSidebar.css';
+import '../pages/styles/Dashboardsidebar.css';
 
 const navItems = [
   {

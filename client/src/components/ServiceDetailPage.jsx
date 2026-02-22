@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import "./ServiceDetailPage.css";
+import './ServiceDetailPage.css';
 
 export default function ServiceDetailPage({ service, onBack }) {
   const today = new Date();
