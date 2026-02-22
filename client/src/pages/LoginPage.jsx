@@ -1,12 +1,11 @@
 import Navbar from '../components/Navbar';
 import LoginBox from '../components/LoginBox';
-import './styles/login.css';
 
 const LoginPage = () => {
   return (
-    <div className="login-page">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="login-main">
+      <main>
         <LoginBox />
       </main>
     </div>
