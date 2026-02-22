@@ -141,6 +141,8 @@ const logout = async (req, res) => {
             const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET_REFRESH);
             await deleteAllUserRefreshTokens(decoded.id);
         } catch (err) {
+          return res.status(403).json({ message: 'Invalid or expired refresh token' });
+
         }
     }
 

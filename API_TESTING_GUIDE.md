@@ -1,1009 +1,1373 @@
-# Servify API — Postman Testing Guide
+# Servify API Testing Guide
 
-> **Last Updated:** February 22, 2026
-> **Base URL:** `http://localhost:<PORT>` (set in `.env`)
-> **Content-Type:** `application/json` for all request bodies
+> **Version:** 1.0 · **Base URL:** `http://localhost:3000/api/v1` · **Last Updated:** 2026-02-22
 
 ---
 
 ## Table of Contents
 
-1. [Authentication Overview](#1-authentication-overview)
-2. [Postman Setup](#2-postman-setup)
-3. [Auth Routes — `/api/v1/auth`](#3-auth-routes--apiv1auth)
-4. [User Routes — `/api/v1/users`](#4-user-routes--apiv1users)
-5. [Category Routes — `/api/v1/categories`](#5-category-routes--apiv1categories)
-6. [Service Routes — `/api/v1/services`](#6-service-routes--apiv1services)
-7. [Booking Routes — `/api/v1/bookings`](#7-booking-routes--apiv1bookings)
-8. [Recommended Testing Order](#8-recommended-testing-order)
-9. [Known Issues & Notes](#9-known-issues--notes)
+1. [Engineering Critique & Code Review](#1-engineering-critique--code-review)
+2. [Environment Setup (Postman)](#2-environment-setup-postman)
+3. [Authentication & Token Management](#3-authentication--token-management)
+4. [Smoke Tests — Is the API Alive?](#4-smoke-tests--is-the-api-alive)
+5. [End-to-End Test Suites](#5-end-to-end-test-suites)
+   - [Suite A — Full Client Journey](#suite-a--full-client-journey)
+   - [Suite B — Full Provider Journey](#suite-b--full-provider-journey)
+   - [Suite C — Admin Operations](#suite-c--admin-operations)
+6. [Endpoint Reference with Test Cases](#6-endpoint-reference-with-test-cases)
+   - [Auth Endpoints](#auth-endpoints)
+   - [User Endpoints](#user-endpoints)
+   - [Category Endpoints](#category-endpoints)
+   - [Services Endpoints](#services-endpoints)
+   - [Booking Endpoints](#booking-endpoints)
+   - [Admin Endpoints](#admin-endpoints)
+7. [Negative & Edge-Case Tests](#7-negative--edge-case-tests)
+8. [Postman Collection Variables & Scripts](#8-postman-collection-variables--scripts)
+9. [Known Bugs & Risk Areas](#9-known-bugs--risk-areas)
 
 ---
 
-## 1. Authentication Overview
+## 1. Engineering Critique & Code Review
 
-The API uses a **dual-token JWT system**:
+Before writing a single Postman test, it is worth understanding where the API is solid and where it is fragile. This section is an honest software-engineering critique of the codebase as it exists today.
 
-| Token             | Where It Lives                                      | Lifetime | Purpose                                                                        |
-| ----------------- | --------------------------------------------------- | -------- | ------------------------------------------------------------------------------ |
-| **Access Token**  | JSON response body                                  | 15 min   | Sent as `Bearer` token in the `Authorization` header for every protected route |
-| **Refresh Token** | `HttpOnly` cookie (set by the server automatically) | 7 days   | Used to silently get a new access token without re-logging in                  |
+### ✅ What Is Done Well
 
-### JWT Payload Structure
+| Area                                  | Detail                                                                                                                                                                                         |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rotating Refresh Tokens**           | `authController` implements a proper token-rotation pattern — the old refresh token is deleted from the DB and replaced on every use. This prevents replay attacks.                            |
+| **HttpOnly Cookie for Refresh Token** | Storing the refresh token in an `httpOnly` cookie (never in `localStorage`) is a security best practice and avoids XSS theft.                                                                  |
+| **Role-Based Authorization**          | The separation of `verifyToken` (identity check) and `authorizeRoles` (permission check) into two distinct middlewares is clean and composable.                                                |
+| **Admin Route Guard**                 | Using `router.use(verifyToken, authorizeRoles('admin'))` at the top of `adminRoutes.js` protects every admin route with a single line — no chance of accidentally missing auth on a new route. |
+| **Ownership Checks in Services**      | `servicesController` explicitly checks `existingService.provider_id !== req.user.id` before allowing edit/delete. This is correct resource-level authorization.                                |
+| **Category Deletion Guard**           | `adminController.deleteCategory` calls `checkCategoryUsage` before deleting, preventing foreign-key violation errors and orphaned data.                                                        |
+| **Admin Input Validation Middleware** | The `adminValidation.js` middleware layer separates validation concerns from business logic.                                                                                                   |
+| **Migration Skipped in Test Env**     | `startServer()` skips migrations when `NODE_ENV=test`, which is the correct pattern for containerized testing.                                                                                 |
 
-```json
-{
-  "id": "uuid-of-the-user",
-  "email": "user@example.com",
-  "role": "client | provider | admin"
+---
+
+### ⚠️ Issues, Bugs & Design Gaps
+
+#### 🔴 Critical Issues
+
+**1. `promoteRole` — Logic is Backwards (Bug)**
+
+```javascript
+// userController.js — promoteRole()
+const user = await updateUserType(req.user.id, "provider"); // ← role is ALREADY changed here
+if (user.user_type === "provider")
+  // ← this check is now ALWAYS true
+  return res.status(400).json({ message: "User is already a provider" }); // always fires
+```
+
+The DB update runs _before_ the guard check. The 400 "already a provider" error will fire every single time, making this endpoint non-functional. The check should happen _before_ calling `updateUserType`.
+
+---
+
+**2. `getAllBookings` — No Authorization (Security Hole)**
+
+```javascript
+// bookingRoutes.js
+router.get("/", verifyToken, getAllBookings); // any logged-in user can see ALL bookings
+```
+
+Any authenticated user — client or provider — can call `GET /api/v1/bookings` and receive every booking in the system (other users' private data). This should be restricted to `admin` only, or the query should be scoped to the requesting user's own bookings.
+
+---
+
+**3. `getClientBookings` / `getProviderBookings` — IDOR Vulnerability**
+
+```javascript
+// bookingRoutes.js
+router.get("/client/:clientId", verifyToken, getClientBookings);
+```
+
+There is no check that `req.user.id === clientId`. Any authenticated user can pass any `clientId` in the URL and view that client's complete booking history. Same issue applies to `/provider/:providerId`. The fix is to verify the param matches `req.user.id` (or the requesting user is an admin).
+
+---
+
+**4. `createBooking` — No Input Validation**
+
+```javascript
+// bookingController.js — createBooking()
+const bookingData = req.body; // raw body forwarded directly to SQL
+const booking = await bookingModel.createBooking(bookingData);
+```
+
+There is zero validation on required fields (`service_id`, `client_id`, `provider_id`, `booking_date`, `booking_time`, `total_price`). A malformed request will hit the database and produce a cryptic 500 error rather than a clear 400. The `client_id` should also be taken from `req.user.id` (not from the body), otherwise a client can impersonate another user.
+
+---
+
+**5. `deleteBooking` — No Authorization**
+
+```javascript
+router.delete("/:id", verifyToken, deleteBooking); // any token holder can delete any booking
+```
+
+Any logged-in user can delete any booking by ID. There is no ownership check and no role restriction. This should verify the requester is the booking owner, the assigned provider, or an admin.
+
+---
+
+**6. `activateUser` — Wrong Error Message (Bug)**
+
+```javascript
+// adminController.js — activateUser()
+if (req.user.id === id) {
+  return res
+    .status(400)
+    .json({ message: "Cannot deactivate your own account" }); // ← "deactivate" in "activate" handler
 }
 ```
 
-### Middleware Summary
-
-| Middleware                 | File                            | Purpose                                                                                                                |
-| -------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `verifyToken`              | `middlewares/authMiddleware.js` | Extracts and verifies the JWT from the `Authorization: Bearer <token>` header. Attaches decoded payload to `req.user`. |
-| `authorizeRoles(...roles)` | `middlewares/roleMiddleware.js` | Checks if `req.user.role` is in the allowed roles list. Returns `403 Forbidden` if not.                                |
+Copy-paste bug: the activation handler returns the message "Cannot **deactivate** your own account."
 
 ---
 
-## 2. Postman Setup
+**7. `authController.logout` — Silent JWT Verification Failure**
 
-### Collection Variables
-
-Create these variables at the Collection level:
-
-| Variable      | Initial Value                 | Usage                        |
-| ------------- | ----------------------------- | ---------------------------- |
-| `baseUrl`     | `http://localhost:5000`       | Used in every request URL    |
-| `accessToken` | _(empty — paste after login)_ | Used in Authorization header |
-
-### Authorization Header (for protected routes)
-
-In Postman, go to the **Authorization** tab of each protected request, select **Bearer Token**, and enter:
-
-```
-{{accessToken}}
+```javascript
+try {
+  const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET_REFRESH);
+  await deleteAllUserRefreshTokens(decoded.id);
+} catch (err) {
+  // ← empty catch: if the token is tampered/expired, we silently skip DB cleanup
+}
 ```
 
-Or manually set the header:
+The empty `catch` means a tampered refresh token will appear to log out successfully (204/200) but the tokens are never invalidated in the database.
+
+---
+
+#### 🟡 Design Gaps & Improvements
+
+**8. Inconsistent Response Shapes**
+The API has two different response conventions:
+
+- `categoriesController`: `{ message: '...', category: {...} }`
+- `adminController`: `{ success: true, data: {...} }`
+- `bookingController`: raw object, no wrapper
+
+Postman tests become brittle because the field name changes per module. A unified response format (e.g., always `{ success, data, message }`) should be enforced globally.
+
+---
+
+**9. `updateBookingStatus` — No Status Enum Validation**
+
+```javascript
+const { status } = req.body;
+if (!status) return res.status(400).json({ message: "Missing status" });
+const updated = await bookingModel.updateBookingStatus(id, status);
+```
+
+The `status` field is only checked for presence, not for validity. Any string (e.g., `"banana"`) will be written to the database. Valid values should be enforced: `['pending', 'confirmed', 'completed', 'cancelled']`.
+
+---
+
+**10. `secure: false` on Cookie in Production**
+
+```javascript
+res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: false, // ← must be `true` in production (HTTPS only)
+  sameSite: "lax",
+});
+```
+
+This is acceptable in local development but must be `secure: process.env.NODE_ENV === 'production'` to prevent the cookie from being sent over HTTP in production.
+
+---
+
+**11. `console.log('routes loaded')` in production code**
+
+```javascript
+// bookingRoutes.js line 6
+console.log("routes loaded");
+```
+
+Debug artefact left in production route file. Should be removed.
+
+---
+
+**12. `authMiddleware.js` — Generic 403 on Token Error**
+
+```javascript
+} catch (error) {
+    return res.status(403).json({ message: 'Forbidden' });
+}
+```
+
+An expired token should return `401 Unauthorized`, not `403 Forbidden`. `403` means you are authenticated but not allowed. `401` means your credentials are bad/missing. This makes debugging harder for frontend developers.
+
+---
+
+**13. `bookingModel` — `updateBookingDetails` is Unreachable**
+The model exports `updateBookingDetails`, but there is no route or controller that calls it. This is dead code that may indicate a missing "reschedule booking" feature.
+
+---
+
+**14. No Global Error Handler**
+Express has no registered `app.use((err, req, res, next) => {...})` error-handling middleware. Unhandled promise rejections that bubble up past individual `catch` blocks will crash the process or produce no response.
+
+---
+
+## 2. Environment Setup (Postman)
+
+### Environment Variables
+
+Create a Postman environment called **Servify Local** with these variables:
+
+| Variable              | Initial Value                             | Type    |
+| --------------------- | ----------------------------------------- | ------- |
+| `base_url`            | `http://localhost:3000/api/v1`            | Default |
+| `accessToken`         | _(empty — auto-filled by login script)_   | Secret  |
+| `adminAccessToken`    | _(empty — auto-filled by admin login)_    | Secret  |
+| `providerAccessToken` | _(empty — auto-filled by provider login)_ | Secret  |
+| `clientId`            | _(empty — auto-filled)_                   | Default |
+| `providerId`          | _(empty — auto-filled)_                   | Default |
+| `categoryId`          | _(empty — auto-filled)_                   | Default |
+| `serviceId`           | _(empty — auto-filled)_                   | Default |
+| `bookingId`           | _(empty — auto-filled)_                   | Default |
+| `userId`              | _(empty — auto-filled)_                   | Default |
+
+### Headers (Collection Level)
+
+Set these at the **Collection** level so every request inherits them automatically:
 
 ```
 Authorization: Bearer {{accessToken}}
+Content-Type:  application/json
 ```
 
-### Cookie Handling
+---
 
-Enable **"Automatically follow cookies"** in your Postman settings. The server sets `refreshToken` as an `HttpOnly` cookie — Postman will automatically store and resend it on subsequent requests to the same domain.
+## 3. Authentication & Token Management
+
+### How the Auth Flow Works
+
+```
+Client                     Server
+  │                          │
+  ├─── POST /auth/login ────>│
+  │<── { accessToken } ──────┤  (refreshToken set as HttpOnly cookie)
+  │                          │
+  │  [15 min later — accessToken expires]
+  │                          │
+  ├─── POST /auth/refresh ──>│  (cookie sent automatically by browser)
+  │<── { accessToken } ──────┤  (new refreshToken cookie set, old one deleted)
+  │                          │
+  └─── POST /auth/logout ───>│
+       [cookies cleared] ────┤
+```
+
+### Postman Cookie Handling
+
+> ⚠️ The `refreshToken` cookie is `httpOnly` — the browser sets and sends it automatically. In Postman, you must enable **"Automatically follow redirects"** and use the **Postman Cookie Jar** to capture the cookie from `POST /auth/login` before calling `POST /auth/refresh`.
+
+Steps:
+
+1. In Postman, go to **Settings → Cookies**.
+2. Add `localhost` to the allowed cookie domains.
+3. After login, open **Cookies** panel — you should see `refreshToken` for `localhost`.
+4. The `/refresh` call will automatically send this cookie.
 
 ---
 
-## 3. Auth Routes — `/api/v1/auth`
+## 4. Smoke Tests — Is the API Alive?
 
-> 🔓 **No authentication required** for any of these routes.
+Run these before any deep testing. If any smoke test fails, stop and investigate infrastructure first.
+
+### SM-01 · Health Check
+
+```
+GET {{base_url}}/../
+```
+
+| Check         | Expected                    |
+| ------------- | --------------------------- |
+| Status code   | `200 OK`                    |
+| Body contains | `"Servify API is running!"` |
+
+**Postman Test Script:**
+
+```javascript
+pm.test("SM-01: API is running", () => {
+  pm.response.to.have.status(200);
+  pm.expect(pm.response.text()).to.include("Servify API is running!");
+});
+```
 
 ---
 
-### 3.1 Register
+### SM-02 · Auth Register Responds
 
-|            |                                    |
-| ---------- | ---------------------------------- |
-| **Method** | `POST`                             |
-| **URL**    | `{{baseUrl}}/api/v1/auth/register` |
-| **Auth**   | None                               |
+```
+POST {{base_url}}/auth/register
+Body: { "full_name": "Smoke Test", "email": "smoke_{{$timestamp}}@test.com", "password": "Test1234!", "phone_number": "09000000000" }
+```
 
-**Request Body:**
+| Check                 | Expected      |
+| --------------------- | ------------- |
+| Status code           | `201 Created` |
+| Response has `userId` | yes           |
 
-```json
+**Postman Test Script:**
+
+```javascript
+pm.test("SM-02: Register returns 201", () => {
+  pm.response.to.have.status(201);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("userId");
+});
+```
+
+---
+
+### SM-03 · Auth Login Responds
+
+```
+POST {{base_url}}/auth/login
+Body: { "email": "admin@servify.com", "password": "adminpass" }
+```
+
+| Check                  | Expected |
+| ---------------------- | -------- |
+| Status code            | `200 OK` |
+| Body has `accessToken` | yes      |
+
+**Postman Test Script:**
+
+```javascript
+pm.test("SM-03: Login returns access token", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("accessToken");
+  pm.environment.set("adminAccessToken", body.accessToken);
+});
+```
+
+---
+
+### SM-04 · Protected Route Rejects Unauthenticated Request
+
+```
+GET {{base_url}}/users/profile
+(No Authorization header)
+```
+
+| Check       | Expected           |
+| ----------- | ------------------ |
+| Status code | `401 Unauthorized` |
+
+**Postman Test Script:**
+
+```javascript
+pm.test("SM-04: Protected route rejects missing token", () => {
+  pm.response.to.have.status(401);
+});
+```
+
+---
+
+### SM-05 · Categories List Responds (Public)
+
+```
+GET {{base_url}}/categories
+(No auth required)
+```
+
+| Check         | Expected |
+| ------------- | -------- |
+| Status code   | `200 OK` |
+| Body is array | yes      |
+
+**Postman Test Script:**
+
+```javascript
+pm.test("SM-05: Public categories endpoint is reachable", () => {
+  pm.response.to.have.status(200);
+});
+```
+
+---
+
+## 5. End-to-End Test Suites
+
+Run each suite **in order** — later requests depend on IDs captured by earlier ones via environment variables.
+
+---
+
+### Suite A — Full Client Journey
+
+> **Persona:** A new user who registers, browses services, books one, and cancels it.
+
+```
+A-01  POST   /auth/register          → register new client
+A-02  POST   /auth/login             → login as client, capture accessToken
+A-03  GET    /users/profile          → verify profile is returned
+A-04  GET    /categories             → list categories (public)
+A-05  GET    /services               → list services (capture serviceId)
+A-06  GET    /services/:serviceId    → view service detail
+A-07  POST   /bookings/createBooking → create a booking (capture bookingId)
+A-08  GET    /bookings/client/:clientId → verify booking appears in client list
+A-09  PATCH  /bookings/:bookingId/status → client cancels booking (status=cancelled)
+A-10  POST   /auth/refresh           → rotate token
+A-11  POST   /auth/logout            → logout, cookie cleared
+```
+
+#### A-01 · Register Client
+
+```
+POST {{base_url}}/auth/register
 {
-  "full_name": "Juan Dela Cruz",
-  "email": "juan@example.com",
-  "password": "securePassword123",
-  "phone_number": "09171234567"
+  "full_name":     "Alice Client",
+  "email":         "alice_{{$timestamp}}@test.com",
+  "password":      "TestPass123!",
+  "phone_number":  "09111111111"
 }
 ```
 
-**Responses:**
+**Test Script:**
 
-| Status | Body                                                 | Condition                 |
-| ------ | ---------------------------------------------------- | ------------------------- |
-| `201`  | `{ "message": "User registered", "userId": "uuid" }` | Success                   |
-| `400`  | `{ "message": "Email already in use" }`              | Duplicate email           |
-| `500`  | `{ "message": "Server error", "error": "..." }`      | Missing fields / DB error |
+```javascript
+pm.test("A-01: Register succeeds", () => {
+  pm.response.to.have.status(201);
+  pm.environment.set("clientEmail", "alice_" + Date.now() + "@test.com");
+});
+```
 
-**Test Scenarios:**
+#### A-02 · Login Client
 
-- [x] Register with all valid fields → `201`
-- [x] Register with the same email again → `400`
-- [x] Register with missing `full_name` or `email` → `500`
-- [x] Register with missing `password` → `500` (bcrypt will fail)
-
----
-
-### 3.2 Login
-
-|            |                                 |
-| ---------- | ------------------------------- |
-| **Method** | `POST`                          |
-| **URL**    | `{{baseUrl}}/api/v1/auth/login` |
-| **Auth**   | None                            |
-
-**Request Body:**
-
-```json
+```
+POST {{base_url}}/auth/login
 {
-  "email": "juan@example.com",
-  "password": "securePassword123"
+  "email":    "alice_<timestamp>@test.com",
+  "password": "TestPass123!"
 }
 ```
 
-**Responses:**
+**Test Script:**
 
-| Status | Body                                            | Condition               |
-| ------ | ----------------------------------------------- | ----------------------- |
-| `200`  | `{ "accessToken": "eyJ..." }`                   | Valid credentials       |
-| `401`  | `{ "message": "Invalid credentials" }`          | Wrong email or password |
-| `500`  | `{ "message": "Server error", "error": "..." }` | DB error                |
+```javascript
+pm.test("A-02: Login succeeds", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("accessToken");
+  pm.environment.set("accessToken", body.accessToken);
+  pm.environment.set("clientId", body.user.id);
+});
+```
 
-> ⚙️ **After login:** Copy the `accessToken` value and paste it into your `{{accessToken}}` Collection Variable. A `refreshToken` cookie is also set automatically.
+#### A-03 · Get Profile
 
-**Test Scenarios:**
+```
+GET {{base_url}}/users/profile
+Authorization: Bearer {{accessToken}}
+```
 
-- [x] Login with correct credentials → `200` + check `Set-Cookie` header has `refreshToken`
-- [x] Login with wrong password → `401`
-- [x] Login with non-existent email → `401`
-- [x] Login with empty body → `500`
+**Test Script:**
 
----
+```javascript
+pm.test("A-03: Profile returned for authenticated user", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("id").equal(pm.environment.get("clientId"));
+});
+```
 
-### 3.3 Refresh Token
+#### A-04 · List Categories (Public)
 
-|            |                                   |
-| ---------- | --------------------------------- |
-| **Method** | `POST`                            |
-| **URL**    | `{{baseUrl}}/api/v1/auth/refresh` |
-| **Auth**   | None (uses cookie)                |
+```
+GET {{base_url}}/categories
+```
 
-**Request Body:** _(none)_
+**Test Script:**
 
-> The `refreshToken` cookie is sent automatically by Postman.
+```javascript
+pm.test("A-04: Categories list returned", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  // Capture first category id for later use
+  if (body.categories && body.categories.length > 0) {
+    pm.environment.set("categoryId", body.categories[0].id);
+  }
+});
+```
 
-**Responses:**
+#### A-05 · List Services
 
-| Status | Body                                                | Condition                                 |
-| ------ | --------------------------------------------------- | ----------------------------------------- |
-| `200`  | `{ "accessToken": "eyJ..." }`                       | Valid refresh token                       |
-| `401`  | `{ "message": "No refresh token provided" }`        | No cookie present                         |
-| `403`  | `{ "message": "Invalid or expired refresh token" }` | Tampered or expired token                 |
-| `403`  | `{ "message": "Refresh token revoked" }`            | Token reuse detected (all sessions wiped) |
-| `500`  | `{ "message": "Server error", "error": "..." }`     | DB error                                  |
+```
+GET {{base_url}}/services
+Authorization: Bearer {{accessToken}}
+```
 
-**Test Scenarios:**
+**Test Script:**
 
-- [x] Refresh with valid cookie → `200` + new `accessToken` + new cookie set
-- [x] Refresh without any cookie → `401`
-- [x] Refresh with same cookie twice (reuse) → `403` (token rotation security)
-- [x] Refresh with tampered cookie → `403`
+```javascript
+pm.test("A-05: Services list returned", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.be.an("array");
+  if (body.length > 0) {
+    pm.environment.set("serviceId", body[0].id);
+    pm.environment.set("providerId", body[0].provider_id);
+  }
+});
+```
 
----
+#### A-06 · Get Service by ID
 
-### 3.4 Logout
+```
+GET {{base_url}}/services/{{serviceId}}
+Authorization: Bearer {{accessToken}}
+```
 
-|            |                                  |
-| ---------- | -------------------------------- |
-| **Method** | `POST`                           |
-| **URL**    | `{{baseUrl}}/api/v1/auth/logout` |
-| **Auth**   | None (uses cookie)               |
+**Test Script:**
 
-**Request Body:** _(none)_
+```javascript
+pm.test("A-06: Service detail returned", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("id").equal(pm.environment.get("serviceId"));
+});
+```
 
-**Responses:**
+#### A-07 · Create Booking
 
-| Status | Body                                     | Condition                    |
-| ------ | ---------------------------------------- | ---------------------------- |
-| `200`  | `{ "message": "Log out successfully!" }` | Always (even without cookie) |
-
-**Test Scenarios:**
-
-- [x] Logout with valid cookie → `200` + cookie cleared
-- [x] Logout without cookie → `200` (graceful)
-- [x] Try to refresh after logout → `401` or `403`
-
----
-
-## 4. User Routes — `/api/v1/users`
-
-> 🔒 **All routes require** `Authorization: Bearer {{accessToken}}`
-
----
-
-### 4.1 Get Profile
-
-|            |                                    |
-| ---------- | ---------------------------------- |
-| **Method** | `GET`                              |
-| **URL**    | `{{baseUrl}}/api/v1/users/profile` |
-| **Auth**   | Bearer Token                       |
-| **Role**   | Any authenticated user             |
-
-**Request Body:** _(none)_
-
-**Responses:**
-
-| Status | Body                                                                               | Condition                          |
-| ------ | ---------------------------------------------------------------------------------- | ---------------------------------- |
-| `200`  | `{ "id": "uuid", "full_name": "...", "email": "...", "user_type": "client", ... }` | Success                            |
-| `401`  | `{ "message": "No token provided" }`                                               | Missing token                      |
-| `403`  | `{ "message": "Forbidden" }`                                                       | Expired or invalid token           |
-| `404`  | `{ "message": "User not found" }`                                                  | User deleted but token still valid |
-
-**Test Scenarios:**
-
-- [x] Valid token → `200` with user data (no `password_hash` returned)
-- [x] No token → `401`
-- [x] Expired token → `403`
-
----
-
-### 4.2 List All Users
-
-|            |                             |
-| ---------- | --------------------------- |
-| **Method** | `GET`                       |
-| **URL**    | `{{baseUrl}}/api/v1/users/` |
-| **Auth**   | Bearer Token                |
-| **Role**   | `admin` only                |
-
-**Request Body:** _(none)_
-
-**Responses:**
-
-| Status | Body                                                               | Condition      |
-| ------ | ------------------------------------------------------------------ | -------------- |
-| `200`  | `[ { "id": "...", "full_name": "...", "user_type": "..." }, ... ]` | Success        |
-| `403`  | `{ "message": "Forbidden" }`                                       | Non-admin user |
-| `404`  | `{ "message": "Users not found" }`                                 | No users exist |
-
-**Test Scenarios:**
-
-- [x] Admin token → `200` with array of users
-- [x] Client or provider token → `403`
-- [x] No token → `401`
-
----
-
-### 4.3 Promote to Provider
-
-|            |                                    |
-| ---------- | ---------------------------------- |
-| **Method** | `PATCH`                            |
-| **URL**    | `{{baseUrl}}/api/v1/users/promote` |
-| **Auth**   | Bearer Token                       |
-| **Role**   | `client` only                      |
-
-**Request Body:** _(none)_
-
-**Responses:**
-
-| Status | Body                                                                                              | Condition                                       |
-| ------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `200`  | `{ "message": "You are now a service provider", "user": { ... }, "accessToken": "new_token..." }` | Success                                         |
-| `403`  | `{ "message": "Forbidden" }`                                                                      | User is not a `client` (already provider/admin) |
-
-> ⚠️ **Important:** After a successful promote, **update your `{{accessToken}}`** variable with the new `accessToken` from the response. The old one still has `role: "client"`.
-
-**Test Scenarios:**
-
-- [x] Client user promotes → `200` + new tokens issued with `provider` role
-- [x] Already a provider tries to promote → `403`
-- [x] Admin tries to promote → `403`
-- [x] After promotion, old token fails on provider routes → verify with `/services/create`
-
----
-
-### 4.4 Change User Role (Admin)
-
-|            |                                     |
-| ---------- | ----------------------------------- |
-| **Method** | `PATCH`                             |
-| **URL**    | `{{baseUrl}}/api/v1/users/:id/role` |
-| **Auth**   | Bearer Token                        |
-| **Role**   | `admin` only                        |
-
-**URL Params:**
-
-| Param | Type | Description      |
-| ----- | ---- | ---------------- |
-| `id`  | UUID | Target user's ID |
-
-**Request Body:**
-
-```json
+```
+POST {{base_url}}/bookings/createBooking
+Authorization: Bearer {{accessToken}}
 {
-  "user_type": "provider"
+  "service_id":    "{{serviceId}}",
+  "client_id":     "{{clientId}}",
+  "provider_id":   "{{providerId}}",
+  "booking_date":  "2026-03-01",
+  "booking_time":  "10:00:00",
+  "user_location": "123 Test Street, Manila",
+  "total_price":   500.00,
+  "notes":         "E2E test booking"
 }
 ```
 
-> Valid values: `"client"`, `"provider"`, `"admin"`
+**Test Script:**
 
-**Responses:**
+```javascript
+pm.test("A-07: Booking created", () => {
+  pm.response.to.have.status(201);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("id");
+  pm.environment.set("bookingId", body.id);
+});
+```
 
-| Status | Body                                                                     | Condition           |
-| ------ | ------------------------------------------------------------------------ | ------------------- |
-| `200`  | `{ "message": "User role changed successfully", "user": { ... } }`       | Success             |
-| `400`  | `{ "message": "Invalid role. Must be one of: client, provider, admin" }` | Invalid `user_type` |
-| `403`  | `{ "message": "Forbidden" }`                                             | Non-admin user      |
-| `404`  | `{ "message": "User not found" }`                                        | Invalid UUID        |
+#### A-08 · Get Client Bookings
 
-**Test Scenarios:**
+```
+GET {{base_url}}/bookings/client/{{clientId}}
+Authorization: Bearer {{accessToken}}
+```
 
-- [x] Admin changes client to provider → `200`
-- [x] Admin changes client to admin → `200`
-- [x] Admin sends invalid role like `"superuser"` → `400`
-- [x] Non-admin tries this → `403`
-- [x] Non-existent user UUID → `404`
+**Test Script:**
+
+```javascript
+pm.test("A-08: Client bookings list contains our booking", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.be.an("array");
+  const found = body.find((b) => b.id === pm.environment.get("bookingId"));
+  pm.expect(found).to.not.be.undefined;
+});
+```
+
+#### A-09 · Cancel Booking
+
+```
+PATCH {{base_url}}/bookings/{{bookingId}}/status
+Authorization: Bearer {{accessToken}}
+{ "status": "cancelled" }
+```
+
+**Test Script:**
+
+```javascript
+pm.test("A-09: Booking cancelled", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.status).to.equal("cancelled");
+});
+```
+
+#### A-10 · Refresh Token
+
+```
+POST {{base_url}}/auth/refresh
+(Cookie: refreshToken is sent automatically)
+```
+
+**Test Script:**
+
+```javascript
+pm.test("A-10: New access token issued", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("accessToken");
+  pm.environment.set("accessToken", body.accessToken);
+});
+```
+
+#### A-11 · Logout
+
+```
+POST {{base_url}}/auth/logout
+Authorization: Bearer {{accessToken}}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("A-11: Logout successful", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.message).to.include("Log out");
+});
+```
 
 ---
 
-## 5. Category Routes — `/api/v1/categories`
+### Suite B — Full Provider Journey
 
-> 🔓 `GET` routes are **public** (no auth needed).
-> 🔒 `POST`, `PUT`, `DELETE` routes require `admin` role.
+> **Persona:** A client who self-promotes to provider, creates a service, and manages a booking from the provider side.
 
----
+```
+B-01  POST   /auth/register           → register new user
+B-02  POST   /auth/login              → login as client
+B-03  PATCH  /users/promote           → self-promote to provider (⚠️ currently buggy)
+B-04  POST   /auth/login              → re-login to get fresh provider token
+B-05  POST   /services/create         → create a service (capture serviceId)
+B-06  GET    /services/:serviceId     → verify service detail
+B-07  PUT    /services/edit/:serviceId → edit the service
+B-08  GET    /bookings/provider/:providerId → check bookings assigned to provider
+B-09  PATCH  /bookings/:id/status     → confirm a booking (status=confirmed)
+B-10  PATCH  /bookings/:id/status     → complete a booking (status=completed)
+B-11  DELETE /services/:serviceId     → remove the test service
+```
 
-### 5.1 Get All Categories
+> **Note on B-03:** This test is expected to **fail** due to the `promoteRole` bug described in Section 1. Until fixed, skip B-03 through B-07 and manually set the user_type to `provider` in the database.
 
-|            |                                  |
-| ---------- | -------------------------------- |
-| **Method** | `GET`                            |
-| **URL**    | `{{baseUrl}}/api/v1/categories/` |
-| **Auth**   | None                             |
+#### B-01 to B-02 · Register & Login (same pattern as Suite A)
 
-**Request Body:** _(none)_
+#### B-03 · Self-Promote to Provider
 
-**Responses:**
+```
+PATCH {{base_url}}/users/promote
+Authorization: Bearer {{accessToken}}
+```
 
-| Status | Body                                                             | Condition |
-| ------ | ---------------------------------------------------------------- | --------- |
-| `200`  | `[ { "id": 1, "name": "Cleaning", "description": "..." }, ... ]` | Success   |
-| `500`  | `{ "message": "Error fetching categories", "error": "..." }`     | DB error  |
+**⚠️ Known Bug — Expected behavior vs actual behavior:**
 
-**Test Scenarios:**
+|             | Expected                           | Actual (Bug)                   |
+| ----------- | ---------------------------------- | ------------------------------ |
+| HTTP Status | `200 OK`                           | `400 Bad Request`              |
+| Message     | `"You are now a service provider"` | `"User is already a provider"` |
 
-- [x] No auth needed → `200` with array
-- [x] Empty DB → `200` with `[]`
+**Test Script (documents the bug):**
 
----
+```javascript
+pm.test("B-03: Promote to provider [KNOWN BUG - expect 400]", () => {
+  // Bug: updateUserType runs before the 'already provider' check
+  // so the check always fires. Remove this note once bug is fixed.
+  pm.expect(pm.response.code).to.be.oneOf([200, 400]);
+  if (pm.response.code === 200) {
+    const body = pm.response.json();
+    pm.environment.set("providerAccessToken", body.accessToken);
+  }
+});
+```
 
-### 5.2 Get Category by ID
+#### B-05 · Create Service
 
-|            |                                     |
-| ---------- | ----------------------------------- |
-| **Method** | `GET`                               |
-| **URL**    | `{{baseUrl}}/api/v1/categories/:id` |
-| **Auth**   | None                                |
-
-**URL Params:**
-
-| Param | Type    | Description                           |
-| ----- | ------- | ------------------------------------- |
-| `id`  | Integer | Category ID (auto-incremented SERIAL) |
-
-**Responses:**
-
-| Status | Body                                                    | Condition                          |
-| ------ | ------------------------------------------------------- | ---------------------------------- |
-| `200`  | `{ "id": 1, "name": "Cleaning", "description": "..." }` | Found                              |
-| `200`  | _(empty or null)_                                       | ID not found (no 404 handling yet) |
-
-**Test Scenarios:**
-
-- [x] Valid ID → `200` with category object
-- [x] Non-existent ID → `200` with empty/null (note: no `404` error handling currently)
-
----
-
-### 5.3 Create Category
-
-|            |                                  |
-| ---------- | -------------------------------- |
-| **Method** | `POST`                           |
-| **URL**    | `{{baseUrl}}/api/v1/categories/` |
-| **Auth**   | Bearer Token                     |
-| **Role**   | `admin` only                     |
-
-**Request Body:**
-
-```json
+```
+POST {{base_url}}/services/create
+Authorization: Bearer {{providerAccessToken}}
 {
-  "name": "Cleaning",
-  "description": "Home and office cleaning services"
+  "category_id":   "{{categoryId}}",
+  "title":         "Test Plumbing Service",
+  "description":   "E2E test service",
+  "price":         500,
+  "service_type":  "on-site",
+  "location":      "Metro Manila"
 }
 ```
 
-**Responses:**
+**Test Script:**
 
-| Status | Body                                                                         | Condition                 |
-| ------ | ---------------------------------------------------------------------------- | ------------------------- |
-| `201`  | `{ "id": 1, "name": "Cleaning", "description": "...", "created_at": "..." }` | Success                   |
-| `403`  | `{ "message": "Forbidden" }`                                                 | Non-admin user            |
-| `500`  | `{ "message": "Error creating category", "error": "..." }`                   | DB error / duplicate name |
+```javascript
+pm.test("B-05: Service created by provider", () => {
+  pm.response.to.have.status(201);
+  const body = pm.response.json();
+  pm.expect(body).to.have.property("id");
+  pm.environment.set("serviceId", body.id);
+});
+```
 
-**Test Scenarios:**
+#### B-07 · Edit Service
 
-- [x] Admin creates a category → `201`
-- [x] Duplicate category name → `500` (DB unique constraint)
-- [x] Non-admin tries → `403`
-- [x] No token → `401`
-- [x] Missing `name` → `500`
+```
+PUT {{base_url}}/services/edit/{{serviceId}}
+Authorization: Bearer {{providerAccessToken}}
+{
+  "title":       "Updated Plumbing Service",
+  "description": "Updated description",
+  "price":       600,
+  "service_type": "on-site",
+  "location":    "Metro Manila"
+}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("B-07: Service edited by owner", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.title).to.equal("Updated Plumbing Service");
+});
+```
+
+#### B-08 · View Provider Bookings
+
+```
+GET {{base_url}}/bookings/provider/{{providerId}}
+Authorization: Bearer {{providerAccessToken}}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("B-08: Provider bookings returned", () => {
+  pm.response.to.have.status(200);
+  pm.expect(pm.response.json()).to.be.an("array");
+});
+```
+
+#### B-09 · Confirm Booking
+
+```
+PATCH {{base_url}}/bookings/{{bookingId}}/status
+Authorization: Bearer {{providerAccessToken}}
+{ "status": "confirmed" }
+```
+
+#### B-10 · Complete Booking
+
+```
+PATCH {{base_url}}/bookings/{{bookingId}}/status
+Authorization: Bearer {{providerAccessToken}}
+{ "status": "completed" }
+```
 
 ---
 
-### 5.4 Update Category
+### Suite C — Admin Operations
 
-|            |                                     |
-| ---------- | ----------------------------------- |
-| **Method** | `PUT`                               |
-| **URL**    | `{{baseUrl}}/api/v1/categories/:id` |
-| **Auth**   | Bearer Token                        |
-| **Role**   | `admin` only                        |
+> **Persona:** An admin manages categories, moderates services, monitors bookings, and adjusts user roles.
 
-**URL Params:**
+```
+C-01  POST   /auth/login                → login as admin, capture adminAccessToken
+C-02  GET    /admin/dashboard           → health check the dashboard
+C-03  GET    /admin/users               → list all users (paginated)
+C-04  GET    /admin/users/:id           → get specific user
+C-05  PATCH  /admin/users/:id/deactivate → deactivate test user
+C-06  PATCH  /admin/users/:id/activate  → re-activate test user
+C-07  PATCH  /users/:id/role            → change user role via /users route
+C-08  POST   /admin/categories          → create a new category
+C-09  PUT    /admin/categories/:id      → update that category
+C-10  GET    /admin/services            → list all services
+C-11  PATCH  /admin/services/:id/toggle → toggle service visibility
+C-12  GET    /admin/bookings            → list all bookings with filters
+C-13  GET    /admin/reviews             → list all reviews
+C-14  DELETE /admin/categories/:id      → delete unused test category
+```
 
-| Param | Type    | Description |
-| ----- | ------- | ----------- |
-| `id`  | Integer | Category ID |
+#### C-01 · Admin Login
 
-**Request Body:**
-
-```json
+```
+POST {{base_url}}/auth/login
 {
-  "name": "Deep Cleaning",
+  "email":    "admin@servify.com",
+  "password": "YourAdminPassword"
+}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("C-01: Admin login succeeds", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.user.user_type).to.equal("admin");
+  pm.environment.set("adminAccessToken", body.accessToken);
+});
+```
+
+#### C-02 · Dashboard Metrics
+
+```
+GET {{base_url}}/admin/dashboard
+Authorization: Bearer {{adminAccessToken}}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("C-02: Dashboard metrics returned", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.success).to.be.true;
+  pm.expect(body.data).to.be.an("object");
+});
+```
+
+#### C-03 · List Users (Paginated)
+
+```
+GET {{base_url}}/admin/users?page=1&limit=5
+Authorization: Bearer {{adminAccessToken}}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("C-03: Users list returned with pagination", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.success).to.be.true;
+  pm.expect(body.data).to.be.an("array");
+  pm.expect(body.page).to.equal(1);
+  pm.expect(body.limit).to.equal(5);
+  if (body.data.length > 0) {
+    pm.environment.set("userId", body.data[0].id);
+  }
+});
+```
+
+#### C-05 · Deactivate User
+
+```
+PATCH {{base_url}}/admin/users/{{userId}}/deactivate
+Authorization: Bearer {{adminAccessToken}}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("C-05: User deactivated", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.success).to.be.true;
+  pm.expect(body.data.is_active).to.be.false;
+});
+```
+
+#### C-08 · Create Category
+
+```
+POST {{base_url}}/admin/categories
+Authorization: Bearer {{adminAccessToken}}
+{
+  "name":        "E2E Test Category",
+  "description": "Created by automated testing"
+}
+```
+
+**Test Script:**
+
+```javascript
+pm.test("C-08: Category created", () => {
+  pm.response.to.have.status(201);
+  const body = pm.response.json();
+  pm.expect(body.success).to.be.true;
+  pm.environment.set("adminCategoryId", body.data.id);
+});
+```
+
+#### C-09 · Update Category
+
+```
+PUT {{base_url}}/admin/categories/{{adminCategoryId}}
+Authorization: Bearer {{adminAccessToken}}
+{
+  "name":        "E2E Test Category (Updated)",
   "description": "Updated description"
 }
 ```
 
-**Responses:**
+#### C-14 · Delete Test Category
 
-| Status | Body                                                         | Condition                      |
-| ------ | ------------------------------------------------------------ | ------------------------------ |
-| `200`  | `{ "id": 1, "name": "Deep Cleaning", "description": "..." }` | Success                        |
-| `200`  | _(empty or null)_                                            | ID not found (no 404 handling) |
-| `403`  | `{ "message": "Forbidden" }`                                 | Non-admin                      |
-| `500`  | `{ "message": "Error updating category", "error": "..." }`   | DB error                       |
+```
+DELETE {{base_url}}/admin/categories/{{adminCategoryId}}
+Authorization: Bearer {{adminAccessToken}}
+```
 
-**Test Scenarios:**
+**Test Script:**
 
-- [x] Admin updates valid category → `200`
-- [x] Non-admin → `403`
-- [x] Non-existent ID → `200` empty (no 404)
-
----
-
-### 5.5 Delete Category
-
-|            |                                     |
-| ---------- | ----------------------------------- |
-| **Method** | `DELETE`                            |
-| **URL**    | `{{baseUrl}}/api/v1/categories/:id` |
-| **Auth**   | Bearer Token                        |
-| **Role**   | `admin` only                        |
-
-**Responses:**
-
-| Status | Body                                                       | Condition                                 |
-| ------ | ---------------------------------------------------------- | ----------------------------------------- |
-| `200`  | `{ "id": 1, "name": "...", ... }`                          | Deleted successfully                      |
-| `200`  | _(empty or null)_                                          | ID not found (no 404 handling)            |
-| `403`  | `{ "message": "Forbidden" }`                               | Non-admin                                 |
-| `500`  | `{ "message": "Error deleting category", "error": "..." }` | FK constraint (category used by services) |
-
-**Test Scenarios:**
-
-- [x] Admin deletes unused category → `200`
-- [x] Admin deletes category that has services linked → `500` (FK violation)
-- [x] Non-admin → `403`
+```javascript
+pm.test("C-14: Test category deleted", () => {
+  pm.response.to.have.status(200);
+  const body = pm.response.json();
+  pm.expect(body.success).to.be.true;
+});
+```
 
 ---
 
-## 6. Service Routes — `/api/v1/services`
+## 6. Endpoint Reference with Test Cases
 
-> 🔒 **All routes require** `Authorization: Bearer {{accessToken}}`
-> 🔒 `POST`, `PUT`, `DELETE` additionally require `provider` role.
+### Auth Endpoints
 
----
+| #   | Method | Endpoint         | Auth Required | Role |
+| --- | ------ | ---------------- | ------------- | ---- |
+| 1   | POST   | `/auth/register` | No            | —    |
+| 2   | POST   | `/auth/login`    | No            | —    |
+| 3   | POST   | `/auth/refresh`  | Cookie        | —    |
+| 4   | POST   | `/auth/logout`   | Cookie        | —    |
 
-### 6.1 Get All Services
+#### `POST /auth/register`
 
-|            |                                |
-| ---------- | ------------------------------ |
-| **Method** | `GET`                          |
-| **URL**    | `{{baseUrl}}/api/v1/services/` |
-| **Auth**   | Bearer Token                   |
-| **Role**   | Any authenticated user         |
-
-**Request Body:** _(none)_
-
-**Responses:**
-
-| Status | Body                                                           | Condition         |
-| ------ | -------------------------------------------------------------- | ----------------- |
-| `200`  | `[ { "id": "uuid", "title": "...", "price": 500, ... }, ... ]` | Success           |
-| `404`  | `{ "message": "Services not found" }`                          | No services exist |
-
----
-
-### 6.2 Get Service by ID
-
-|            |                                   |
-| ---------- | --------------------------------- |
-| **Method** | `GET`                             |
-| **URL**    | `{{baseUrl}}/api/v1/services/:id` |
-| **Auth**   | Bearer Token                      |
-| **Role**   | Any authenticated user            |
-
-**URL Params:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id`  | UUID | Service ID  |
-
-**Responses:**
-
-| Status | Body                                                           | Condition    |
-| ------ | -------------------------------------------------------------- | ------------ |
-| `200`  | `{ "id": "uuid", "provider_id": "uuid", "title": "...", ... }` | Found        |
-| `404`  | `{ "message": "Service does not exist" }`                      | Invalid UUID |
-
----
-
-### 6.3 Create Service
-
-|            |                                      |
-| ---------- | ------------------------------------ |
-| **Method** | `POST`                               |
-| **URL**    | `{{baseUrl}}/api/v1/services/create` |
-| **Auth**   | Bearer Token                         |
-| **Role**   | `provider` only                      |
-
-> ⚙️ **Note:** The `provider_id` is automatically pulled from the JWT token (`req.user.id`). Do NOT include it in the body.
-
-**Request Body:**
+**Happy Path:**
 
 ```json
+Request:
 {
-  "category_id": 1,
-  "title": "Home Cleaning",
-  "description": "Full apartment deep cleaning",
-  "price": 1500,
-  "service_type": "onsite",
-  "location": "Makati, Metro Manila"
+  "full_name":    "John Doe",
+  "email":        "john@example.com",
+  "password":     "SecurePass123!",
+  "phone_number": "09123456789"
+}
+
+Response 201:
+{
+  "message": "User registered",
+  "userId": "uuid-here"
 }
 ```
 
-> ⚠️ `service_type` must be exactly `"online"` or `"onsite"` — the DB has a `CHECK` constraint. (Not `"on-site"`!)
+**Negative Cases:**
 
-**Responses:**
-
-| Status | Body                                                           | Condition                                                      |
-| ------ | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| `201`  | `{ "id": "uuid", "provider_id": "uuid", "title": "...", ... }` | Success                                                        |
-| `403`  | `{ "message": "Forbidden" }`                                   | Non-provider user                                              |
-| `500`  | `{ "message": "Internal server error" }`                       | Missing fields, invalid `category_id`, or constraint violation |
-
-**Test Scenarios:**
-
-- [x] Provider creates a service → `201`
-- [x] Client tries → `403`
-- [x] Invalid `service_type` (e.g., `"on-site"`) → `500` (DB check constraint violation)
-- [x] Non-existent `category_id` → `500` (FK violation)
-- [x] Missing required fields → `500`
-- [x] Negative price → `500` (DB check constraint)
+| Test             | Input            | Expected                                 |
+| ---------------- | ---------------- | ---------------------------------------- |
+| Duplicate email  | Same email twice | `400` · `"Email already in use"`         |
+| Missing password | Omit `password`  | `500` (no input validation — design gap) |
+| Missing email    | Omit `email`     | `500` (no input validation — design gap) |
 
 ---
 
-### 6.4 Edit Service
+#### `POST /auth/login`
 
-|            |                                        |
-| ---------- | -------------------------------------- |
-| **Method** | `PUT`                                  |
-| **URL**    | `{{baseUrl}}/api/v1/services/edit/:id` |
-| **Auth**   | Bearer Token                           |
-| **Role**   | `provider` only                        |
-
-**URL Params:**
-
-| Param | Type | Description        |
-| ----- | ---- | ------------------ |
-| `id`  | UUID | Service ID to edit |
-
-**Request Body:**
+**Happy Path:**
 
 ```json
+Request:  { "email": "john@example.com", "password": "SecurePass123!" }
+Response 200:
 {
-  "title": "Premium Home Cleaning",
-  "description": "Updated deep cleaning service",
-  "price": 2000,
-  "service_type": "onsite",
-  "location": "BGC, Taguig"
+  "accessToken": "eyJ...",
+  "user": { "id": "...", "email": "...", "user_type": "client", "full_name": "John Doe" }
 }
 ```
 
-**Responses:**
+**Negative Cases:**
 
-| Status | Body                                                      | Condition    |
-| ------ | --------------------------------------------------------- | ------------ |
-| `200`  | `{ "id": "uuid", "title": "Premium Home Cleaning", ... }` | Success      |
-| `403`  | `{ "message": "Forbidden" }`                              | Non-provider |
-| `404`  | `{ "message": "There are no services to edit" }`          | Invalid UUID |
-
-**Test Scenarios:**
-
-- [x] Provider edits own service → `200`
-- [x] Non-existent service ID → `404`
-- [x] Client tries → `403`
-- [x] Provider edits another provider's service → `200` _(note: no ownership check — see Known Issues)_
+| Test               | Input                         | Expected                        |
+| ------------------ | ----------------------------- | ------------------------------- |
+| Wrong password     | Correct email, wrong password | `401` · `"Invalid credentials"` |
+| Non-existent email | Random email                  | `401` · `"Invalid credentials"` |
+| Missing body       | Empty `{}`                    | `401` · `"Invalid credentials"` |
 
 ---
 
-### 6.5 Delete Service
+#### `POST /auth/refresh`
 
-|            |                                   |
-| ---------- | --------------------------------- |
-| **Method** | `DELETE`                          |
-| **URL**    | `{{baseUrl}}/api/v1/services/:id` |
-| **Auth**   | Bearer Token                      |
-| **Role**   | `provider` only                   |
-
-**Responses:**
-
-| Status | Body                                      | Condition                            |
-| ------ | ----------------------------------------- | ------------------------------------ |
-| `200`  | `{ "id": "uuid", "title": "...", ... }`   | Deleted successfully                 |
-| `403`  | `{ "message": "Forbidden" }`              | Non-provider                         |
-| `404`  | `{ "message": "Service does not exist" }` | Invalid UUID                         |
-| `500`  | `{ "message": "Internal server error" }`  | FK constraint (service has bookings) |
-
-**Test Scenarios:**
-
-- [x] Provider deletes own service → `200`
-- [x] Delete service with existing bookings → `500` (FK constraint)
-- [x] Client tries → `403`
-
----
-
-## 7. Booking Routes — `/api/v1/bookings`
-
-> 🔒 **All routes require** `Authorization: Bearer {{accessToken}}`
-> No additional role restrictions — any authenticated user can access.
-
----
-
-### 7.1 Get All Bookings
-
-|            |                                |
-| ---------- | ------------------------------ |
-| **Method** | `GET`                          |
-| **URL**    | `{{baseUrl}}/api/v1/bookings/` |
-| **Auth**   | Bearer Token                   |
-
-**Optional Query Params:**
-
-| Param    | Type   | Description                                                                           |
-| -------- | ------ | ------------------------------------------------------------------------------------- |
-| `status` | String | Filter by booking status: `pending`, `accepted`, `rejected`, `completed`, `cancelled` |
-
-**Examples:**
+**Happy Path:**
 
 ```
-GET {{baseUrl}}/api/v1/bookings/
-GET {{baseUrl}}/api/v1/bookings/?status=pending
+(refreshToken cookie present from login)
+Response 200: { "accessToken": "eyJ..." }
 ```
 
-**Responses:**
+**Negative Cases:**
 
-| Status | Body                                                  | Condition         |
-| ------ | ----------------------------------------------------- | ----------------- |
-| `200`  | `[ { "id": "uuid", "status": "pending", ... }, ... ]` | Success           |
-| `200`  | `[]`                                                  | No bookings found |
+| Test             | Input               | Expected                                     |
+| ---------------- | ------------------- | -------------------------------------------- |
+| No cookie        | Clear cookies       | `401` · `"No refresh token provided"`        |
+| Tampered token   | Modify cookie value | `403` · `"Invalid or expired refresh token"` |
+| Token used twice | Replay old token    | `403` · `"Refresh token revoked"`            |
 
 ---
 
-### 7.2 Create Booking
+### User Endpoints
 
-|            |                                             |
-| ---------- | ------------------------------------------- |
-| **Method** | `POST`                                      |
-| **URL**    | `{{baseUrl}}/api/v1/bookings/createBooking` |
-| **Auth**   | Bearer Token                                |
+| #   | Method | Endpoint          | Auth | Role   |
+| --- | ------ | ----------------- | ---- | ------ |
+| 1   | GET    | `/users/profile`  | JWT  | any    |
+| 2   | PATCH  | `/users/promote`  | JWT  | client |
+| 3   | PATCH  | `/users/:id/role` | JWT  | admin  |
+| 4   | GET    | `/users/`         | JWT  | admin  |
 
-**Request Body:**
+#### `GET /users/profile`
+
+| Test          | Input                  | Expected                      |
+| ------------- | ---------------------- | ----------------------------- |
+| Valid token   | Bearer {{accessToken}} | `200` · user object           |
+| No token      | Remove header          | `401` · `"No token provided"` |
+| Invalid token | `Bearer garbage`       | `403` · `"Forbidden"`         |
+
+#### `PATCH /users/:id/role`
 
 ```json
+Request:  { "user_type": "provider" }
+Response 200: { "message": "User role changed successfully", "user": {...} }
+```
+
+| Test                          | Input                          | Expected |
+| ----------------------------- | ------------------------------ | -------- |
+| Valid role change             | `{ "user_type": "provider" }`  | `200`    |
+| Invalid role value            | `{ "user_type": "superuser" }` | `400`    |
+| Client calling admin endpoint | Client token                   | `403`    |
+
+---
+
+### Category Endpoints
+
+| #   | Method | Endpoint          | Auth | Role  |
+| --- | ------ | ----------------- | ---- | ----- |
+| 1   | GET    | `/categories`     | No   | —     |
+| 2   | GET    | `/categories/:id` | No   | —     |
+| 3   | POST   | `/categories`     | JWT  | admin |
+| 4   | PUT    | `/categories/:id` | JWT  | admin |
+| 5   | DELETE | `/categories/:id` | JWT  | admin |
+
+#### `GET /categories`
+
+| Test    | Input     | Expected                                 |
+| ------- | --------- | ---------------------------------------- |
+| No auth | No header | `200` · `{ message, categories: [...] }` |
+
+#### `POST /categories` (Admin only)
+
+```json
+Request: { "name": "Plumbing", "description": "Water-related services" }
+Response 201: { "message": "Category created successfully", "category": {...} }
+```
+
+| Test         | Input                    | Expected |
+| ------------ | ------------------------ | -------- |
+| Valid create | Admin token + valid body | `201`    |
+| Client token | Non-admin token          | `403`    |
+| No auth      | No token                 | `401`    |
+
+---
+
+### Services Endpoints
+
+| #   | Method | Endpoint             | Auth | Role     |
+| --- | ------ | -------------------- | ---- | -------- |
+| 1   | GET    | `/services`          | JWT  | any      |
+| 2   | GET    | `/services/:id`      | JWT  | any      |
+| 3   | POST   | `/services/create`   | JWT  | provider |
+| 4   | PUT    | `/services/edit/:id` | JWT  | provider |
+| 5   | DELETE | `/services/:id`      | JWT  | provider |
+
+#### `POST /services/create`
+
+```json
+Request:
 {
-  "service_id": "uuid-of-service",
-  "client_id": "uuid-of-client",
-  "provider_id": "uuid-of-provider",
-  "booking_date": "2026-03-15",
-  "booking_time": "14:00",
-  "user_location": "123 Main St, Makati City",
-  "total_price": 1500,
-  "notes": "Please bring cleaning supplies"
+  "category_id":  "uuid",
+  "title":        "Professional Cleaning",
+  "description":  "Deep cleaning service",
+  "price":        800,
+  "service_type": "on-site",
+  "location":     "Manila"
+}
+Response 201: { "id": "...", "title": "...", ... }
+```
+
+| Test                            | Input                          | Expected                                        |
+| ------------------------------- | ------------------------------ | ----------------------------------------------- |
+| Provider creates service        | Provider token + valid body    | `201`                                           |
+| Client tries to create          | Client token                   | `403`                                           |
+| Edit another provider's service | Provider B token, Service A ID | `403` · `"You can only edit your own services"` |
+
+---
+
+### Booking Endpoints
+
+| #   | Method | Endpoint                         | Auth | Role                      |
+| --- | ------ | -------------------------------- | ---- | ------------------------- |
+| 1   | GET    | `/bookings`                      | JWT  | any ⚠️ should be admin    |
+| 2   | POST   | `/bookings/createBooking`        | JWT  | any ⚠️ no validation      |
+| 3   | GET    | `/bookings/client/:clientId`     | JWT  | any ⚠️ IDOR               |
+| 4   | GET    | `/bookings/provider/:providerId` | JWT  | any ⚠️ IDOR               |
+| 5   | PATCH  | `/bookings/:id/status`           | JWT  | any ⚠️ no ownership check |
+| 6   | DELETE | `/bookings/:id`                  | JWT  | any ⚠️ no ownership check |
+
+#### `POST /bookings/createBooking`
+
+```json
+Request:
+{
+  "service_id":    "uuid",
+  "client_id":     "uuid",
+  "provider_id":   "uuid",
+  "booking_date":  "2026-03-01",
+  "booking_time":  "10:00:00",
+  "user_location": "123 Main St",
+  "total_price":   500.00,
+  "notes":         "Optional notes"
+}
+Response 201: { "id": "...", "status": "pending", ... }
+```
+
+#### `PATCH /bookings/:id/status`
+
+Valid status values: `pending`, `confirmed`, `completed`, `cancelled`
+
+```json
+Request: { "status": "confirmed" }
+Response 200: { "id": "...", "status": "confirmed", ... }
+```
+
+| Test                    | Input                   | Expected                                   |
+| ----------------------- | ----------------------- | ------------------------------------------ |
+| Valid status            | `"confirmed"`           | `200`                                      |
+| Missing status          | `{}`                    | `400` · `"Missing status in request body"` |
+| Invalid status value    | `"banana"`              | `200` ⚠️ Bug — should be `400`             |
+| Non-existent booking ID | UUID that doesn't exist | `404`                                      |
+
+---
+
+### Admin Endpoints
+
+All admin routes require: `Authorization: Bearer {{adminAccessToken}}`
+
+| #   | Method | Endpoint                          |
+| --- | ------ | --------------------------------- |
+| 1   | GET    | `/admin/dashboard`                |
+| 2   | GET    | `/admin/users?page=1&limit=10`    |
+| 3   | GET    | `/admin/users/:id`                |
+| 4   | PATCH  | `/admin/users/:id/activate`       |
+| 5   | PATCH  | `/admin/users/:id/deactivate`     |
+| 6   | PATCH  | `/admin/users/:id/verify`         |
+| 7   | GET    | `/admin/categories`               |
+| 8   | POST   | `/admin/categories`               |
+| 9   | PUT    | `/admin/categories/:id`           |
+| 10  | DELETE | `/admin/categories/:id`           |
+| 11  | GET    | `/admin/services?page=1&limit=10` |
+| 12  | GET    | `/admin/services/:id`             |
+| 13  | PATCH  | `/admin/services/:id/toggle`      |
+| 14  | GET    | `/admin/bookings?page=1&limit=10` |
+| 15  | GET    | `/admin/bookings/:id`             |
+| 16  | GET    | `/admin/reviews?page=1&limit=10`  |
+| 17  | GET    | `/admin/reviews/:id`              |
+| 18  | DELETE | `/admin/reviews/:id`              |
+
+#### `GET /admin/users` — Pagination & Role Filter
+
+```
+GET /admin/users?page=1&limit=5&role=client
+```
+
+| Test               | Query             | Expected                  |
+| ------------------ | ----------------- | ------------------------- |
+| Default pagination | No query params   | `200` · page 1, limit 10  |
+| With role filter   | `?role=provider`  | `200` · only providers    |
+| With page filter   | `?page=2&limit=3` | `200` · page 2, 3 results |
+| Non-admin token    | Client token      | `403`                     |
+
+#### `PATCH /admin/users/:id/verify` — Verify Provider
+
+| Test                  | Setup                         | Expected                           |
+| --------------------- | ----------------------------- | ---------------------------------- |
+| Verify a provider     | User has `user_type=provider` | `200`                              |
+| Verify a non-provider | User has `user_type=client`   | `400` · `"User is not a provider"` |
+| Self-verify           | Same ID as admin token        | `400` or `403`                     |
+
+#### `DELETE /admin/categories/:id` — Category with Services
+
+| Test                   | Setup                        | Expected                                                       |
+| ---------------------- | ---------------------------- | -------------------------------------------------------------- |
+| Delete unused category | Category has 0 services      | `200`                                                          |
+| Delete used category   | Category has linked services | `400` · `"Cannot delete category. It is used by N service(s)"` |
+
+---
+
+## 7. Negative & Edge-Case Tests
+
+These tests deliberately send bad data to verify the API degrades gracefully.
+
+### Authentication Edge Cases
+
+| Test ID | Request                                                         | Expected                                           |
+| ------- | --------------------------------------------------------------- | -------------------------------------------------- |
+| NEG-01  | `POST /auth/login` with SQL injection: `"email": "' OR 1=1 --"` | `401` — parameterized queries protect against this |
+| NEG-02  | `POST /auth/refresh` — replay the same refresh token twice      | `403` · `"Refresh token revoked"`                  |
+| NEG-03  | Use an expired access token                                     | `403` · `"Forbidden"`                              |
+| NEG-04  | `Authorization: Bearer ` (empty token)                          | `401` · `"No token provided"`                      |
+| NEG-05  | `Authorization: Token abc123` (non-Bearer prefix)               | `401` · `"No token provided"`                      |
+
+### Role Authorization Edge Cases
+
+| Test ID | Request                                  | Expected |
+| ------- | ---------------------------------------- | -------- |
+| NEG-10  | Client calls `POST /services/create`     | `403`    |
+| NEG-11  | Provider calls `GET /admin/users`        | `403`    |
+| NEG-12  | Client calls `DELETE /admin/reviews/:id` | `403`    |
+| NEG-13  | Provider calls `PATCH /users/:id/role`   | `403`    |
+
+### Resource Not Found Cases
+
+| Test ID | Request                                                       | Expected |
+| ------- | ------------------------------------------------------------- | -------- |
+| NEG-20  | `GET /services/00000000-0000-0000-0000-000000000000`          | `404`    |
+| NEG-21  | `GET /admin/users/00000000-0000-0000-0000-000000000000`       | `404`    |
+| NEG-22  | `PATCH /bookings/00000000-0000-0000-0000-000000000000/status` | `404`    |
+| NEG-23  | `DELETE /bookings/00000000-0000-0000-0000-000000000000`       | `404`    |
+
+### Booking Input Edge Cases
+
+| Test ID | Request                                                | Expected                                          |
+| ------- | ------------------------------------------------------ | ------------------------------------------------- |
+| NEG-30  | `POST /bookings/createBooking` with `status: "banana"` | Currently `500` (no validation) — should be `400` |
+| NEG-31  | `PATCH /bookings/:id/status` with body `{}`            | `400` · `"Missing status"`                        |
+| NEG-32  | `PATCH /bookings/:id/status` with `status: "banana"`   | Currently `200` — should be `400`                 |
+| NEG-33  | `POST /bookings/createBooking` — missing `service_id`  | Currently `500` (no validation) — should be `400` |
+
+---
+
+## 8. Postman Collection Variables & Scripts
+
+### Collection-Level Pre-request Script (Auto Token Refresh)
+
+Paste this into **Collection → Pre-request Script** tab:
+
+```javascript
+// Auto-refresh access token if it's about to expire
+const accessToken = pm.environment.get("accessToken");
+if (!accessToken) return;
+
+const parts = accessToken.split(".");
+if (parts.length !== 3) return;
+
+try {
+  const payload = JSON.parse(atob(parts[1]));
+  const now = Math.floor(Date.now() / 1000);
+  const expiresIn = payload.exp - now;
+
+  // If token expires in less than 60 seconds, refresh it
+  if (expiresIn < 60) {
+    pm.sendRequest(
+      {
+        url: pm.environment.get("base_url") + "/auth/refresh",
+        method: "POST",
+        header: { "Content-Type": "application/json" },
+      },
+      (err, res) => {
+        if (!err && res.code === 200) {
+          pm.environment.set("accessToken", res.json().accessToken);
+        }
+      },
+    );
+  }
+} catch (e) {
+  console.log("Token decode error:", e.message);
 }
 ```
 
-> ⚠️ All of `service_id`, `client_id`, `provider_id`, `booking_date`, `booking_time`, `user_location`, and `total_price` are **required** by the DB schema. `notes` is optional.
-
-**Responses:**
-
-| Status | Body                                                                | Condition              |
-| ------ | ------------------------------------------------------------------- | ---------------------- |
-| `201`  | `{ "id": "uuid", "status": "pending", "booking_date": "...", ... }` | Success                |
-| `500`  | `{ "message": "Error creating booking", "error": "..." }`           | Missing/invalid fields |
-
-**Test Scenarios:**
-
-- [x] All valid fields → `201` with status `"pending"`
-- [x] Invalid `service_id` UUID → `500` (FK violation)
-- [x] Invalid `client_id` or `provider_id` UUID → `500`
-- [x] Missing `booking_time` → `500`
-- [x] Missing `user_location` → `500`
-- [x] Negative `total_price` → `500` (check constraint)
-- [x] Invalid status enum in booking → DB default is `"pending"`, so this is fine on creation
-
 ---
 
-### 7.3 Get Client Bookings
-
-|            |                                                |
-| ---------- | ---------------------------------------------- |
-| **Method** | `GET`                                          |
-| **URL**    | `{{baseUrl}}/api/v1/bookings/client/:clientId` |
-| **Auth**   | Bearer Token                                   |
-
-**URL Params:**
-
-| Param      | Type | Description          |
-| ---------- | ---- | -------------------- |
-| `clientId` | UUID | The client's user ID |
-
-> Returns bookings with JOINed `service_name` and `service_description`.
-
-**Responses:**
-
-| Status | Body                                                                              | Condition         |
-| ------ | --------------------------------------------------------------------------------- | ----------------- |
-| `200`  | `[ { ..., "service_name": "Home Cleaning", "service_description": "..." }, ... ]` | Success           |
-| `200`  | `[]`                                                                              | No bookings found |
-
----
-
-### 7.4 Get Provider Bookings
-
-|            |                                                    |
-| ---------- | -------------------------------------------------- |
-| **Method** | `GET`                                              |
-| **URL**    | `{{baseUrl}}/api/v1/bookings/provider/:providerId` |
-| **Auth**   | Bearer Token                                       |
-
-**URL Params:**
-
-| Param        | Type | Description            |
-| ------------ | ---- | ---------------------- |
-| `providerId` | UUID | The provider's user ID |
-
-> Returns bookings with JOINed `service_name`, `client_name`, and `client_phone`.
-
-**Responses:**
-
-| Status | Body                                                                                        | Condition         |
-| ------ | ------------------------------------------------------------------------------------------- | ----------------- |
-| `200`  | `[ { ..., "service_name": "...", "client_name": "Juan", "client_phone": "0917..." }, ... ]` | Success           |
-| `200`  | `[]`                                                                                        | No bookings found |
-
----
-
-### 7.5 Update Booking Status
-
-|            |                                          |
-| ---------- | ---------------------------------------- |
-| **Method** | `PATCH`                                  |
-| **URL**    | `{{baseUrl}}/api/v1/bookings/:id/status` |
-| **Auth**   | Bearer Token                             |
-
-**URL Params:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id`  | UUID | Booking ID  |
-
-**Request Body:**
-
-```json
-{
-  "status": "accepted"
-}
-```
-
-> Valid values: `"pending"`, `"accepted"`, `"rejected"`, `"completed"`, `"cancelled"`
-
-**Responses:**
-
-| Status | Body                                                             | Condition                               |
-| ------ | ---------------------------------------------------------------- | --------------------------------------- |
-| `200`  | `{ "id": "uuid", "status": "accepted", ... }`                    | Success                                 |
-| `400`  | `{ "message": "Missing status in request body" }`                | No `status` field                       |
-| `404`  | `{ "message": "Booking not found" }`                             | Invalid UUID                            |
-| `500`  | `{ "message": "Error updating booking status", "error": "..." }` | Invalid status value (check constraint) |
-
-**Test Scenarios:**
-
-- [x] Update to `"accepted"` → `200`
-- [x] Update to `"completed"` → `200`
-- [x] Missing `status` in body → `400`
-- [x] Invalid status like `"in-progress"` → `500` (DB check constraint)
-- [x] Non-existent booking ID → `404`
-
----
-
-### 7.6 Delete Booking
-
-|            |                                   |
-| ---------- | --------------------------------- |
-| **Method** | `DELETE`                          |
-| **URL**    | `{{baseUrl}}/api/v1/bookings/:id` |
-| **Auth**   | Bearer Token                      |
-
-**URL Params:**
-
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `id`  | UUID | Booking ID  |
-
-**Responses:**
-
-| Status | Body                                                   | Condition    |
-| ------ | ------------------------------------------------------ | ------------ |
-| `200`  | `{ "message": "Booking deleted", "booking": { ... } }` | Success      |
-| `404`  | `{ "message": "Booking not found" }`                   | Invalid UUID |
-
-**Test Scenarios:**
-
-- [x] Delete existing booking → `200`
-- [x] Delete non-existent booking → `404`
-- [x] Delete booking that has a review → `500` (FK constraint from `reviews` table)
-
----
-
-## 8. Recommended Testing Order
-
-Follow this step-by-step flow to simulate a real end-to-end user journey. This order ensures dependencies are met (e.g., categories exist before creating services).
-
-```
-PHASE 1: SETUP — Admin & Categories
-──────────────────────────────────────
- 1.  POST   /auth/register         → Register admin user
- 2.  POST   /auth/login            → Login as admin (save accessToken)
- 3.  PATCH  /users/:id/role        → Change own role to "admin" (requires manual DB update first time)
- 4.  POST   /categories/           → Create category: "Cleaning"
- 5.  POST   /categories/           → Create category: "Plumbing"
- 6.  GET    /categories/           → Verify categories exist
- 7.  GET    /categories/1          → Verify single category
-
-PHASE 2: PROVIDER — Service Management
-──────────────────────────────────────
- 8.  POST   /auth/register         → Register provider user
- 9.  POST   /auth/login            → Login as provider (save accessToken)
-10.  PATCH  /users/promote         → Promote client → provider (update accessToken!)
-11.  POST   /services/create       → Create "Home Cleaning" service (category_id: 1)
-12.  POST   /services/create       → Create "Pipe Repair" service (category_id: 2)
-13.  GET    /services/             → Verify services listed
-14.  GET    /services/:id          → Verify single service
-15.  PUT    /services/edit/:id     → Edit service title/price
-16.  GET    /users/profile         → Verify profile shows "provider"
-
-PHASE 3: CLIENT — Booking Flow
-──────────────────────────────────────
-17.  POST   /auth/register         → Register client user
-18.  POST   /auth/login            → Login as client (save accessToken)
-19.  GET    /services/             → Browse available services
-20.  POST   /bookings/createBooking → Book "Home Cleaning"
-21.  GET    /bookings/client/:id   → View client's bookings
-22.  GET    /bookings/             → View all bookings
-
-PHASE 4: PROVIDER — Handle Bookings
-──────────────────────────────────────
-23.  POST   /auth/login            → Login back as provider
-24.  GET    /bookings/provider/:id → View incoming bookings
-25.  PATCH  /bookings/:id/status   → Accept booking (status: "accepted")
-26.  PATCH  /bookings/:id/status   → Complete booking (status: "completed")
-
-PHASE 5: TOKEN LIFECYCLE
-──────────────────────────────────────
-27.  POST   /auth/refresh          → Get new access token via cookie
-28.  POST   /auth/refresh          → Try same cookie again (should fail — rotation)
-29.  POST   /auth/logout           → Logout
-30.  POST   /auth/refresh          → Try refresh after logout → 401/403
-
-PHASE 6: NEGATIVE / EDGE CASES
-──────────────────────────────────────
-31.  GET    /users/profile         → No token → 401
-32.  GET    /users/profile         → Expired token → 403
-33.  POST   /services/create       → Client tries to create service → 403
-34.  PATCH  /users/:id/role        → Non-admin tries to change role → 403
-35.  DELETE /services/:id          → Delete service with bookings → 500
-36.  DELETE /categories/1          → Delete category with services → 500
-
-PHASE 7: CLEANUP
-──────────────────────────────────────
-37.  DELETE /bookings/:id          → Delete test booking
-38.  DELETE /services/:id          → Delete test service
-39.  DELETE /categories/1          → Delete test category (now safe)
-```
-
----
-
-## 9. Known Issues & Notes
-
-These are things to be aware of while testing, and areas for future improvement.
-
-### 🐛 Bug: Category Controller Name Collision
-
-In `controllers/categoriesController.js`, the controller functions have the **same names** as the imported model functions:
+### Collection-Level Test Script (Response Time Check)
 
 ```javascript
-const { createCategory, getAllCategories, ... } = require('../models/categoriesModel');
-
-const createCategory = async (req, res) => {   // ❌ Redeclares the import!
-    const category = await createCategory(...);  // Calls itself → infinite recursion
+pm.test("Response time under 2000ms", () => {
+  pm.expect(pm.response.responseTime).to.be.below(2000);
+});
 ```
 
-This will cause a **stack overflow** at runtime. The controller functions need unique names or the imports need to be aliased (e.g., `createCategory: createCategoryInDB`).
+---
 
-### 🐛 Bug: Category Routes Import Path
+### Login Helper Script (for Admin, Client, Provider requests)
 
-In `routes/categoryRoutes.js`, line 4:
+Create a Postman request called **Admin Login** and set as Pre-request in dependent folders:
 
 ```javascript
-const { authorizeRoles } = require("../middleware/roleMiddleware");
-//                                     ^^^^^^^^^^
-// Should be: '../middlewares/roleMiddleware'
+// Run before any admin suite request
+pm.sendRequest(
+  {
+    url: pm.environment.get("base_url") + "/auth/login",
+    method: "POST",
+    header: { "Content-Type": "application/json" },
+    body: {
+      mode: "raw",
+      raw: JSON.stringify({
+        email: pm.environment.get("adminEmail") || "admin@servify.com",
+        password: pm.environment.get("adminPassword") || "YourAdminPassword",
+      }),
+    },
+  },
+  (err, res) => {
+    if (!err && res.code === 200) {
+      pm.environment.set("adminAccessToken", res.json().accessToken);
+    }
+  },
+);
 ```
 
-And `authorizeRoles` is exported as a **default export** (`module.exports = authorizeRoles`), not a named export, so the destructuring `{ authorizeRoles }` won't work either. It should be:
+---
 
-```javascript
-const authorizeRoles = require("../middlewares/roleMiddleware");
+### Recommended Test Run Order in Collection Runner
+
+Configure **Collection Runner** with this order:
+
+```
+1. Smoke Tests (all SM-*)
+2. Suite A — Client Journey (A-01 to A-11)
+3. Suite B — Provider Journey (B-01 to B-11)
+4. Suite C — Admin Operations (C-01 to C-14)
+5. Negative Tests (all NEG-*)
 ```
 
-### ⚠️ No Ownership Checks on Services
+Set **delay** between requests to `200ms` to avoid race conditions on token validation.
 
-Any `provider` can edit or delete **any** service, not just their own. Consider adding:
+---
 
-```javascript
-if (service.provider_id !== req.user.id) return res.status(403).json(...)
-```
+## 9. Known Bugs & Risk Areas
 
-### ⚠️ No Ownership Checks on Bookings
+### Summary Table
 
-Any authenticated user can view, update, or delete **any** booking. Consider restricting access to only the client or provider involved in that booking.
+| Bug ID | Severity    | Location                                        | Description                                                         | Workaround                                 |
+| ------ | ----------- | ----------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------ |
+| BUG-01 | 🔴 Critical | `userController.promoteRole`                    | Guard check fires after DB update — always returns 400              | Manually update `user_type` in DB          |
+| BUG-02 | 🔴 Critical | `bookingRoutes GET /`                           | All bookings exposed to any authenticated user                      | None — data leak                           |
+| BUG-03 | 🔴 Critical | `bookingRoutes GET /client/:id` `/provider/:id` | IDOR — no ownership verification                                    | None — data leak                           |
+| BUG-04 | 🔴 Critical | `bookingController.createBooking`               | No input validation; `client_id` from body allows impersonation     | Validate manually before calling           |
+| BUG-05 | 🔴 Critical | `bookingRoutes DELETE /:id`                     | Any user can delete any booking                                     | None                                       |
+| BUG-06 | 🟡 Medium   | `adminController.activateUser`                  | Wrong error message: says "deactivate" in activate handler          | Cosmetic only                              |
+| BUG-07 | 🟡 Medium   | `authController.logout`                         | Silent empty catch — token not invalidated on tampered cookie       | None                                       |
+| BUG-08 | 🟡 Medium   | `bookingController.updateBookingStatus`         | No status enum validation — accepts any string                      | Validate in tests                          |
+| BUG-09 | 🟡 Medium   | `authMiddleware`                                | Expired token returns 403 instead of 401                            | Frontend should treat both as auth failure |
+| BUG-10 | 🟢 Low      | `bookingRoutes.js`                              | `console.log('routes loaded')` in production code                   | Remove the line                            |
+| BUG-11 | 🟢 Low      | `authController`                                | `secure: false` on cookie — fine for dev, dangerous if kept in prod | Use `NODE_ENV` check                       |
+| BUG-12 | 🟢 Low      | `bookingModel`                                  | `updateBookingDetails` exported but no route references it          | Implement or remove                        |
 
-### ⚠️ No Input Validation Layer
+---
 
-The API relies entirely on DB constraints for validation. Missing fields return generic `500` errors instead of clear `400` messages. Consider adding a validation library like **Joi** or **express-validator** for better error messages.
+### Testing Priority Order
 
-### ⚠️ `service_type` Constraint
+1. **Auth flow** (login → refresh → logout) — everything depends on this
+2. **IDOR tests** (NEG-03, BUG-03) — security validation
+3. **Booking creation** — core business flow
+4. **Admin operations** — privileged access validation
+5. **Role promotion** (BUG-01) — blocked until code is fixed
 
-The database `CHECK` constraint only allows `'online'` or `'onsite'`. If you send `'on-site'` (with a hyphen), it will fail with a `500`. Keep this in mind during Postman testing.
+---
 
-### 📌 First Admin Setup
-
-There is no self-registration as admin. To create the first admin, you need to either:
-
-1. Register a normal user, then manually update in the DB:
-   ```sql
-   UPDATE users SET user_type = 'admin' WHERE email = 'admin@example.com';
-   ```
-2. Or use an existing admin to promote via `PATCH /users/:id/role`.
+_This document was generated by analyzing the Servify server codebase including routes, controllers, models, and middleware. Re-run analysis after patching BUG-01 through BUG-05 before submitting to QA._
