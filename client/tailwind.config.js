@@ -41,11 +41,26 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Custom colors for consistency with existing design
+        'app-primary': '#1a3a8f',
+        'app-accent': '#2b52cc',
+        'app-accent-light': '#eef2ff',
+        'app-text': '#0f172a',
+        'app-text-muted': '#64748b',
+        'app-bg': '#f1f5f9',
+        'app-card': '#ffffff',
+        'app-border': '#e2e8f0',
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        'xl': '12px',
+        '2xl': '16px',
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'DM Sans', 'sans-serif'],
+        heading: ['Sora', 'sans-serif'],
       },
       keyframes: {
         "accordion-down": {
