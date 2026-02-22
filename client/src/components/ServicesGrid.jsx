@@ -144,21 +144,21 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
   });
 
   return (
-    <div className="services-grid-wrapper">
-      <p className="services-grid__count">{filtered.length} services available</p>
-      <div className="services-grid">
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-slate-500 font-medium">{filtered.length} services available</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.length > 0 ? (
           filtered.map((service) => (
             <div
               key={service.id}
-              style={{ cursor: 'pointer' }}
+              className="cursor-pointer"
               onClick={() => onSelectService(service)}
             >
               <ServiceCard service={service} />
             </div>
           ))
         ) : (
-          <div className="services-grid__empty">
+          <div className="col-span-full text-center py-16 text-slate-500 text-base">
             <p>No services match your filters.</p>
           </div>
         )}
