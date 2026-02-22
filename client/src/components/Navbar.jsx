@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Navbar({ activePage = "" }) {
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
 
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("theme") === "dark";

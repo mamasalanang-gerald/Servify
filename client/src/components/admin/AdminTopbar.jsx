@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 
-const AdminTopbar = ({ title, subtitle, actions }) => {
+const AdminTopbar = ({ title, actions }) => {
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',

@@ -1,4 +1,4 @@
-  import React, { useState } from 'react';
+  import { useState } from 'react';
   import BookingCard from './BookingCard';
   import { Card } from './ui/card';
   import { Button } from './ui/button';
@@ -7,9 +7,7 @@
   import houseCleaningImg from '../assets/images/house_cleaning.jpg'
   import spaImg from '../assets/images/spa_massage.jpg'
   import plumbingImg from '../assets/images/plumbing_repair.jpg'
-  import computerImg from '../assets/images/computer_repair.jpg'
   import mathImg from '../assets/images/math_physics.jpg'
-  import webImg from '../assets/images/professional_web_design.png'
 
   const upcomingBookings = [
     {
