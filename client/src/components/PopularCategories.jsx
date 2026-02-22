@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import "./PopularCategories.css";
 
 const categories = [
@@ -83,6 +84,8 @@ const categories = [
 ];
 
 export default function PopularCategories() {
+  const navigate = useNavigate();
+
   return (
     <section className="categories">
       <div className="categories-header">
@@ -91,7 +94,11 @@ export default function PopularCategories() {
       </div>
       <div className="categories-grid">
         {categories.map((cat) => (
-          <div key={cat.label} className="category-card">
+          <div
+            key={cat.label}
+            className="category-card"
+            onClick={() => navigate('/services', { state: { category: cat.label } })}
+          >
             <div className="category-icon-wrap">{cat.icon}</div>
             <span className="category-label">{cat.label}</span>
             <span className="category-count">{cat.count}</span>

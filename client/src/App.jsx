@@ -11,6 +11,7 @@ import ProviderDashboardPage from './pages/ProviderDashboardPage';
 import AdminDashboardPage    from './pages/AdminDashboardPage';
 import useAuth               from './hooks/useAuth';
 import useRole               from './hooks/useRole';
+import RegisterPage from './pages/RegisterPage';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { isLoggedIn } = useAuth();
@@ -27,40 +28,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
-        <Route path="/"         element={<LandingPage />} />
-        <Route path="/login"    element={<LoginPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/services" element={<ServicesPage />} />
-
-        {/* User-only */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute requiredRole="user"><DashboardPage /></ProtectedRoute>
-        } />
-        <Route path="/SavedServices" element={
-          <ProtectedRoute requiredRole="user"><SavedServices /></ProtectedRoute>
-        } />
-        <Route path="/ProfileSettings" element={
-          <ProtectedRoute requiredRole="user"><ProfileSettings /></ProtectedRoute>
-        } />
-        <Route path="/AccountSettings" element={
-          <ProtectedRoute requiredRole="user"><AccountSettings /></ProtectedRoute>
-        } />
-
-        {/* Provider-only */}
-        <Route path="/provider" element={
-          <ProtectedRoute requiredRole="provider"><ProviderDashboardPage /></ProtectedRoute>
-        } />
-
-        {/* Admin-only */}
-        <Route path="/admin" element={
-          <ProtectedRoute requiredRole="admin"><AdminDashboardPage /></ProtectedRoute>
-        } />
-
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/provider" element={<ProviderDashboardPage />} />
+        <Route path="/signup" element={<RegisterPage />} />
       </Routes>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

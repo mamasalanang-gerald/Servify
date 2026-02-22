@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 const categories = [
   { name: 'Home Cleaning', count: 234 },
   { name: 'Plumbing', count: 156 },
@@ -11,26 +9,22 @@ const categories = [
   { name: 'Pet Care', count: 124 },
 ];
 
-const ratings = ['4.5+ Stars', '4+ Stars', '3.5+ Stars', '3+ Stars'];
+const ratings = ['4.5+ Stars', '4+ Stars', '3.5+ Stars', '3& below'];
 
-const ServicesFilter = ({ onFilterChange }) => {
-  const [priceRange, setPriceRange] = useState(500);
-  const [selectedRating, setSelectedRating] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState([]);
+const ServicesFilter = ({ filters, onFilterChange }) => {
+  const { priceRange, selectedRating, selectedCategories } = filters;
+
+  const update = (patch) => onFilterChange({ ...filters, ...patch });
 
   const toggleCategory = (cat) => {
     const updated = selectedCategories.includes(cat)
       ? selectedCategories.filter((c) => c !== cat)
       : [...selectedCategories, cat];
-    setSelectedCategories(updated);
-    onFilterChange?.({ priceRange, selectedRating, selectedCategories: updated });
+    update({ selectedCategories: updated });
   };
 
   const clearAll = () => {
-    setPriceRange(500);
-    setSelectedRating('');
-    setSelectedCategories([]);
-    onFilterChange?.({ priceRange: 500, selectedRating: '', selectedCategories: [] });
+    onFilterChange({ priceRange: 25000, selectedRating: '', selectedCategories: [] });
   };
 
   return (
@@ -42,18 +36,19 @@ const ServicesFilter = ({ onFilterChange }) => {
 
       {/* Price Range */}
       <div className="services-filter__section">
-        <h4 className="services-filter__label">Price Range</h4>
+        <h4 className="services-filter__label">Max Price</h4>
         <input
           type="range"
-          min="0"
-          max="500"
+          min="500"
+          max="25000"
+          step="500"
           value={priceRange}
-          onChange={(e) => setPriceRange(Number(e.target.value))}
+          onChange={(e) => update({ priceRange: Number(e.target.value) })}
           className="services-filter__slider"
         />
         <div className="services-filter__price-labels">
-          <span>₱0</span>
-          <span>₱{priceRange === 500 ? '500+' : priceRange}</span>
+          <span>₱500</span>
+          <span>₱{priceRange.toLocaleString()}</span>
         </div>
       </div>
 
@@ -67,7 +62,7 @@ const ServicesFilter = ({ onFilterChange }) => {
                 type="radio"
                 name="rating"
                 checked={selectedRating === rating}
-                onChange={() => setSelectedRating(rating)}
+                onChange={() => update({ selectedRating: rating })}
                 className="services-filter__radio"
               />
               <span>{rating}</span>

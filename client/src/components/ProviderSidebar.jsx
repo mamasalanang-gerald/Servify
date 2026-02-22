@@ -68,11 +68,11 @@ const ProviderSidebar = ({ activeNav, setActiveNav }) => {
   return (
     <aside className="p-sidebar">
       {/* Brand */}
-      <a href="/" className="p-sidebar__brand">
+      <div className="p-sidebar__brand">
         <div className="p-sidebar__brand-icon">S</div>
         <span className="p-sidebar__brand-name">Servify</span>
         <span className="p-sidebar__brand-tag">Pro</span>
-      </a>
+      </div>
 
       {/* Provider info */}
       <div className="p-sidebar__provider">

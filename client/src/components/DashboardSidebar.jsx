@@ -1,5 +1,6 @@
 import React from 'react';
 import LogoutButton from './LogoutButton';
+import useAuth from '../hooks/useAuth';
 import '../pages/styles/DashboardSidebar.css';
 
 const navItems = [
@@ -43,13 +44,28 @@ const navItems = [
 ];
 
 const DashboardSidebar = ({ activeNav, setActiveNav }) => {
+  const { user } = useAuth();
+  const isGuest = !user;
+
+  const displayName  = isGuest ? 'Guest'         : (user.name || user.email?.split('@')[0] || 'User');
+  const displayEmail = isGuest ? 'Not logged in' : user.email;
+  const initials     = isGuest ? null             : displayName.slice(0, 2).toUpperCase();
+
   return (
     <aside className="dash-sidebar">
+
       {/* Profile */}
       <div className="dash-profile">
-        <div className="dash-profile__avatar">CD</div>
-        <h3 className="dash-profile__name">Carlo Dela Cruz</h3>
-        <p className="dash-profile__email">carlo.dcxgh@gmail.com</p>
+        <div className={`dash-profile__avatar ${isGuest ? 'dash-profile__avatar--guest' : ''}`}>
+          {isGuest ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          ) : initials}
+        </div>
+        <h3 className="dash-profile__name">{displayName}</h3>
+        <p className="dash-profile__email">{displayEmail}</p>
       </div>
 
       {/* Nav */}
@@ -57,19 +73,21 @@ const DashboardSidebar = ({ activeNav, setActiveNav }) => {
         {navItems.map((item) => (
           <button
             key={item.label}
-            className={`dash-nav__item ${activeNav === item.label ? 'active' : ''}`}
+            className={`dash-nav__item ${activeNav === item.label ? 'active' : ''} ${isGuest ? 'dash-nav__item--guest' : ''}`}
             onClick={() => setActiveNav(item.label)}
           >
             <span className="dash-nav__icon">{item.icon}</span>
             {item.label}
+            {isGuest && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto', opacity: 0.4, flexShrink: 0 }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            )}
           </button>
         ))}
       </nav>
 
-      {/* Sign out — light variant since this sidebar is white */}
-      <div className="dash-sidebar__footer">
-        <LogoutButton className="logout-btn--light" />
-      </div>
     </aside>
   );
 };
