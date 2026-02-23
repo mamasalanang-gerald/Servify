@@ -163,7 +163,13 @@ const AdminDashboardPage = () => {
                                 {user.role}
                               </Badge>
                             </TableCell>
-                            <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              }) : 'N/A'}
+                            </TableCell>
                             <TableCell>
                               <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
                                 {user.status}
