@@ -30,9 +30,10 @@ const UserManagement = () => {
       setUsers(response.data || []);
       setTotalPages(response.totalPages || 1);
     } catch (error) {
+      console.error('Failed to fetch users:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to fetch users. Please ensure you are logged in as an admin.',
         variant: 'destructive',
       });
     } finally {
@@ -202,23 +203,23 @@ const UserManagement = () => {
           {selectedUser && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Name</label>
+                <div className="text-sm font-medium text-slate-700">Name</div>
                 <p className="text-slate-900">{selectedUser.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Email</label>
+                <div className="text-sm font-medium text-slate-700">Email</div>
                 <p className="text-slate-900">{selectedUser.email}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Role</label>
+                <div className="text-sm font-medium text-slate-700">Role</div>
                 <p className="text-slate-900">{selectedUser.role}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
+                <div className="text-sm font-medium text-slate-700">Status</div>
                 <p className="text-slate-900">{selectedUser.status}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Joined</label>
+                <div className="text-sm font-medium text-slate-700">Joined</div>
                 <p className="text-slate-900">{selectedUser.joinedDate}</p>
               </div>
             </div>
