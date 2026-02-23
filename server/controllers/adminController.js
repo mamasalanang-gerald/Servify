@@ -5,14 +5,34 @@ const adminService = require('../services/adminService');
 const getUsers = async (req, res) => {
     try {
         const { page = 1, limit = 10, role } = req.query;
-        const users = await adminService.fetchUsers(page, limit, role);
+        
+        // Convert 'null' string or empty string to actual null
+        const roleFilter = (role && role !== 'null' && role !== '') ? role : null;
+        
+        const users = await adminService.fetchUsers(page, limit, roleFilter);
+        
+        // Transform data to match frontend expectations
+        const transformedUsers = users.map(user => ({
+            id: user.id,
+            name: user.full_name,
+            email: user.email,
+            role: user.user_type,
+            status: user.is_active ? 'active' : 'inactive',
+            verificationStatus: user.is_verified ? 'verified' : 'pending',
+            joinedDate: new Date(user.created_at).toLocaleDateString(),
+            servicesCount: user.services_count || 0,
+            rating: user.avg_rating || null
+        }));
+        
         res.status(200).json({
             success: true,
-            data: users,
+            data: transformedUsers,
             page: parseInt(page),
-            limit: parseInt(limit)
+            limit: parseInt(limit),
+            totalPages: Math.ceil(transformedUsers.length / limit) || 1
         });
     } catch (err) {
+        console.error('Admin getUsers error:', err);
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
 };
@@ -156,11 +176,23 @@ const getServices = async (req, res) => {
     try {
         const { page = 1, limit = 10, provider_id, category_id, search } = req.query;
         const services = await adminService.fetchServices(page, limit, { provider_id, category_id, search });
+        
+        // Transform data to match frontend expectations
+        const transformedServices = services.map(service => ({
+            id: service.id,
+            name: service.title,
+            provider: service.provider_name,
+            category: service.category_name || 'Uncategorized',
+            price: service.price,
+            status: service.is_active ? 'active' : 'inactive'
+        }));
+        
         res.status(200).json({
             success: true,
-            data: services,
+            data: transformedServices,
             page: parseInt(page),
-            limit: parseInt(limit)
+            limit: parseInt(limit),
+            totalPages: Math.ceil(transformedServices.length / limit) || 1
         });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
@@ -194,14 +226,35 @@ const toggleServiceStatus = async (req, res) => {
 const getBookings = async (req, res) => {
     try {
         const { page = 1, limit = 10, status, startDate, endDate } = req.query;
-        const bookings = await adminService.fetchBookings(page, limit, { status, startDate, endDate });
+        
+        // Filter out null/undefined values
+        const filters = {};
+        if (status && status !== 'null') filters.status = status;
+        if (startDate && startDate !== 'null') filters.startDate = startDate;
+        if (endDate && endDate !== 'null') filters.endDate = endDate;
+        
+        const bookings = await adminService.fetchBookings(page, limit, filters);
+        
+        // Transform data to match frontend expectations
+        const transformedBookings = bookings.map(booking => ({
+            id: booking.id,
+            clientName: booking.client_name,
+            providerName: booking.provider_name,
+            service: booking.service_title,
+            date: new Date(booking.booking_date).toLocaleDateString(),
+            status: booking.status,
+            amount: booking.total_price
+        }));
+        
         res.status(200).json({
             success: true,
-            data: bookings,
+            data: transformedBookings,
             page: parseInt(page),
-            limit: parseInt(limit)
+            limit: parseInt(limit),
+            totalPages: Math.ceil(transformedBookings.length / limit) || 1
         });
     } catch (err) {
+        console.error('Admin getBookings error:', err);
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
 };
