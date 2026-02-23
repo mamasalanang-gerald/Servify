@@ -1,0 +1,18 @@
+{
+  "name": "servify-testing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Postman/Newman API automation for Servify",
+  "type": "commonjs",
+  "scripts": {
+    "generate:collection": "node scripts/generate-postman-collection.js",
+    "test:smoke": "node scripts/run-newman.js --folder Smoke",
+    "test:e2e": "node scripts/run-newman.js --folder E2E Flow",
+    "test:negative": "node scripts/run-newman.js --folder Negative Cases",
+    "test:all": "node scripts/run-newman.js"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    user_type TEXT NOT NULL,
+    user_type TEXT NOT NULL DEFAULT 'client',
     phone_number VARCHAR(20),
     profile_image TEXT,
     bio TEXT,
@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 -- Create services table
 CREATE TABLE IF NOT EXISTS services (
@@ -38,7 +39,7 @@ updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 
 );
 
-CREATE TABLE bookings (
+CREATE TABLE IF NOT EXISTS bookings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     service_id UUID NOT NULL REFERENCES services(id), 
     client_id UUID NOT NULL REFERENCES users(id),   
@@ -46,14 +47,14 @@ CREATE TABLE bookings (
     booking_date DATE NOT NULL,
     booking_time TIME NOT NULL,
     user_location VARCHAR NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
     total_price NUMERIC(10, 2) NOT NULL CHECK (total_price >= 0),
     notes TEXT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     booking_id UUID UNIQUE NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
     client_id UUID NOT NULL REFERENCES users(id),
@@ -62,4 +63,24 @@ CREATE TABLE reviews (
     comment TEXT NULL,
     review_date TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens (expires_at);
+CREATE INDEX IF NOT EXISTS idx_users_type ON users(user_type);
+CREATE INDEX IF NOT EXISTS idx_services_provider ON services(provider_id);
+CREATE INDEX IF NOT EXISTS idx_services_category ON services(category_id);
+CREATE INDEX IF NOT EXISTS idx_services_active ON services(is_active);
+CREATE INDEX IF NOT EXISTS idx_bookings_client ON bookings(client_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_provider ON bookings(provider_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_reviews_provider ON reviews(provider_id);
 
