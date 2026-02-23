@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
-import { userService } from '../services/userService';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
 
