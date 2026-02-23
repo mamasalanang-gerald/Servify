@@ -1,6 +1,6 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
 import LogoutButton from '../LogoutButton';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const navItems = [
   {
@@ -81,49 +81,50 @@ const navItems = [
 
 const AdminSidebar = ({ activeNav, setActiveNav }) => {
   return (
-    <aside className="fixed left-0 top-0 z-100 h-screen w-60 bg-slate-900 flex flex-col">
+    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col border-r border-border bg-card z-40">
       {/* Brand */}
-      <a href="/" className="flex items-center gap-2.5 border-b border-slate-700/50 px-5 py-5.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white flex-shrink-0">
+      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
           S
         </div>
-        <span className="text-base font-bold text-white">Servify</span>
-        <span className="ml-auto text-xs font-bold text-amber-400 bg-amber-400/15 px-2 py-0.5 rounded-full">
+        <span className="text-xl font-bold text-foreground">Servify</span>
+        <Badge variant="secondary" className="ml-auto bg-amber-500/10 text-amber-700 hover:bg-amber-500/10">
           Admin
-        </span>
-      </a>
+        </Badge>
+      </div>
 
       {/* Admin info */}
-      <div className="flex items-center gap-2.5 border-b border-slate-700/50 px-5 py-3.5 mb-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-amber-500 text-xs font-bold text-white flex-shrink-0">
+      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-lg font-bold text-white">
           AD
         </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-white truncate">Admin User</div>
-          <div className="text-xs text-slate-400">Super Administrator</div>
+        <div className="flex-1">
+          <div className="font-semibold text-foreground">Admin User</div>
+          <div className="text-sm text-muted-foreground">Administrator</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex flex-col gap-0.5 px-3 flex-1">
+      <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => setActiveNav(item.label)}
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
               activeNav === item.label
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-            }`}
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+            onClick={() => setActiveNav(item.label)}
           >
-            {item.icon}
+            <span className="flex-shrink-0">{item.icon}</span>
             {item.label}
           </button>
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-slate-700/50 px-5 py-4">
+      <div className="border-t border-border p-4">
         <LogoutButton />
       </div>
     </aside>
