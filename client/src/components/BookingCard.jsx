@@ -3,7 +3,41 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
-const BookingCard = ({ booking }) => {
+const statusConfig = {
+  pending: {
+    variant: 'warning',
+    className:
+      'bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-400',
+    label: 'Pending',
+  },
+  confirmed: {
+    variant: 'default',
+    className:
+      'bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-400',
+    label: 'Confirmed',
+  },
+  completed: {
+    variant: 'success',
+    className:
+      'bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-400',
+    label: 'Completed',
+  },
+  cancelled: {
+    variant: 'destructive',
+    className:
+      'bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-400',
+    label: 'Cancelled',
+  },
+};
+
+const BookingCard = ({
+  booking,
+  onViewDetails,
+  onMarkCompleted,
+  isUpdating = false,
+}) => {
+  const status = statusConfig[booking.status] || statusConfig.pending;
+
   return (
     <Card className="flex items-center gap-4 p-4 transition-shadow hover:shadow-md">
       <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg">
@@ -22,15 +56,14 @@ const BookingCard = ({ booking }) => {
             </svg>
             {booking.date}
           </span>
-          <Badge 
-            variant={booking.status === 'upcoming' ? 'default' : 'secondary'}
+          <Badge
+            variant={status.variant}
             className={cn(
               "capitalize",
-              booking.status === 'upcoming' && "bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-400",
-              booking.status === 'completed' && "bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-400"
+              status.className
             )}
           >
-            {booking.status}
+            {status.label}
           </Badge>
         </div>
       </div>
@@ -39,7 +72,20 @@ const BookingCard = ({ booking }) => {
           <div className="text-xs text-muted-foreground">Total</div>
           <div className="text-xl font-bold text-foreground">{booking.total}</div>
         </div>
-        <Button variant="outline" size="sm">View Details</Button>
+        <div className="flex gap-2">
+          {booking.status === 'confirmed' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-green-700 hover:bg-green-50"
+              onClick={onMarkCompleted}
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Updating...' : 'Mark Completed'}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={onViewDetails}>View Details</Button>
+        </div>
       </div>
     </Card>
   );

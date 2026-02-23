@@ -17,8 +17,17 @@ import { authService } from '../services/authService';
 const statusConfig = {
   pending:   { label: 'Pending',   variant: 'warning' },
   confirmed: { label: 'Confirmed', variant: 'default' },
+  accepted:  { label: 'Confirmed', variant: 'default' },
+  rejected:  { label: 'Rejected',  variant: 'destructive' },
   completed: { label: 'Completed', variant: 'success' },
   cancelled: { label: 'Cancelled', variant: 'destructive' },
+};
+
+const normalizeStatus = (status) => {
+  const current = String(status || 'pending').toLowerCase();
+  if (current === 'accepted') return 'confirmed';
+  if (current === 'rejected') return 'cancelled';
+  return current;
 };
 
 const ProviderOverview = () => {
@@ -30,7 +39,7 @@ const ProviderOverview = () => {
     avgRating: '—',
   });
   const [recentBookings, setRecentBookings] = useState([]);
-  const [weeklyData, setWeeklyData] = useState([
+  const [weeklyData] = useState([
     { day: 'Mon', amount: 0 },
     { day: 'Tue', amount: 0 },
     { day: 'Wed', amount: 0 },
@@ -67,7 +76,7 @@ const ProviderOverview = () => {
             year: 'numeric',
           }),
           amount: `₱${Number(b.total_price || 0).toLocaleString()}`,
-          status: b.status,
+          status: normalizeStatus(b.status),
         })),
       );
     }).catch(console.error);
@@ -251,7 +260,7 @@ const ProviderOverview = () => {
               </thead>
               <tbody>
                 {recentBookings.map((booking) => {
-                  const statusInfo = statusConfig[booking.status];
+                  const statusInfo = statusConfig[booking.status] || statusConfig.pending;
                   return (
                     <tr
                       key={booking.id}

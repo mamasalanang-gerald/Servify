@@ -28,6 +28,9 @@ const unsaveService = async (req, res) => {
 const getMySaved = async (req, res) => {
   try {
     const saved = await savedServiceModel.getSavedByUser(req.user.id);
+    if (!saved) {
+      return res.status(404).json({ message: "No saved services found" });
+    }
     res.status(200).json(saved);
   } catch (err) {
     res

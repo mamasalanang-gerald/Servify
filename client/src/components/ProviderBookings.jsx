@@ -11,8 +11,43 @@ const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 const statusMap = {
   pending:   { label: 'Pending',   variant: 'warning' },
   confirmed: { label: 'Confirmed', variant: 'default' },
+  accepted:  { label: 'Confirmed', variant: 'default' },
   completed: { label: 'Completed', variant: 'success' },
   cancelled: { label: 'Cancelled', variant: 'destructive' },
+};
+
+const normalizeStatus = (status) => {
+  const current = String(status || 'pending').toLowerCase();
+  return current === 'accepted' ? 'confirmed' : current;
+};
+
+const toApiStatus = (uiStatus) => (
+  uiStatus === 'confirmed' ? 'accepted' : uiStatus
+);
+
+const mapProviderBooking = (booking) => {
+  const clientName = booking.client_name || 'Unknown Client';
+  return {
+    ...booking,
+    client: clientName,
+    service: booking.service_name || 'Service',
+    date: booking.booking_date
+      ? new Date(booking.booking_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : '—',
+    time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
+    amount: `₱${Number(booking.total_price || 0).toLocaleString()}`,
+    avatar: clientName
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+    status: normalizeStatus(booking.status),
+  };
 };
 
 const ProviderBookings = () => {
@@ -25,7 +60,10 @@ const ProviderBookings = () => {
     if (user?.id) {
       bookingService
         .getProviderBookings(user.id)
-        .then((data) => setBookings(Array.isArray(data) ? data : []))
+        .then((data) => {
+          const source = Array.isArray(data) ? data : [];
+          setBookings(source.map(mapProviderBooking));
+        })
         .catch(console.error);
     }
   }, []);
@@ -36,8 +74,10 @@ const ProviderBookings = () => {
 
   const updateStatus = async (id, newStatus) => {
     try {
-      await bookingService.updateBookingStatus(id, newStatus);
-      setBookings(bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
+      await bookingService.updateBookingStatus(id, toApiStatus(newStatus));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)),
+      );
       setDetailModal(null);
     } catch (err) { console.error(err); }
   };
@@ -87,7 +127,7 @@ const ProviderBookings = () => {
           </Card>
         )}
         {filtered.map((b) => {
-          const s = statusMap[b.status];
+          const s = statusMap[b.status] || statusMap.pending;
           return (
             <Card key={b.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
