@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { serviceService } from '../services/serviceService';
 
 export default function ServiceDetailPage({ service, onBack }) {
   const today = new Date();
@@ -20,17 +21,70 @@ export default function ServiceDetailPage({ service, onBack }) {
   const [note, setNote] = useState("");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  const packages = service?.packages || [
-    { name: "Basic Clean", price: "4,999", description: "Essential cleaning for small apartments", features: ["Living room & bedroom", "Kitchen surfaces", "Bathroom", "2-3 hours"] },
-    { name: "Standard Clean", price: "8,499", description: "Complete cleaning for medium homes", features: ["All rooms", "Kitchen & appliances", "Bathrooms", "Dusting & vacuuming", "4-5 hours"] },
-    { name: "Premium Clean", price: "13,999", description: "Intensive deep cleaning", features: ["Deep scrubbing", "Carpet cleaning", "Window cleaning", "Organizing", "6-8 hours"] },
-  ];
+  const [reviews, setReviews] = useState([]);
 
-  const reviews = [
-    { name: "Anna L.", rating: 5, date: "Jan 2026", comment: "Absolutely fantastic service! My home has never been cleaner. Will definitely book again." },
-    { name: "Mark R.", rating: 5, date: "Dec 2025", comment: "Very professional and thorough. Arrived on time and did an amazing job." },
-    { name: "Sofia T.", rating: 4, date: "Nov 2025", comment: "Great service overall. A few minor spots were missed but they came back to fix it." },
-  ];
+  const toNumber = (value) => {
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    if (typeof value === "string") {
+      const cleaned = value.replace(/[^0-9.-]/g, "");
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    return 0;
+  };
+
+  const parsePackages = (value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const formatPeso = (value) => {
+    const amount = toNumber(value);
+    return `₱${amount.toLocaleString()}`;
+  };
+
+  const packages = useMemo(() => {
+    const normalizedPackages = parsePackages(service?.packages)
+      .map((pkg) => ({
+        ...pkg,
+        price: toNumber(pkg?.price),
+      }))
+      .filter((pkg) => pkg.name || pkg.description || pkg.price > 0);
+
+    if (normalizedPackages.length > 0) {
+      return normalizedPackages;
+    }
+
+    return [
+      {
+        name: service?.title || "Standard",
+        price: toNumber(service?.priceNum ?? service?.price ?? 0),
+        description: service?.description || "",
+        features: [],
+      },
+    ];
+  }, [service]);
+
+  useEffect(() => {
+    if (!service?.id) return;
+
+    serviceService
+      .getServiceReviews(service.id)
+      .then((data) => setReviews(Array.isArray(data) ? data : []))
+      .catch(() => setReviews([]));
+  }, [service?.id]);
 
   const monthName = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -43,7 +97,7 @@ export default function ServiceDetailPage({ service, onBack }) {
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
 
   const selectedDateStr = `${currentMonth.getMonth() + 1}/${selectedDate}/${currentMonth.getFullYear()}`;
-  const pkg = packages[selectedPackage];
+  const pkg = packages[selectedPackage] || packages[0] || { name: '', price: 0, description: '', features: [] };
 
   const handleBooking = () => {
     if (!user) {
@@ -155,19 +209,29 @@ export default function ServiceDetailPage({ service, onBack }) {
           ) : (
             <div className="space-y-4">
               {reviews.map((r, i) => (
-                <Card key={i} className="p-5">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-                      {r.name[0]}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-slate-900">{r.name}</div>
-                      <div className="text-xs text-slate-500">{r.date}</div>
-                    </div>
-                    <div className="text-amber-500">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</div>
+              <Card key={r.id || i} className="p-5">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                    {(r.reviewer_name || r.name || "?")[0]}
                   </div>
-                  <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>
-                </Card>
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-900">
+                      {r.reviewer_name || r.name}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(r.review_date || r.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </div>
+                  </div>
+                  <div className="text-amber-500">
+                    {"★".repeat(r.rating)}
+                    {"☆".repeat(5 - r.rating)}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600">{r.comment || r.text}</p>
+              </Card>
               ))}
             </div>
           )}
@@ -183,11 +247,11 @@ export default function ServiceDetailPage({ service, onBack }) {
                   <button key={i} className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedPackage === i ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`} onClick={() => setSelectedPackage(i)}>
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-semibold text-slate-900">{p.name}</span>
-                      <span className="font-bold text-blue-600">₱{p.price}</span>
+                      <span className="font-bold text-blue-600">{formatPeso(p.price)}</span>
                     </div>
                     <p className="text-xs text-slate-600 mb-3">{p.description}</p>
                     <ul className="space-y-1.5">
-                      {p.features.map((f, j) => (
+                      {(p.features || []).map((f, j) => (
                         <li key={j} className="flex items-center gap-2 text-xs text-slate-600">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="10" fill="#2b52cc" opacity="0.12" />
@@ -247,7 +311,7 @@ export default function ServiceDetailPage({ service, onBack }) {
             <div className="space-y-2 pt-4 border-t border-slate-200">
               <div className="flex justify-between text-sm"><span className="text-slate-600">Package</span><span className="font-semibold text-slate-900">{pkg.name}</span></div>
               <div className="flex justify-between text-sm"><span className="text-slate-600">Date</span><span className="font-semibold text-slate-900">{selectedDateStr}</span></div>
-              <div className="flex justify-between text-lg font-bold pt-2"><span>Total</span><span className="text-blue-600">₱{pkg.price}</span></div>
+              <div className="flex justify-between text-lg font-bold pt-2"><span>Total</span><span className="text-blue-600">{formatPeso(pkg.price)}</span></div>
             </div>
 
             <Button className="w-full bg-gradient-to-br from-blue-900 to-blue-600 gap-2" onClick={handleBooking}>

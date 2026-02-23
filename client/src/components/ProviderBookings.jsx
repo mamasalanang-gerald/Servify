@@ -1,20 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-
-const allBookings = [
-  { id: 1, client: 'Maria Santos',   avatar: 'MS', service: 'Deep House Cleaning', date: 'Feb 22, 2026', time: '9:00 AM',  amount: '₱149', status: 'pending' },
-  { id: 2, client: 'Rico Buendia',   avatar: 'RB', service: 'Deep House Cleaning', date: 'Feb 20, 2026', time: '2:00 PM',  amount: '₱149', status: 'pending' },
-  { id: 3, client: 'Trisha Cunanan', avatar: 'TC', service: 'Standard Clean',      date: 'Feb 23, 2026', time: '10:00 AM', amount: '₱89',  status: 'pending' },
-  { id: 4, client: 'Lena Macaraeg',  avatar: 'LM', service: 'Standard Clean',      date: 'Feb 18, 2026', time: '11:00 AM', amount: '₱89',  status: 'confirmed' },
-  { id: 5, client: 'James Torres',   avatar: 'JT', service: 'Deep House Cleaning', date: 'Feb 25, 2026', time: '1:00 PM',  amount: '₱229', status: 'confirmed' },
-  { id: 6, client: 'Ana Reyes',      avatar: 'AR', service: 'Standard Clean',      date: 'Feb 10, 2026', time: '9:00 AM',  amount: '₱89',  status: 'completed' },
-  { id: 7, client: 'Paul Katigbak',  avatar: 'PK', service: 'Deep House Cleaning', date: 'Feb 5, 2026',  time: '3:00 PM',  amount: '₱149', status: 'completed' },
-  { id: 8, client: 'Sofia Araneta',  avatar: 'SA', service: 'Move-In/Out Clean',   date: 'Jan 28, 2026', time: '9:00 AM',  amount: '₱229', status: 'completed' },
-  { id: 9, client: 'Marco Dizon',    avatar: 'MD', service: 'Standard Clean',      date: 'Jan 20, 2026', time: '2:00 PM',  amount: '₱89',  status: 'cancelled' },
-];
+import { bookingService } from '../services/bookingService';
+import { authService } from '../services/authService';
 
 const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
@@ -27,16 +17,29 @@ const statusMap = {
 
 const ProviderBookings = () => {
   const [activeTab, setActiveTab]     = useState('All');
-  const [bookings, setBookings]       = useState(allBookings);
+  const [bookings, setBookings]       = useState([]);
   const [detailModal, setDetailModal] = useState(null);
+
+  useEffect(() => {
+    const user = authService.getUser();
+    if (user?.id) {
+      bookingService
+        .getProviderBookings(user.id)
+        .then((data) => setBookings(Array.isArray(data) ? data : []))
+        .catch(console.error);
+    }
+  }, []);
 
   const filtered = activeTab === 'All'
     ? bookings
     : bookings.filter((b) => b.status === activeTab.toLowerCase());
 
-  const updateStatus = (id, newStatus) => {
-    setBookings(bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
-    setDetailModal(null);
+  const updateStatus = async (id, newStatus) => {
+    try {
+      await bookingService.updateBookingStatus(id, newStatus);
+      setBookings(bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
+      setDetailModal(null);
+    } catch (err) { console.error(err); }
   };
 
   const counts = tabs.reduce((acc, tab) => {

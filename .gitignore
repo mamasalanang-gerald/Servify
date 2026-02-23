@@ -13,3 +13,4 @@ build/
 *.suo
 .vscode/
 .idea/
+testing/
