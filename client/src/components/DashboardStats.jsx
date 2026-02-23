@@ -3,6 +3,13 @@ import { Card } from './ui/card';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
 
+const normalizeStatus = (status) => {
+  const current = String(status || 'pending').toLowerCase();
+  if (current === 'accepted') return 'confirmed';
+  if (current === 'rejected') return 'cancelled';
+  return current;
+};
+
 const DashboardStats = () => {
   const [stats, setStats] = useState({
     upcoming: 0,
@@ -23,7 +30,10 @@ const DashboardStats = () => {
           const bookings = await bookingService.getClientBookings(user.id);
           
           // Calculate stats from bookings
-          const bookingsArray = Array.isArray(bookings) ? bookings : [];
+          const bookingsArray = (Array.isArray(bookings) ? bookings : []).map((booking) => ({
+            ...booking,
+            status: normalizeStatus(booking.status),
+          }));
           const upcoming = bookingsArray.filter(b => b.status === 'pending' || b.status === 'confirmed').length;
           const completed = bookingsArray.filter(b => b.status === 'completed').length;
           const totalSpent = bookingsArray

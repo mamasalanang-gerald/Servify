@@ -21,10 +21,13 @@ export const bookingService = {
    */
   async createBooking(bookingData) {
     const response = await api.post('/bookings/createBooking', bookingData);
+    const data = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      throw new Error('Failed to create booking');
+      throw new Error(data.message || 'Failed to create booking');
     }
-    return await response.json();
+
+    return data;
   },
 
   /**

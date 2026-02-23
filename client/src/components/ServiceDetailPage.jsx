@@ -6,6 +6,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { serviceService } from '../services/serviceService';
+import { bookingService } from "../services/bookingService";
 
 export default function ServiceDetailPage({ service, onBack }) {
   const today = new Date();
@@ -18,8 +19,12 @@ export default function ServiceDetailPage({ service, onBack }) {
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [selectedDate, setSelectedDate] = useState(today.getDate());
+  const [bookingTime, setBookingTime] = useState("09:00");
+  const [userLocation, setUserLocation] = useState(service?.location || "");
   const [note, setNote] = useState("");
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState("");
 
   const [reviews, setReviews] = useState([]);
 
@@ -97,13 +102,50 @@ export default function ServiceDetailPage({ service, onBack }) {
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
 
   const selectedDateStr = `${currentMonth.getMonth() + 1}/${selectedDate}/${currentMonth.getFullYear()}`;
+  const selectedDateISO = `${currentMonth.getFullYear()}-${String(
+    currentMonth.getMonth() + 1,
+  ).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
   const pkg = packages[selectedPackage] || packages[0] || { name: '', price: 0, description: '', features: [] };
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!user) {
       setShowLoginPrompt(true);
-    } else {
-      // proceed with booking logic here
+      return;
+    }
+
+    const providerId = service?.provider_id || service?.providerId;
+    if (!service?.id || !providerId) {
+      setBookingError("Missing service/provider data. Please refresh and try again.");
+      return;
+    }
+
+    if (!bookingTime || !userLocation.trim()) {
+      setBookingError("Please set your preferred time and location.");
+      return;
+    }
+
+    setIsBooking(true);
+    setBookingError("");
+
+    try {
+      await bookingService.createBooking({
+        service_id: service.id,
+        client_id: user.id,
+        provider_id: providerId,
+        booking_date: selectedDateISO,
+        booking_time: bookingTime,
+        user_location: userLocation.trim(),
+        total_price: toNumber(pkg.price),
+        notes: [note?.trim(), `Package: ${pkg?.name || "Standard"}`]
+          .filter(Boolean)
+          .join(" | "),
+      });
+
+      navigate("/dashboard");
+    } catch (err) {
+      setBookingError(err.message || "Failed to create booking");
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -296,6 +338,27 @@ export default function ServiceDetailPage({ service, onBack }) {
             </div>
 
             <div>
+              <h3 className="text-base font-bold text-slate-900 mb-3">Preferred Time</h3>
+              <input
+                type="time"
+                className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={bookingTime}
+                onChange={(e) => setBookingTime(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-slate-900 mb-3">Service Location</h3>
+              <input
+                type="text"
+                className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                placeholder="Enter your address/location"
+                value={userLocation}
+                onChange={(e) => setUserLocation(e.target.value)}
+              />
+            </div>
+
+            <div>
               <h3 className="text-base font-bold text-slate-900 mb-3">Add a Note</h3>
               <textarea
                 className="w-full border border-slate-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -314,12 +377,20 @@ export default function ServiceDetailPage({ service, onBack }) {
               <div className="flex justify-between text-lg font-bold pt-2"><span>Total</span><span className="text-blue-600">{formatPeso(pkg.price)}</span></div>
             </div>
 
-            <Button className="w-full bg-gradient-to-br from-blue-900 to-blue-600 gap-2" onClick={handleBooking}>
+            {bookingError ? (
+              <p className="text-sm text-red-600">{bookingError}</p>
+            ) : null}
+
+            <Button
+              className="w-full bg-gradient-to-br from-blue-900 to-blue-600 gap-2"
+              onClick={handleBooking}
+              disabled={isBooking}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
               </svg>
-              Book Service
+              {isBooking ? "Booking..." : "Book Service"}
             </Button>
             <p className="text-xs text-center text-slate-500">You won't be charged yet</p>
           </Card>
