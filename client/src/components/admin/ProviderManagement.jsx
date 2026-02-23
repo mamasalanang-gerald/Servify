@@ -176,25 +176,25 @@ const ProviderManagement = () => {
           {selectedProvider && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Name</label>
+                <div className="text-sm font-medium text-slate-700">Name</div>
                 <p className="text-slate-900">{selectedProvider.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Email</label>
+                <div className="text-sm font-medium text-slate-700">Email</div>
                 <p className="text-slate-900">{selectedProvider.email}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Services</label>
+                <div className="text-sm font-medium text-slate-700">Services</div>
                 <p className="text-slate-900">{selectedProvider.servicesCount || 0}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Rating</label>
+                <div className="text-sm font-medium text-slate-700">Rating</div>
                 <p className="text-slate-900">
                   {selectedProvider.rating ? `${selectedProvider.rating.toFixed(1)} ⭐` : 'N/A'}
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Verification Status</label>
+                <div className="text-sm font-medium text-slate-700">Verification Status</div>
                 <p className="text-slate-900">{selectedProvider.verificationStatus}</p>
               </div>
             </div>
