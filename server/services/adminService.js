@@ -278,8 +278,8 @@ const fetchReviews = async (page = 1, limit = 10, filters = {}) => {
     try {
         const offset = (page - 1) * limit;
         let query = `
-            SELECT r.id, r.booking_id, r.client_id, c.full_name as reviewer_name, 
-                   r.provider_id, p.full_name as provider_name, r.rating, r.comment, r.review_date as date
+            SELECT r.id, r.booking_id, r.client_id, c.full_name as "reviewerName", 
+                   r.provider_id, p.full_name as "providerName", r.rating, r.comment, r.review_date as date
             FROM reviews r
             JOIN users c ON r.client_id = c.id
             JOIN users p ON r.provider_id = p.id
@@ -319,8 +319,8 @@ const fetchReviews = async (page = 1, limit = 10, filters = {}) => {
 const fetchReviewById = async (id) => {
     try {
         const query = `
-            SELECT r.id, r.booking_id, r.client_id, c.full_name as client_name, 
-                   r.provider_id, p.full_name as provider_name, r.rating, r.comment, r.review_date
+            SELECT r.id, r.booking_id, r.client_id, c.full_name as "clientName", 
+                   r.provider_id, p.full_name as "providerName", r.rating, r.comment, r.review_date
             FROM reviews r
             JOIN users c ON r.client_id = c.id
             JOIN users p ON r.provider_id = p.id
