@@ -162,31 +162,31 @@ const BookingMonitoring = () => {
           {selectedBooking && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Booking ID</label>
+                <div className="text-sm font-medium text-slate-700">Booking ID</div>
                 <p className="text-slate-900">#{selectedBooking.id}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Client</label>
+                <div className="text-sm font-medium text-slate-700">Client</div>
                 <p className="text-slate-900">{selectedBooking.clientName}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Provider</label>
+                <div className="text-sm font-medium text-slate-700">Provider</div>
                 <p className="text-slate-900">{selectedBooking.providerName}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Service</label>
+                <div className="text-sm font-medium text-slate-700">Service</div>
                 <p className="text-slate-900">{selectedBooking.service}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Date</label>
+                <div className="text-sm font-medium text-slate-700">Date</div>
                 <p className="text-slate-900">{selectedBooking.date}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Amount</label>
+                <div className="text-sm font-medium text-slate-700">Amount</div>
                 <p className="text-slate-900">${selectedBooking.amount}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
+                <div className="text-sm font-medium text-slate-700">Status</div>
                 <p className="text-slate-900">{selectedBooking.status}</p>
               </div>
             </div>

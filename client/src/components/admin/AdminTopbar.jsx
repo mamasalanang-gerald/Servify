@@ -1,22 +1,10 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-
-const AdminTopbar = ({ title, actions }) => {
-  const today = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-
+const AdminTopbar = ({ title, subtitle }) => {
   return (
-    <div className="sticky top-0 z-40 border-b border-slate-200 bg-white px-8 py-3.5 flex items-center justify-between">
+    <div className="bg-white/90 backdrop-blur-2xl border-b border-slate-200 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50 w-full">
       <div>
-        <h1 className="text-lg font-bold text-slate-900">{title}</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Servify Admin Panel · {today}
-        </p>
+        <div className="text-lg font-bold text-slate-900">{title}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{subtitle}</div>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
   );
 };

@@ -163,23 +163,23 @@ const ServiceModeration = () => {
           {selectedService && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Name</label>
+                <div className="text-sm font-medium text-slate-700">Name</div>
                 <p className="text-slate-900">{selectedService.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Provider</label>
+                <div className="text-sm font-medium text-slate-700">Provider</div>
                 <p className="text-slate-900">{selectedService.provider}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Category</label>
+                <div className="text-sm font-medium text-slate-700">Category</div>
                 <p className="text-slate-900">{selectedService.category}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Price</label>
+                <div className="text-sm font-medium text-slate-700">Price</div>
                 <p className="text-slate-900">${selectedService.price}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
+                <div className="text-sm font-medium text-slate-700">Status</div>
                 <p className="text-slate-900">{selectedService.status}</p>
               </div>
             </div>
