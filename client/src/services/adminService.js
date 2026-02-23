@@ -14,7 +14,11 @@ export const adminService = {
 
   // Users
   getUsers: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
+    // Filter out null/undefined values
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null)
+    );
+    const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/users?${queryString}` : '/admin/users';
     const response = await api.get(endpoint);
     if (!response.ok) throw new Error('Failed to fetch users');
@@ -47,7 +51,11 @@ export const adminService = {
 
   // Services
   getServices: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
+    // Filter out null/undefined values
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null)
+    );
+    const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/services?${queryString}` : '/admin/services';
     const response = await api.get(endpoint);
     if (!response.ok) throw new Error('Failed to fetch services');
@@ -86,7 +94,11 @@ export const adminService = {
 
   // Bookings
   getBookings: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
+    // Filter out null/undefined values
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null)
+    );
+    const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/bookings?${queryString}` : '/admin/bookings';
     const response = await api.get(endpoint);
     if (!response.ok) throw new Error('Failed to fetch bookings');
@@ -101,7 +113,11 @@ export const adminService = {
 
   // Reviews
   getReviews: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
+    // Filter out null/undefined values
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null)
+    );
+    const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/reviews?${queryString}` : '/admin/reviews';
     const response = await api.get(endpoint);
     if (!response.ok) throw new Error('Failed to fetch reviews');
