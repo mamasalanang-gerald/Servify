@@ -5,13 +5,7 @@ import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Navbar({ activePage = "" }) {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Get user from authService
-    const currentUser = authService.getUser();
-    setUser(currentUser);
-  }, []);
+  const user = authService.getUser();
 
   const [dark, setDark] = useState(() => {
     return localStorage.getItem("theme") === "dark";
