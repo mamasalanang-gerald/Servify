@@ -19,11 +19,7 @@ const getUsers = async (req, res) => {
             role: user.user_type,
             status: user.is_active ? 'active' : 'inactive',
             verificationStatus: user.is_verified ? 'verified' : 'pending',
-            joinedDate: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric' 
-            }) : 'N/A',
+            joinedDate: user.created_at || null,
             servicesCount: user.services_count || 0,
             rating: user.avg_rating || null
         }));
