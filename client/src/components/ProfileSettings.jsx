@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { userService } from '../services/userService';
-import { authService } from '../services/authService';
 
 const ProfileSettings = () => {
   const [form, setForm] = useState({
