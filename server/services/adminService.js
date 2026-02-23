@@ -9,12 +9,10 @@ const fetchUsers = async (page = 1, limit = 10, role = null) => {
         const values = [];
 
         if (role) {
-            query += ' WHERE user_type = $1';
-            values.push(role);
-            query += ` ORDER BY created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-            values.push(limit, offset);
+            query += ' WHERE user_type = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3';
+            values.push(role, limit, offset);
         } else {
-            query += ` ORDER BY created_at DESC LIMIT $1 OFFSET $2`;
+            query += ' ORDER BY created_at DESC LIMIT $1 OFFSET $2';
             values.push(limit, offset);
         }
 
@@ -125,31 +123,41 @@ const fetchServices = async (page = 1, limit = 10, filters = {}) => {
     try {
         const offset = (page - 1) * limit;
         let query = `
-            SELECT s.id, s.provider_id, u.full_name as provider_name, s.category_id, s.title, s.description, 
+            SELECT s.id, s.provider_id, u.full_name as provider_name, s.category_id, c.name as category_name, s.title, s.description, 
                    s.price, s.service_type, s.location, s.is_active, s.created_at, s.updated_at
             FROM services s
             JOIN users u ON s.provider_id = u.id
+            LEFT JOIN categories c ON s.category_id = c.id
             WHERE 1=1
         `;
         const values = [];
+        let paramCount = 0;
 
         if (filters.provider_id) {
-            query += ` AND s.provider_id = $${values.length + 1}`;
+            paramCount++;
+            query += ` AND s.provider_id = $${paramCount}`;
             values.push(filters.provider_id);
         }
 
         if (filters.category_id) {
-            query += ` AND s.category_id = $${values.length + 1}`;
+            paramCount++;
+            query += ` AND s.category_id = $${paramCount}`;
             values.push(filters.category_id);
         }
 
         if (filters.search) {
-            query += ` AND LOWER(s.title) LIKE LOWER($${values.length + 1})`;
+            paramCount++;
+            query += ` AND LOWER(s.title) LIKE LOWER($${paramCount})`;
             values.push(`%${filters.search}%`);
         }
 
-        query += ` ORDER BY s.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-        values.push(limit, offset);
+        paramCount++;
+        query += ` ORDER BY s.created_at DESC LIMIT $${paramCount}`;
+        values.push(limit);
+        
+        paramCount++;
+        query += ` OFFSET $${paramCount}`;
+        values.push(offset);
 
         const { rows } = await pool.query(query, values);
         return rows;
@@ -208,24 +216,33 @@ const fetchBookings = async (page = 1, limit = 10, filters = {}) => {
             WHERE 1=1
         `;
         const values = [];
+        let paramCount = 0;
 
         if (filters.status) {
-            query += ` AND b.status = $${values.length + 1}`;
+            paramCount++;
+            query += ` AND b.status = $${paramCount}`;
             values.push(filters.status);
         }
 
         if (filters.startDate) {
-            query += ` AND b.booking_date >= $${values.length + 1}`;
+            paramCount++;
+            query += ` AND b.booking_date >= $${paramCount}`;
             values.push(filters.startDate);
         }
 
         if (filters.endDate) {
-            query += ` AND b.booking_date <= $${values.length + 1}`;
+            paramCount++;
+            query += ` AND b.booking_date <= $${paramCount}`;
             values.push(filters.endDate);
         }
 
-        query += ` ORDER BY b.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-        values.push(limit, offset);
+        paramCount++;
+        query += ` ORDER BY b.created_at DESC LIMIT $${paramCount}`;
+        values.push(limit);
+        
+        paramCount++;
+        query += ` OFFSET $${paramCount}`;
+        values.push(offset);
 
         const { rows } = await pool.query(query, values);
         return rows;
@@ -261,27 +278,35 @@ const fetchReviews = async (page = 1, limit = 10, filters = {}) => {
     try {
         const offset = (page - 1) * limit;
         let query = `
-            SELECT r.id, r.booking_id, r.client_id, c.full_name as client_name, 
-                   r.provider_id, p.full_name as provider_name, r.rating, r.comment, r.review_date
+            SELECT r.id, r.booking_id, r.client_id, c.full_name as reviewer_name, 
+                   r.provider_id, p.full_name as provider_name, r.rating, r.comment, r.review_date as date
             FROM reviews r
             JOIN users c ON r.client_id = c.id
             JOIN users p ON r.provider_id = p.id
             WHERE 1=1
         `;
         const values = [];
+        let paramCount = 0;
 
         if (filters.rating) {
-            query += ` AND r.rating = $${values.length + 1}`;
+            paramCount++;
+            query += ` AND r.rating = $${paramCount}`;
             values.push(filters.rating);
         }
 
         if (filters.provider_id) {
-            query += ` AND r.provider_id = $${values.length + 1}`;
+            paramCount++;
+            query += ` AND r.provider_id = $${paramCount}`;
             values.push(filters.provider_id);
         }
 
-        query += ` ORDER BY r.review_date DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
-        values.push(limit, offset);
+        paramCount++;
+        query += ` ORDER BY r.review_date DESC LIMIT $${paramCount}`;
+        values.push(limit);
+        
+        paramCount++;
+        query += ` OFFSET $${paramCount}`;
+        values.push(offset);
 
         const { rows } = await pool.query(query, values);
         return rows;
@@ -328,8 +353,10 @@ const getDashboardMetrics = async () => {
             { name: 'totalUsers', query: 'SELECT COUNT(*) as count FROM users' },
             { name: 'totalProviders', query: 'SELECT COUNT(*) as count FROM users WHERE user_type = $1', params: ['provider'] },
             { name: 'activeServices', query: 'SELECT COUNT(*) as count FROM services WHERE is_active = TRUE' },
+            { name: 'bookingsToday', query: 'SELECT COUNT(*) as count FROM bookings WHERE DATE(created_at) = CURRENT_DATE' },
             { name: 'pendingBookings', query: 'SELECT COUNT(*) as count FROM bookings WHERE status = $1', params: ['pending'] },
             { name: 'completedBookings', query: 'SELECT COUNT(*) as count FROM bookings WHERE status = $1', params: ['completed'] },
+            { name: 'openReports', query: 'SELECT 0 as count' }, // Placeholder - implement when reports table exists
             { name: 'totalTransactions', query: 'SELECT COALESCE(SUM(total_price), 0) as total FROM bookings WHERE status = $1', params: ['completed'] }
         ];
 
