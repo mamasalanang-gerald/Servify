@@ -43,11 +43,23 @@ const AdminDashboardPage = () => {
       const usersResponse = await adminService.getUsers({ page: 1, limit: 5 });
       setRecentUsers(usersResponse.data || []);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to fetch dashboard metrics',
-        variant: 'destructive',
-      });
+      console.error('Dashboard metrics error:', error);
+      const errorMessage = error.message || 'Failed to fetch dashboard metrics';
+      
+      // Check if it's an authentication error
+      if (errorMessage.includes('Unauthorized') || errorMessage.includes('401')) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in as an admin to access this page. Use admin@servify.com / Admin@123456',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoadingMetrics(false);
     }
@@ -185,14 +197,14 @@ const AdminDashboardPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <AdminSidebar activeNav={activeNav} setActiveNav={setActiveNav} />
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col ml-60">
+      <div className="ml-64 flex-1 flex flex-col min-h-screen">
         <AdminTopbar title={meta.title} subtitle={meta.sub} />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto px-8 py-7">
           {renderContent()}
         </main>
       </div>
