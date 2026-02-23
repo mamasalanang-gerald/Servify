@@ -183,25 +183,25 @@ const ReviewModeration = () => {
           {selectedReview && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Reviewer</label>
+                <div className="text-sm font-medium">Reviewer</div>
                 <p className="text-sm text-muted-foreground">{selectedReview.reviewerName}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Provider</label>
+                <div className="text-sm font-medium">Provider</div>
                 <p className="text-sm text-muted-foreground">{selectedReview.providerName}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Rating</label>
+                <div className="text-sm font-medium">Rating</div>
                 <Badge className={getRatingColor(selectedReview.rating)}>
                   {selectedReview.rating} ★
                 </Badge>
               </div>
               <div>
-                <label className="text-sm font-medium">Comment</label>
+                <div className="text-sm font-medium">Comment</div>
                 <p className="text-sm text-muted-foreground">{selectedReview.comment}</p>
               </div>
               <div>
-                <label className="text-sm font-medium">Date</label>
+                <div className="text-sm font-medium">Date</div>
                 <p className="text-sm text-muted-foreground">
                   {new Date(selectedReview.date).toLocaleDateString()}
                 </p>
