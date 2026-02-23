@@ -177,16 +177,20 @@ function CategoryManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Category Name</label>
+              <label htmlFor="category-name" className="text-sm font-medium">Category Name</label>
               <Input
+                id="category-name"
+                name="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Enter category name"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Description</label>
+              <label htmlFor="category-description" className="text-sm font-medium">Description</label>
               <Input
+                id="category-description"
+                name="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Enter category description"
