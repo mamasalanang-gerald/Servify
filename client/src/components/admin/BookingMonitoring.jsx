@@ -22,7 +22,7 @@ const BookingMonitoring = () => {
     try {
       const response = await adminService.getBookings({ 
         page, 
-        limit: 10, 
+        limit: 8, 
         status: statusFilter === 'all' ? null : statusFilter 
       });
       setBookings(response.data || []);

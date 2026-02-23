@@ -24,7 +24,7 @@ const UserManagement = () => {
     try {
       const response = await adminService.getUsers({ 
         page, 
-        limit: 10, 
+        limit: 8, 
         role: roleFilter === 'all' ? null : roleFilter 
       });
       setUsers(response.data || []);
