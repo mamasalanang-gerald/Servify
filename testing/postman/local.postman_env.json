@@ -10,42 +10,42 @@
     },
     {
       "key": "adminEmail",
-      "value": "",
+      "value": "admin@servify.com",
       "type": "default",
       "enabled": true
     },
     {
       "key": "adminPassword",
-      "value": "",
+      "value": "Admin@123456",
       "type": "default",
       "enabled": true
     },
     {
       "key": "providerEmail",
-      "value": "",
+      "value": "qa.provider@servify.com",
       "type": "default",
       "enabled": true
     },
     {
       "key": "providerPassword",
-      "value": "",
+      "value": "Provider@123456",
       "type": "default",
       "enabled": true
     },
     {
       "key": "clientEmail",
-      "value": "",
+      "value": "qa.client@servify.com",
       "type": "default",
       "enabled": true
     },
     {
       "key": "clientPassword",
-      "value": "",
+      "value": "Client@123456",
       "type": "default",
       "enabled": true
     }
   ],
   "_postman_variable_scope": "environment",
-  "_postman_exported_at": "2026-02-22T00:00:00.000Z",
-  "_postman_exported_using": "Codex"
+  "_postman_exported_at": "2026-02-23T11:36:59.780Z",
+  "_postman_exported_using": "Servify Test Bootstrap"
 }

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { userService } from '../services/userService';
 
 const days      = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const timeSlots = ['7:00 AM','8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM'];
@@ -10,15 +11,10 @@ const timeSlots = ['7:00 AM','8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM
 const ProviderProfile = () => {
   const [activeTab, setActiveTab] = useState('Profile');
   const [saved, setSaved]         = useState(false);
-  const [skills, setSkills]       = useState(['House Cleaning', 'Deep Cleaning', 'Post-Construction', 'Eco-Friendly Products']);
+  const [skills, setSkills]       = useState([]);
   const [newSkill, setNewSkill]   = useState('');
   const [form, setForm]           = useState({
-    name: 'Juan dela Cruz',
-    bio: 'Professional cleaner with 5+ years of experience. Specializing in deep cleaning, move-in/out cleans, and eco-friendly solutions. Serving Metro Manila and nearby areas.',
-    phone: '+63 912 345 6789',
-    email: 'juan.delacruz@email.com',
-    address: 'Quezon City, Metro Manila',
-    experience: '5 years',
+    name: '', bio: '', phone: '', email: '', address: '', experience: '',
   });
   const [availability, setAvailability] = useState({
     Monday:    { open: true,  start: '8:00 AM', end: '5:00 PM' },
@@ -30,7 +26,35 @@ const ProviderProfile = () => {
     Sunday:    { open: false, start: '9:00 AM', end: '3:00 PM' },
   });
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+  useEffect(() => {
+    userService.getProfile()
+      .then((user) => {
+        setForm({
+          name: user.full_name || '',
+          bio: user.bio || '',
+          phone: user.phone_number || '',
+          email: user.email || '',
+          address: user.address || '',
+          experience: user.experience || '',
+        });
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      await userService.updateProfile({
+        full_name: form.name,
+        email: form.email,
+        phone_number: form.phone,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const addSkill   = () => { if (newSkill.trim()) { setSkills([...skills, newSkill.trim()]); setNewSkill(''); } };
   const removeSkill = (i) => setSkills(skills.filter((_, idx) => idx !== i));
 
