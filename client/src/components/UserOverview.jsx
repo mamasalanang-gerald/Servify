@@ -7,6 +7,7 @@ import useAuth from '../hooks/useAuth';
 import { applicationService } from '../services/applicationService';
 import { bookingService } from '../services/bookingService';
 import ApplicationStatusCard from './ApplicationStatusCard';
+import { normalizeBookingStatus } from '../utils/bookingStatus';
 
 const UserOverview = ({ onQuickAction }) => {
   const { user } = useAuth();
@@ -15,8 +16,6 @@ const UserOverview = ({ onQuickAction }) => {
   const [loadingApplication, setLoadingApplication] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
-
-  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
 
   // Fetch application status on mount for clients
   useEffect(() => {
@@ -50,7 +49,13 @@ const UserOverview = ({ onQuickAction }) => {
       try {
         setLoadingBookings(true);
         const data = await bookingService.getClientBookings(user.id);
-        setBookings(data || []);
+        const source = Array.isArray(data) ? data : [];
+        setBookings(
+          source.map((booking) => ({
+            ...booking,
+            status: normalizeBookingStatus(booking.status),
+          })),
+        );
       } catch (err) {
         console.error('Failed to fetch bookings:', err);
       } finally {
@@ -67,11 +72,11 @@ const UserOverview = ({ onQuickAction }) => {
 
   // Calculate stats from bookings
   const activeBookingsCount = bookings.filter(b => 
-    ['pending', 'confirmed'].includes(b.status?.toLowerCase())
+    ['pending', 'confirmed'].includes(normalizeBookingStatus(b.status))
   ).length;
 
   const totalSpent = bookings
-    .filter(b => b.status?.toLowerCase() === 'completed')
+    .filter(b => normalizeBookingStatus(b.status) === 'completed')
     .reduce((sum, b) => sum + parseFloat(b.total_price || 0), 0);
 
   const stats = [
