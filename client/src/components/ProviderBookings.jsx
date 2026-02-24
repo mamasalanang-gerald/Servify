@@ -1,42 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-
-const allBookings = [
-  { id: 1, client: 'Maria Santos',   avatar: 'MS', service: 'Deep House Cleaning', date: 'Feb 22, 2026', time: '9:00 AM',  amount: '₱149', status: 'pending' },
-  { id: 2, client: 'Rico Buendia',   avatar: 'RB', service: 'Deep House Cleaning', date: 'Feb 20, 2026', time: '2:00 PM',  amount: '₱149', status: 'pending' },
-  { id: 3, client: 'Trisha Cunanan', avatar: 'TC', service: 'Standard Clean',      date: 'Feb 23, 2026', time: '10:00 AM', amount: '₱89',  status: 'pending' },
-  { id: 4, client: 'Lena Macaraeg',  avatar: 'LM', service: 'Standard Clean',      date: 'Feb 18, 2026', time: '11:00 AM', amount: '₱89',  status: 'confirmed' },
-  { id: 5, client: 'James Torres',   avatar: 'JT', service: 'Deep House Cleaning', date: 'Feb 25, 2026', time: '1:00 PM',  amount: '₱229', status: 'confirmed' },
-  { id: 6, client: 'Ana Reyes',      avatar: 'AR', service: 'Standard Clean',      date: 'Feb 10, 2026', time: '9:00 AM',  amount: '₱89',  status: 'completed' },
-  { id: 7, client: 'Paul Katigbak',  avatar: 'PK', service: 'Deep House Cleaning', date: 'Feb 5, 2026',  time: '3:00 PM',  amount: '₱149', status: 'completed' },
-  { id: 8, client: 'Sofia Araneta',  avatar: 'SA', service: 'Move-In/Out Clean',   date: 'Jan 28, 2026', time: '9:00 AM',  amount: '₱229', status: 'completed' },
-  { id: 9, client: 'Marco Dizon',    avatar: 'MD', service: 'Standard Clean',      date: 'Jan 20, 2026', time: '2:00 PM',  amount: '₱89',  status: 'cancelled' },
-];
+import { bookingService } from '../services/bookingService';
+import { authService } from '../services/authService';
 
 const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
 const statusMap = {
   pending:   { label: 'Pending',   variant: 'warning' },
   confirmed: { label: 'Confirmed', variant: 'default' },
+  accepted:  { label: 'Confirmed', variant: 'default' },
   completed: { label: 'Completed', variant: 'success' },
   cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
 
-const ProviderBookings = () => {
-  const [activeTab, setActiveTab]     = useState('All');
-  const [bookings, setBookings]       = useState(allBookings);
+const normalizeStatus = (status) => {
+  const current = String(status || 'pending').toLowerCase();
+  return current === 'accepted' ? 'confirmed' : current;
+};
+
+const toApiStatus = (uiStatus) => (
+  uiStatus === 'confirmed' ? 'accepted' : uiStatus
+);
+
+const mapProviderBooking = (booking) => {
+  const clientName = booking.client_name || 'Unknown Client';
+  return {
+    ...booking,
+    client: clientName,
+    service: booking.service_name || 'Service',
+    date: booking.booking_date
+      ? new Date(booking.booking_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : '—',
+    time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
+    amount: `₱${Number(booking.total_price || 0).toLocaleString()}`,
+    avatar: clientName
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase(),
+    status: normalizeStatus(booking.status),
+  };
+};
+
+const ProviderBookings = ({ defaultTab = 'All' }) => {
+  const [activeTab, setActiveTab]     = useState(defaultTab);
+  const [bookings, setBookings]       = useState([]);
   const [detailModal, setDetailModal] = useState(null);
+
+  useEffect(() => {
+    const user = authService.getUser();
+    if (user?.id) {
+      bookingService
+        .getProviderBookings(user.id)
+        .then((data) => {
+          const source = Array.isArray(data) ? data : [];
+          setBookings(source.map(mapProviderBooking));
+        })
+        .catch(console.error);
+    }
+  }, []);
 
   const filtered = activeTab === 'All'
     ? bookings
     : bookings.filter((b) => b.status === activeTab.toLowerCase());
 
-  const updateStatus = (id, newStatus) => {
-    setBookings(bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
-    setDetailModal(null);
+  const updateStatus = async (id, newStatus) => {
+    try {
+      await bookingService.updateBookingStatus(id, toApiStatus(newStatus));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)),
+      );
+      setDetailModal(null);
+    } catch (err) { console.error(err); }
   };
 
   const counts = tabs.reduce((acc, tab) => {
@@ -84,7 +127,7 @@ const ProviderBookings = () => {
           </Card>
         )}
         {filtered.map((b) => {
-          const s = statusMap[b.status];
+          const s = statusMap[b.status] || statusMap.pending;
           return (
             <Card key={b.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">

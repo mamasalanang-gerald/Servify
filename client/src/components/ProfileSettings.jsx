@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import { Camera } from 'lucide-react';
 import { userService } from '../services/userService';
+import { uploadServiceImage } from '../services/cloudinaryService';
 
 const ProfileSettings = () => {
   const [form, setForm] = useState({
     full_name: '',
     email: '',
     phone_number: '',
+    profile_image: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -23,7 +28,9 @@ const ProfileSettings = () => {
           full_name: profile.full_name || '',
           email: profile.email || '',
           phone_number: profile.phone_number || '',
+          profile_image: profile.profile_image || '',
         });
+        setImagePreview(profile.profile_image || '');
       } catch (err) {
         console.error('Failed to fetch profile:', err);
         setError(err.message);
@@ -41,13 +48,54 @@ const ProfileSettings = () => {
     setError(null);
   };
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Invalid file type. Use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File too large. Maximum 5MB.');
+      return;
+    }
+
+    setError(null);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setSaved(false);
+  };
+
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
     try {
-      await userService.updateProfile(form);
+      let profileImageUrl = form.profile_image || null;
+
+      // Upload new photo to Cloudinary if a new file was selected
+      if (imageFile) {
+        profileImageUrl = await uploadServiceImage(imageFile);
+        setImageFile(null);
+      }
+
+      await userService.updateProfile({
+        ...form,
+        profile_image: profileImageUrl,
+      });
+      setForm((prev) => ({ ...prev, profile_image: profileImageUrl || '' }));
+      // Sync to localStorage so Navbar/Sidebar update immediately
+      if (profileImageUrl) {
+        localStorage.setItem('servify_profile_image', profileImageUrl);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -76,6 +124,36 @@ const ProfileSettings = () => {
       )}
 
       <form className="space-y-6" onSubmit={handleSubmit}>
+        {/* Profile Photo */}
+        <div className="flex items-center gap-5">
+          <div className="relative group">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-xl font-bold">
+                {getInitials(form.full_name)}
+              </div>
+            )}
+            <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <Camera className="h-5 w-5 text-white" />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">{form.full_name || 'Your Name'}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Click the photo to change it</p>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Full Name</label>
           <Input 

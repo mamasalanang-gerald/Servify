@@ -1,56 +1,91 @@
-import { useState } from 'react';
-import Navbar from '../components/Navbar';
-import DashboardSidebar from '../components/DashboardSidebar';
-import DashboardStats from '../components/DashboardStats';
-import BookingList from '../components/BookingList';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import UserSidebar from '../components/UserSidebar';
+import UserOverview from '../components/UserOverview';
+import UserBookings from '../components/UserBookings';
 import SavedServices from '../components/SavedServices';
 import ProfileSettings from '../components/ProfileSettings';
 import AccountSettings from '../components/AccountSettings';
 import useAuth from '../hooks/useAuth';
-import { Button } from '../components/ui/button';
-
-/* ─── Full-area blur overlay shown when not logged in ─── */
-const GuestOverlay = () => (
-  <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-    <div className="mx-4 max-w-md space-y-6 rounded-lg border border-border bg-card p-8 text-center shadow-lg">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-        </svg>
-      </div>
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">Sign in to view your Dashboard</h2>
-        <p className="text-sm text-muted-foreground">
-          Access your bookings, saved services, profile, and account settings by logging in or creating a free account.
-        </p>
-      </div>
-      <div className="flex gap-3">
-        <Button asChild className="flex-1">
-          <a href="/login">Log In</a>
-        </Button>
-        <Button asChild variant="outline" className="flex-1">
-          <a href="/signup">Create Account</a>
-        </Button>
-      </div>
-    </div>
-  </div>
-);
+import { userService } from '../services/userService';
 
 const DashboardPage = () => {
-  const [activeNav, setActiveNav] = useState('Bookings');
-  const { user } = useAuth();
-  const isGuest = !user;
+  const [activeNav, setActiveNav] = useState('Dashboard');
+  const [quickActionContext, setQuickActionContext] = useState(null);
+  const { user, updateUserRole } = useAuth();
+  const navigate = useNavigate();
+  const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  // Refresh user data on mount and when window gains focus
+  useEffect(() => {
+    const refreshUserData = async () => {
+      if (!user) return;
+      
+      try {
+        const userData = await userService.getCurrentUser();
+        // Update role if it changed
+        if (userData.role !== user.role) {
+          updateUserRole(userData.role);
+          // Force page reload to update UI
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error('Failed to refresh user data:', err);
+      }
+    };
+
+    refreshUserData();
+
+    // Refresh when window gains focus (user comes back to tab)
+    const handleFocus = () => {
+      refreshUserData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user, updateUserRole]);
+
+  const pageMeta = {
+    Dashboard: { title: 'Dashboard', sub: `Welcome back, ${firstName}! Here's your overview.` },
+    Bookings: { title: 'My Bookings', sub: 'View and manage your service bookings.' },
+    'Saved Services': { title: 'Saved Services', sub: 'Your favorite services for quick access.' },
+    Profile: { title: 'Profile Settings', sub: 'Update your personal information.' },
+    Settings: { title: 'Account Settings', sub: 'Manage your account preferences.' },
+  };
+
+  const meta = pageMeta[activeNav] || pageMeta.Dashboard;
+
+  const handleSidebarNavChange = (nextNav) => {
+    setQuickActionContext(null);
+    setActiveNav(nextNav);
+  };
+
+  const handleQuickAction = (actionId) => {
+    if (actionId === 'view-bookings') {
+      setActiveNav('Bookings');
+      setQuickActionContext('view-bookings');
+      return;
+    }
+
+    if (actionId === 'saved-services') {
+      setActiveNav('Saved Services');
+      setQuickActionContext(null);
+    }
+  };
 
   const renderContent = () => {
     switch (activeNav) {
+      case 'Dashboard':
+        return <UserOverview onQuickAction={handleQuickAction} />;
       case 'Bookings':
-        return (
-          <div className="space-y-6">
-            <DashboardStats />
-            <BookingList />
-          </div>
-        );
+        return <UserBookings />;
       case 'Saved Services':
         return <SavedServices />;
       case 'Profile':
@@ -62,27 +97,21 @@ const DashboardPage = () => {
     }
   };
 
+  if (!user) {
+    return null; // Will redirect via useEffect
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar activePage="dashboard" />
-
-      <div className="flex">
-        <DashboardSidebar activeNav={activeNav} setActiveNav={setActiveNav} />
-
-        {/* Wrapper positions the blur + overlay relative to just the main content area */}
-        <div className="relative flex-1">
-          <main className={isGuest ? "blur-sm" : ""}>
-            <div className="border-b border-border bg-card px-8 py-6">
-              <h1 className="text-3xl font-bold text-foreground">My Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage your bookings and account settings</p>
-            </div>
-            <div className="p-8">
-              {renderContent()}
-            </div>
-          </main>
-
-          {isGuest && <GuestOverlay />}
+    <div className="flex min-h-screen bg-slate-50">
+      <UserSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
+      <div className="ml-64 flex-1 flex flex-col min-h-screen">
+        <div className="bg-white/90 backdrop-blur-2xl border-b border-slate-200 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
+          <div>
+            <div className="text-lg font-bold text-slate-900">{meta.title}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{meta.sub}</div>
+          </div>
         </div>
+        <div className="px-8 py-7 flex-1">{renderContent()}</div>
       </div>
     </div>
   );

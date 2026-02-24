@@ -12,6 +12,7 @@ import AdminDashboardPage    from './pages/AdminDashboardPage';
 import RegisterPage          from './pages/RegisterPage';
 import ProtectedRoute        from './components/ProtectedRoute';
 import { authService }       from './services/authService';
+import BecomeProviderPage from './pages/BecomeProviderPage';
 
 function App() {
   return (
@@ -21,6 +22,15 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<RegisterPage />} />
+        
+        <Route
+          path="/become-provider"
+          element={
+            <ProtectedRoute requiredRole="client">
+              <BecomeProviderPage />
+            </ProtectedRoute>
+        }
+      />
 
         {/* Protected routes - User */}
         <Route

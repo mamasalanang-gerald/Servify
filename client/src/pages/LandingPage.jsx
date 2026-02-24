@@ -1,6 +1,7 @@
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import PopularCategories from "../components/PopularCategories";
+import FeaturedServices from "../components/FeaturedServices";
 import Footer from "../components/Footer";
 
 export default function LandingPage() {
@@ -10,6 +11,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <PopularCategories />
+        <FeaturedServices />
       </main>
       <Footer />
     </div>

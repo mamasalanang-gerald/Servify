@@ -4,12 +4,30 @@ const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 const args = process.argv.slice(2);
+const skipBootstrap = args.includes('--skip-bootstrap');
 
 const getArgValue = (flag) => {
   const index = args.indexOf(flag);
   if (index === -1) return null;
   return args[index + 1] || null;
 };
+
+if (!skipBootstrap) {
+  const bootstrapPath = path.join(__dirname, 'bootstrap-test-users.js');
+  const bootstrapResult = spawnSync(process.execPath, [bootstrapPath], {
+    cwd: root,
+    stdio: 'inherit'
+  });
+
+  if (bootstrapResult.error) {
+    console.error(`Failed to bootstrap test data: ${bootstrapResult.error.message}`);
+    process.exit(1);
+  }
+
+  if (bootstrapResult.status !== 0) {
+    process.exit(bootstrapResult.status ?? 1);
+  }
+}
 
 const folder = getArgValue('--folder');
 const collectionPath = getArgValue('--collection') || path.join(root, 'postman', 'Servify.API.postman_collection.json');

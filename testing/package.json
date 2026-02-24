@@ -2,16 +2,27 @@
   "name": "servify-testing",
   "version": "1.0.0",
   "private": true,
-  "description": "Postman/Newman API automation for Servify",
+  "description": "Servify API and frontend automation (Newman + Playwright)",
   "type": "commonjs",
   "scripts": {
+    "bootstrap": "node scripts/bootstrap-test-users.js",
     "generate:collection": "node scripts/generate-postman-collection.js",
-    "test:smoke": "node scripts/run-newman.js --folder Smoke",
-    "test:e2e": "node scripts/run-newman.js --folder E2E Flow",
-    "test:negative": "node scripts/run-newman.js --folder Negative Cases",
-    "test:all": "node scripts/run-newman.js"
+    "test:api:smoke": "node scripts/run-newman.js --folder Smoke",
+    "test:api:e2e": "node scripts/run-newman.js --folder E2E Flow",
+    "test:api:negative": "node scripts/run-newman.js --folder Negative Cases",
+    "test:api:all": "node scripts/run-newman.js",
+    "test:ui:smoke": "node scripts/run-playwright.js --grep @smoke",
+    "test:ui:e2e": "node scripts/run-playwright.js --grep @e2e",
+    "test:custom": "node scripts/run-custom-flow.js",
+    "test:custom:provider-multi-packages": "node scripts/run-custom-flow.js --type api --flow provider-multi-packages",
+    "test:custom:provider-multi-packages:keep": "node scripts/run-custom-flow.js --type api --flow provider-multi-packages --keep-data",
+    "test:negative": "npm run test:api:negative",
+    "test:smoke": "npm run bootstrap && node scripts/run-newman.js --skip-bootstrap --folder Smoke && node scripts/run-playwright.js --skip-bootstrap --grep @smoke",
+    "test:e2e": "npm run bootstrap && node scripts/run-newman.js --skip-bootstrap --folder E2E Flow && node scripts/run-playwright.js --skip-bootstrap --grep @e2e",
+    "test:all": "npm run bootstrap && node scripts/run-newman.js --skip-bootstrap && node scripts/run-newman.js --skip-bootstrap --folder Negative Cases && node scripts/run-playwright.js --skip-bootstrap --grep @smoke && node scripts/run-playwright.js --skip-bootstrap --grep @e2e"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "newman": "^6.2.1",
     "newman-reporter-htmlextra": "^1.23.1"
   }

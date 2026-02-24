@@ -14,16 +14,33 @@ const getProfile = async (req, res) => {
   }
 };
 
+const getCurrentUser = async (req, res) => {
+  try {
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Return only essential auth info
+    res.status(200).json({
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      role: user.user_type
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 const updateProfile = async (req, res) => {
   try {
-    const { full_name, email, phone_number } = req.body;
+    const { full_name, email, phone_number, profile_image } = req.body;
     
     // Validate required fields
     if (!full_name || !email) {
       return res.status(400).json({ message: 'Full name and email are required' });
     }
 
-    const user = await updateUserProfile(req.user.id, { full_name, email, phone_number });
+    const user = await updateUserProfile(req.user.id, { full_name, email, phone_number, profile_image: profile_image || null });
     if (!user) return res.status(404).json({ message: 'User not found' });
     
     res.status(200).json({ message: 'Profile updated successfully', user });
@@ -104,4 +121,4 @@ const changeUserRole = async (req, res) => {
     }
 };
 
-module.exports = { getProfile, updateProfile, listUsers, promoteRole, changeUserRole };
+module.exports = { getProfile, getCurrentUser, updateProfile, listUsers, promoteRole, changeUserRole };

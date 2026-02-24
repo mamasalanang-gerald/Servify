@@ -1,4 +1,4 @@
-const { createCategory: insertCategory, getAllCategories: retrieveAllCategories, getCategoryById: retrieveCategoryById, updateCategory: modifyCategory, deleteCategory: removeCategory } = require('../models/categoriesModel');
+const { createCategory: insertCategory, getAllCategories: retrieveAllCategories, getCategoryById: retrieveCategoryById, updateCategory: modifyCategory, deleteCategory: removeCategory, getAllCategoriesWithCount } = require('../models/categoriesModel');
 
 const createCategory = async (req, res) => {
     try {
@@ -8,6 +8,17 @@ const createCategory = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: 'Error creating category', error: err.message });
     }
+};
+
+const getCategoriesWithCount = async (req, res) => {
+  try {
+    const categories = await getAllCategoriesWithCount();
+    res.status(200).json({ categories });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching categories", error: err.message });
+  }
 };
 
 const getAllCategories = async (req, res) => {
@@ -54,6 +65,7 @@ module.exports = {
     createCategory,
     getAllCategories,
     getCategoryById,
+    getCategoriesWithCount,
     updateCategory,
     deleteCategory
 }

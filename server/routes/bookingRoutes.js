@@ -4,8 +4,6 @@ const { getAllBookings, createBooking, getClientBookings, getProviderBookings, u
 const { verifyToken } = require('../middlewares/authMiddleware');
 const authorizeRoles = require('../middlewares/roleMiddleware');
 
-console.log('routes loaded');
-
 router.get('/', verifyToken, authorizeRoles('admin'), getAllBookings);
 
 router.post('/createBooking',verifyToken, createBooking);

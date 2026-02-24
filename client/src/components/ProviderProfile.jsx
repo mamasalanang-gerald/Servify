@@ -1,24 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Camera } from 'lucide-react';
+import { userService } from '../services/userService';
+import { uploadServiceImage } from '../services/cloudinaryService';
 
 const days      = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const timeSlots = ['7:00 AM','8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM'];
 
-const ProviderProfile = () => {
-  const [activeTab, setActiveTab] = useState('Profile');
+const ProviderProfile = ({ defaultTab = 'Profile' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [saved, setSaved]         = useState(false);
-  const [skills, setSkills]       = useState(['House Cleaning', 'Deep Cleaning', 'Post-Construction', 'Eco-Friendly Products']);
+  const [skills, setSkills]       = useState([]);
   const [newSkill, setNewSkill]   = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [form, setForm]           = useState({
-    name: 'Juan dela Cruz',
-    bio: 'Professional cleaner with 5+ years of experience. Specializing in deep cleaning, move-in/out cleans, and eco-friendly solutions. Serving Metro Manila and nearby areas.',
-    phone: '+63 912 345 6789',
-    email: 'juan.delacruz@email.com',
-    address: 'Quezon City, Metro Manila',
-    experience: '5 years',
+    name: '', bio: '', phone: '', email: '', address: '', experience: '', profile_image: '',
   });
   const [availability, setAvailability] = useState({
     Monday:    { open: true,  start: '8:00 AM', end: '5:00 PM' },
@@ -30,7 +32,85 @@ const ProviderProfile = () => {
     Sunday:    { open: false, start: '9:00 AM', end: '3:00 PM' },
   });
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+  useEffect(() => {
+    userService.getProfile()
+      .then((user) => {
+        setForm({
+          name: user.full_name || '',
+          bio: user.bio || '',
+          phone: user.phone_number || '',
+          email: user.email || '',
+          address: user.address || '',
+          experience: user.experience || '',
+          profile_image: user.profile_image || '',
+        });
+        setImagePreview(user.profile_image || '');
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Invalid file type. Use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File too large. Maximum 5MB.');
+      return;
+    }
+
+    setUploadError('');
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
+  const handleSave = async () => {
+    try {
+      setUploading(false);
+      let profileImageUrl = form.profile_image || null;
+
+      // Upload new photo to Cloudinary if selected
+      if (imageFile) {
+        setUploading(true);
+        setUploadError('');
+        try {
+          profileImageUrl = await uploadServiceImage(imageFile);
+          setImageFile(null);
+        } catch (err) {
+          setUploadError(err.message || 'Image upload failed');
+          setUploading(false);
+          return;
+        }
+        setUploading(false);
+      }
+
+      await userService.updateProfile({
+        full_name: form.name,
+        email: form.email,
+        phone_number: form.phone,
+        profile_image: profileImageUrl,
+      });
+      setForm((prev) => ({ ...prev, profile_image: profileImageUrl || '' }));
+      // Sync to localStorage so Sidebar/Navbar update immediately
+      if (profileImageUrl) {
+        localStorage.setItem('servify_profile_image', profileImageUrl);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const addSkill   = () => { if (newSkill.trim()) { setSkills([...skills, newSkill.trim()]); setNewSkill(''); } };
   const removeSkill = (i) => setSkills(skills.filter((_, idx) => idx !== i));
 
@@ -144,12 +224,42 @@ const ProviderProfile = () => {
           <div className="space-y-6">
             <Card>
               <CardContent className="flex flex-col items-center p-6">
-                <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 text-2xl font-bold mb-4">
-                  JD
+                <div className="relative group mb-4">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Profile"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-2xl font-bold">
+                      {getInitials(form.name)}
+                    </div>
+                  )}
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="h-6 w-6 text-white" />
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
                 <div className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">{form.name}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">Service Provider · {form.experience}</div>
-                <Button variant="outline" className="w-full">Change Photo</Button>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Service Provider · {form.experience}</div>
+                {uploadError && <p className="text-xs text-red-500 mb-2">{uploadError}</p>}
+                <label className="w-full">
+                  <Button variant="outline" className="w-full" asChild>
+                    <span className="cursor-pointer">Change Photo</span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
               </CardContent>
             </Card>
 

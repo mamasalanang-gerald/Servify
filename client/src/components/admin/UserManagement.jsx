@@ -24,7 +24,7 @@ const UserManagement = () => {
     try {
       const response = await adminService.getUsers({ 
         page, 
-        limit: 10, 
+        limit: 8, 
         role: roleFilter === 'all' ? null : roleFilter 
       });
       setUsers(response.data || []);
@@ -143,7 +143,13 @@ const UserManagement = () => {
                       {user.role}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-slate-600">{user.joinedDate}</TableCell>
+                  <TableCell className="text-slate-600">
+                    {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) : 'N/A'}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
                       <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 bg-current"></span>
@@ -220,7 +226,13 @@ const UserManagement = () => {
               </div>
               <div>
                 <div className="text-sm font-medium text-slate-700">Joined</div>
-                <p className="text-slate-900">{selectedUser.joinedDate}</p>
+                <p className="text-slate-900">
+                  {selectedUser.joinedDate ? new Date(selectedUser.joinedDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  }) : 'N/A'}
+                </p>
               </div>
             </div>
           )}

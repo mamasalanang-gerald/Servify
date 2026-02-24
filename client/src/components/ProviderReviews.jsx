@@ -1,23 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-
-const initialReviews = [
-  { id: 1, client: 'Maria Santos',  avatar: 'MS', service: 'Deep House Cleaning', rating: 5, date: 'Feb 18, 2026', text: 'Absolutely fantastic! The team was thorough and professional. My kitchen looks brand new. Will definitely book again!', reply: '' },
-  { id: 2, client: 'James Torres',  avatar: 'JT', service: 'Move-In/Out Clean',   rating: 5, date: 'Feb 15, 2026', text: 'Highly recommend. Punctual, efficient, and left zero mess behind. Juan is the best cleaner in the area.', reply: 'Thank you so much James! It was a pleasure working with you.' },
-  { id: 3, client: 'Lena Macaraeg', avatar: 'LM', service: 'Standard Clean',      rating: 4, date: 'Feb 10, 2026', text: 'Great service overall. Minor thing was they missed one shelf, but everything else was perfect.', reply: '' },
-  { id: 4, client: 'Ana Reyes',     avatar: 'AR', service: 'Standard Clean',      rating: 5, date: 'Jan 28, 2026', text: 'Super thorough and friendly! My apartment smells amazing now. Great value for the price.', reply: 'Thank you Ana! So happy you loved the results.' },
-  { id: 5, client: 'Paul Katigbak', avatar: 'PK', service: 'Deep House Cleaning', rating: 4, date: 'Jan 22, 2026', text: 'Very good service, arrived on time and was professional throughout. Would recommend to friends.', reply: '' },
-  { id: 6, client: 'Sofia Araneta', avatar: 'SA', service: 'Move-In/Out Clean',   rating: 5, date: 'Jan 15, 2026', text: 'Saved my security deposit! The apartment was spotless when they were done. Worth every peso.', reply: '' },
-];
-
-const ratingCounts = [5, 4, 3, 2, 1].map((n) => ({
-  star: n,
-  count: initialReviews.filter((r) => r.rating === n).length,
-}));
-
-const avgRating = (initialReviews.reduce((s, r) => s + r.rating, 0) / initialReviews.length).toFixed(1);
+import { serviceService } from '../services/serviceService';
+import { authService } from '../services/authService';
 
 const renderStars = (n, size = 'text-base') =>
   Array.from({ length: 5 }, (_, i) => (
@@ -25,9 +11,35 @@ const renderStars = (n, size = 'text-base') =>
   ));
 
 const ProviderReviews = () => {
-  const [reviewList, setReviewList] = useState(initialReviews);
+  const [reviewList, setReviewList] = useState([]);
   const [replyDraft, setReplyDraft] = useState({});
   const [filter, setFilter]         = useState(0);
+
+  useEffect(() => {
+    const user = authService.getUser();
+    if (user?.id) {
+      serviceService.getMyServices().then(async (services) => {
+        const data = Array.isArray(services) ? services : [];
+        const allReviews = [];
+        for (const svc of data) {
+          try {
+            const reviews = await serviceService.getServiceReviews(svc.id);
+            allReviews.push(...reviews.map((r) => ({ ...r, service: svc.title })));
+          } catch (e) { /* skip */ }
+        }
+        setReviewList(allReviews);
+      }).catch(console.error);
+    }
+  }, []);
+
+  const ratingCounts = [5, 4, 3, 2, 1].map((n) => ({
+    star: n,
+    count: reviewList.filter((r) => r.rating === n).length,
+  }));
+
+  const avgRating = reviewList.length > 0
+    ? (reviewList.reduce((s, r) => s + r.rating, 0) / reviewList.length).toFixed(1)
+    : '0.0';
 
   const submitReply = (id) => {
     if (!replyDraft[id]?.trim()) return;
@@ -45,7 +57,7 @@ const ProviderReviews = () => {
           <CardContent className="flex flex-col items-center p-6">
             <div className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-2">{avgRating}</div>
             <div className="flex mb-2">{renderStars(Math.round(avgRating), 'text-xl')}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">{initialReviews.length} reviews</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{reviewList.length} reviews</div>
           </CardContent>
         </Card>
 
@@ -63,7 +75,7 @@ const ProviderReviews = () => {
               onClick={() => setFilter(0)}
             >
               <span className="text-sm font-medium">All Reviews</span>
-              <span className="text-sm font-semibold">{initialReviews.length}</span>
+              <span className="text-sm font-semibold">{reviewList.length}</span>
             </button>
             {ratingCounts.map(({ star, count }) => (
               <button
@@ -79,7 +91,7 @@ const ProviderReviews = () => {
                 <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-yellow-500 rounded-full" 
-                    style={{ width: `${(count / initialReviews.length) * 100}%` }} 
+                    style={{ width: `${reviewList.length > 0 ? (count / reviewList.length) * 100 : 0}%` }} 
                   />
                 </div>
                 <span className="text-sm font-semibold min-w-[20px] text-right">{count}</span>
@@ -105,16 +117,18 @@ const ProviderReviews = () => {
             <CardContent className="p-6">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
-                  {r.avatar}
+                  {(r.reviewer_name || r.client || '?')[0]}
                 </div>
                 <div className="flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-gray-100">{r.client}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{r.service} · {r.date}</div>
+                  <div className="font-semibold text-gray-900 dark:text-gray-100">{r.reviewer_name || r.client}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {r.service} · {new Date(r.review_date || r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
                 </div>
                 <div className="flex">{renderStars(r.rating, 'text-sm')}</div>
               </div>
 
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{r.text}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{r.comment || r.text}</p>
 
               {r.reply && (
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
