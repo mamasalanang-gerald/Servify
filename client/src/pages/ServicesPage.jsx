@@ -23,6 +23,7 @@ const ServicesPage = () => {
 
   return (
     <div className="w-full min-h-screen bg-slate-50 dark:bg-[#0b1220] flex flex-col transition-colors">
+      
       <Navbar activePage="services" />
 
       {selectedService ? (

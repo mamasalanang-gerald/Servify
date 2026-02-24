@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { authService } from "../services/authService";
 import LogoutButton from "./LogoutButton";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,9 @@ export default function Navbar({ activePage = "" }) {
     return localStorage.getItem("theme") === "dark";
   });
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   useEffect(() => {
     if (dark) {
       document.documentElement.classList.add("dark");
@@ -19,6 +22,19 @@ export default function Navbar({ activePage = "" }) {
       localStorage.setItem("theme", "light");
     }
   }, [dark]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownOpen]);
 
   return (
     <nav className="flex items-center justify-between px-12 h-[68px] bg-white/92 dark:bg-[#0f172a]/95 border-b border-app-border dark:border-[#1e293b] sticky top-0 z-[100] backdrop-blur-2xl transition-all gap-6 font-sans">
@@ -55,10 +71,11 @@ export default function Navbar({ activePage = "" }) {
 
         {user ? (
           /* Logged in: profile dropdown */
-          <div className="relative inline-flex group">
+          <div className="relative inline-flex" ref={dropdownRef}>
             <button
               className="w-9 h-9 rounded-full border-[1.5px] border-app-border dark:border-[#1e293b] bg-transparent cursor-pointer flex items-center justify-center text-app-text-muted dark:text-[#94a3b8] transition-all hover:border-app-accent dark:hover:border-[#7b9fff] overflow-hidden"
               aria-label="Account"
+              onClick={() => setDropdownOpen((prev) => !prev)}
             >
               {user.profile_image ? (
                 <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover rounded-full" />
@@ -71,7 +88,14 @@ export default function Navbar({ activePage = "" }) {
             </button>
 
             {/* Dropdown */}
-            <div className="absolute top-[calc(100%+12px)] right-0 min-w-[190px] bg-white/98 dark:bg-[#0f172a]/98 border border-app-border dark:border-[#1e293b] rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] p-3 flex flex-col gap-1.5 opacity-0 pointer-events-none -translate-y-1.5 transition-all duration-200 z-[200] group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0 before:content-[''] before:absolute before:-top-1.5 before:right-3 before:w-2.5 before:h-2.5 before:bg-white dark:before:bg-[#0f172a] before:border-l before:border-t before:border-app-border dark:before:border-[#1e293b] before:rotate-45">
+            <div
+              className={cn(
+                "absolute top-[calc(100%+12px)] right-0 min-w-[190px] bg-white/98 dark:bg-[#0f172a]/98 border border-app-border dark:border-[#1e293b] rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] p-3 flex flex-col gap-1.5 transition-all duration-200 z-[200] before:content-[''] before:absolute before:-top-1.5 before:right-3 before:w-2.5 before:h-2.5 before:bg-white dark:before:bg-[#0f172a] before:border-l before:border-t before:border-app-border dark:before:border-[#1e293b] before:rotate-45",
+                dropdownOpen
+                  ? "opacity-100 pointer-events-auto translate-y-0"
+                  : "opacity-0 pointer-events-none -translate-y-1.5"
+              )}
+            >
               <span className="text-[0.8rem] font-semibold text-app-text dark:text-[#f1f5f9] overflow-hidden whitespace-nowrap text-ellipsis px-1.5">
                 {user.email}
               </span>
