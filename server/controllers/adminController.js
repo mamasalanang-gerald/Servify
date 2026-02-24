@@ -325,6 +325,126 @@ const getDashboardMetrics = async (req, res) => {
     }
 };
 
+// ============ APPLICATION MANAGEMENT ============
+
+const getApplications = async (req, res) => {
+    try {
+        const { status = 'all', search = '', page = 1, limit = 10 } = req.query;
+        
+        const { getApplications: getApps } = require('../services/applicationService');
+        const result = await getApps({ status, search, page, limit });
+        
+        res.status(200).json({
+            success: true,
+            applications: result.applications,
+            pagination: result.pagination,
+            counts: result.counts
+        });
+    } catch (error) {
+        console.error('Get applications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve applications',
+            error: error.message
+        });
+    }
+};
+
+const approveApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const adminId = req.user.id;
+        
+        const { approveApplication: approveApp } = require('../services/applicationService');
+        const application = await approveApp(id, adminId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Application approved successfully',
+            application: {
+                id: application.id,
+                status: application.status,
+                reviewedAt: application.reviewed_at,
+                reviewedBy: application.reviewed_by
+            }
+        });
+    } catch (error) {
+        console.error('Approve application error:', error);
+        
+        if (error.message.includes('not found')) {
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+        
+        if (error.message.includes('already been processed')) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'Failed to approve application',
+            error: error.message
+        });
+    }
+};
+
+const rejectApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rejectionReason } = req.body;
+        const adminId = req.user.id;
+        
+        if (!rejectionReason || rejectionReason.trim().length < 10) {
+            return res.status(400).json({
+                success: false,
+                message: 'Rejection reason must be at least 10 characters'
+            });
+        }
+        
+        const { rejectApplication: rejectApp } = require('../services/applicationService');
+        const application = await rejectApp(id, adminId, rejectionReason);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Application rejected',
+            application: {
+                id: application.id,
+                status: application.status,
+                reviewedAt: application.reviewed_at,
+                reviewedBy: application.reviewed_by,
+                rejectionReason: application.rejection_reason
+            }
+        });
+    } catch (error) {
+        console.error('Reject application error:', error);
+        
+        if (error.message.includes('not found')) {
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+        
+        if (error.message.includes('already been processed')) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: 'Failed to reject application',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     // User Management
     getUsers,
@@ -349,5 +469,9 @@ module.exports = {
     getReviewById,
     deleteReview,
     // Dashboard
-    getDashboardMetrics
+    getDashboardMetrics,
+    // Application Management
+    getApplications,
+    approveApplication,
+    rejectApplication
 };

@@ -6,6 +6,17 @@ import api from './api';
 
 export const userService = {
   /**
+   * Get current user (minimal auth info)
+   */
+  async getCurrentUser() {
+    const response = await api.get('/users/me');
+    if (!response.ok) {
+      throw new Error('Failed to fetch current user');
+    }
+    return await response.json();
+  },
+
+  /**
    * Get current user profile
    */
   async getProfile() {

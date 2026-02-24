@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { applicationService } from '../services/applicationService';
+import { categoryService } from '../services/categoryService';
+import { validateApplicationForm } from '../utils/applicationValidation';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
@@ -8,38 +10,108 @@ const BecomeProviderBox = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
+    businessName: '',
+    bio: '',
+    yearsOfExperience: '',
+    serviceCategories: [],
+    phoneNumber: '',
+    serviceAddress: '',
   });
 
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState('');
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Check if user already has an application on mount
+  useEffect(() => {
+    const checkApplicationStatus = async () => {
+      try {
+        const status = await applicationService.getMyApplicationStatus();
+        if (status && status.application) {
+          // User already has an application
+          setSubmitted(true);
+          setForm((prev) => ({
+            ...prev,
+            businessName: status.application.business_name || '',
+          }));
+        }
+      } catch (err) {
+        // No application found or error - that's okay, show the form
+        console.log('No existing application found');
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
+    checkApplicationStatus();
+  }, []);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await categoryService.getAllCategories();
+        setCategories(data.categories || []);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
     setError('');
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors({ ...validationErrors, [name]: '' });
+    }
+  };
+
+  const handleCategoryToggle = (categoryId) => {
+    setForm((prev) => ({
+      ...prev,
+      serviceCategories: prev.serviceCategories.includes(categoryId)
+        ? prev.serviceCategories.filter((id) => id !== categoryId)
+        : [...prev.serviceCategories, categoryId],
+    }));
+    if (validationErrors.serviceCategories) {
+      setValidationErrors({ ...validationErrors, serviceCategories: '' });
+    }
+  };
+
+  const validateForm = () => {
+    const errors = validateApplicationForm(form);
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!form.fullName.trim()) return setError('Full name is required.');
-    if (!form.email.trim()) return setError('Email is required.');
-    if (!form.phone.trim()) return setError('Contact number is required.');
+    if (!validateForm()) {
+      setError('Please fix the validation errors below');
+      return;
+    }
 
     setLoading(true);
     try {
-      await authService.registerProvider({
-        fullName: form.fullName,
-        email: form.email,
-        phone: form.phone,
+      await applicationService.submitApplication({
+        businessName: form.businessName,
+        bio: form.bio,
+        yearsOfExperience: Number(form.yearsOfExperience),
+        serviceCategories: form.serviceCategories,
+        phoneNumber: form.phoneNumber,
+        serviceAddress: form.serviceAddress,
       });
       setSubmitted(true);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Failed to submit application. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -72,17 +144,31 @@ const BecomeProviderBox = () => {
             </div>
             <h1 className="mb-3 text-3xl font-bold text-foreground">Application Submitted!</h1>
             <p className="mb-2 text-muted-foreground">
-              Thank you, <span className="font-semibold text-foreground">{form.fullName}</span>!
+              Thank you, <span className="font-semibold text-foreground">{form.businessName}</span>!
             </p>
             <p className="mb-8 text-sm text-muted-foreground">
               Your provider application is now under review. Our admin team will verify your details and approve your account shortly.
             </p>
-            <Button className="w-full" onClick={() => navigate('/login')}>Go to Login</Button>
+            <Button className="w-full" onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
             <p className="mt-4 text-xs text-muted-foreground">
-              Already approved?{' '}
-              <a href="/login" className="font-medium text-primary underline-offset-4 hover:underline">Sign in here</a>
+              You can check your application status in your dashboard.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while checking status
+  if (checkingStatus) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <svg className="mx-auto h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="mt-4 text-sm text-muted-foreground">Checking application status...</p>
         </div>
       </div>
     );
@@ -138,47 +224,119 @@ const BecomeProviderBox = () => {
 
           <form className="space-y-5" onSubmit={handleSubmit}>
 
-            {/* Full Name */}
+            {/* Business Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Full Name</label>
+              <label className="text-sm font-medium text-foreground">Business Name *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
                   </svg>
                 </span>
-                <Input name="fullName" type="text" className="pl-10"
-                  placeholder="Juan dela Cruz" value={form.fullName} onChange={handleChange} required />
+                <Input name="businessName" type="text" className="pl-10"
+                  placeholder="Your Business Name" value={form.businessName} onChange={handleChange} />
               </div>
+              {validationErrors.businessName && (
+                <p className="text-xs text-red-600">{validationErrors.businessName}</p>
+              )}
             </div>
 
-            {/* Email */}
+            {/* Bio */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email Address</label>
+              <label className="text-sm font-medium text-foreground">
+                Bio * <span className="text-xs text-muted-foreground">(minimum 50 characters)</span>
+              </label>
+              <textarea
+                name="bio"
+                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Tell us about your experience and services..."
+                value={form.bio}
+                onChange={handleChange}
+              />
+              <p className="text-xs text-muted-foreground">{form.bio.length}/50 characters</p>
+              {validationErrors.bio && (
+                <p className="text-xs text-red-600">{validationErrors.bio}</p>
+              )}
+            </div>
+
+            {/* Years of Experience */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Years of Experience *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                   </svg>
                 </span>
-                <Input name="email" type="email" className="pl-10"
-                  placeholder="you@example.com" value={form.email} onChange={handleChange} required />
+                <Input name="yearsOfExperience" type="number" min="0" className="pl-10"
+                  placeholder="5" value={form.yearsOfExperience} onChange={handleChange} />
               </div>
+              {validationErrors.yearsOfExperience && (
+                <p className="text-xs text-red-600">{validationErrors.yearsOfExperience}</p>
+              )}
             </div>
 
-            {/* Phone */}
+            {/* Service Categories */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Contact Number</label>
+              <label className="text-sm font-medium text-foreground">Service Categories *</label>
+              <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto border border-input rounded-md p-3">
+                {categories.map((category) => (
+                  <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.serviceCategories.includes(category.id)}
+                      onChange={() => handleCategoryToggle(category.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm">{category.name}</span>
+                  </label>
+                ))}
+              </div>
+              {validationErrors.serviceCategories && (
+                <p className="text-xs text-red-600">{validationErrors.serviceCategories}</p>
+              )}
+            </div>
+
+            {/* Phone Number */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Phone Number *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.07 6.07l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                 </span>
-                <Input name="phone" type="tel" className="pl-10"
-                  placeholder="+63 900 000 0000" value={form.phone} onChange={handleChange} required />
+                <Input name="phoneNumber" type="tel" className="pl-10"
+                  placeholder="+63 900 000 0000" value={form.phoneNumber} onChange={handleChange} />
               </div>
+              {validationErrors.phoneNumber && (
+                <p className="text-xs text-red-600">{validationErrors.phoneNumber}</p>
+              )}
+            </div>
+
+            {/* Service Address */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Service Address *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-muted-foreground">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </span>
+                <textarea
+                  name="serviceAddress"
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Your service area address"
+                  value={form.serviceAddress}
+                  onChange={handleChange}
+                />
+              </div>
+              {validationErrors.serviceAddress && (
+                <p className="text-xs text-red-600">{validationErrors.serviceAddress}</p>
+              )}
             </div>
 
             {/* Error */}

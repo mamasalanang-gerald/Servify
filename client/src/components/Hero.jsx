@@ -7,7 +7,7 @@ export default function Hero() {
 
   return (
     <section className="bg-gradient-to-br from-[#eef1fb] via-[#f4f6fd] to-[#e8eaf6] dark:from-[#131929] dark:via-[#0f1623] dark:to-[#131929] min-h-[calc(100vh-64px)] flex items-center justify-center px-8 py-16 relative overflow-hidden transition-colors before:content-[''] before:absolute before:w-[600px] before:h-[600px] before:bg-[radial-gradient(circle,rgba(44,63,209,0.08)_0%,transparent_70%)] before:-top-[100px] before:-right-[100px] before:pointer-events-none">
-      <div className="text-center max-w-[720px] animate-[fadeUp_0.7s_ease_both]">
+      <div className="text-center max-w-[720px]">
         <h1 className="font-heading text-[clamp(2.2rem,5vw,3.6rem)] font-extrabold text-app-text dark:text-[#f1f5f9] leading-[1.15] mb-5 transition-colors">
           Book Trusted Services<br />
           <span className="text-app-accent dark:text-[#7b93ff]">Anytime, Anywhere</span>

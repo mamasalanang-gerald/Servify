@@ -7,6 +7,7 @@ import ServiceModeration from '../components/admin/ServiceModeration';
 import BookingMonitoring from '../components/admin/BookingMonitoring';
 import ReviewModeration from '../components/admin/ReviewModeration';
 import CategoryManagement from '../components/admin/CategoryManagement';
+import ApplicationManagement from '../components/admin/ApplicationManagement';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,6 +20,7 @@ const pageMeta = {
   'Overview': { title: 'Overview', sub: 'Dashboard overview and key metrics' },
   'Users': { title: 'Users', sub: 'Manage user accounts' },
   'Providers': { title: 'Providers', sub: 'Manage service providers' },
+  'Applications': { title: 'Applications', sub: 'Review provider applications' },
   'Services': { title: 'Services', sub: 'Moderate service listings' },
   'Bookings': { title: 'Bookings', sub: 'Monitor booking requests' },
   'Reviews': { title: 'Reviews', sub: 'Moderate user reviews' },
@@ -181,6 +183,8 @@ const AdminDashboardPage = () => {
         return <UserManagement />;
       case 'Providers':
         return <ProviderManagement />;
+      case 'Applications':
+        return <ApplicationManagement />;
       case 'Services':
         return <ServiceModeration />;
       case 'Bookings':

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { 
   DollarSign, 
   Calendar, 
@@ -30,7 +31,11 @@ const normalizeStatus = (status) => {
   return current;
 };
 
-const ProviderOverview = () => {
+const toApiStatus = (uiStatus) => (
+  uiStatus === 'confirmed' ? 'accepted' : uiStatus
+);
+
+const ProviderOverview = ({ onQuickAction = () => {} }) => {
   const [chartPeriod, setChartPeriod] = useState('Week');
   const [overviewStats, setOverviewStats] = useState({
     totalEarnings: '₱0',
@@ -39,6 +44,8 @@ const ProviderOverview = () => {
     avgRating: '—',
   });
   const [recentBookings, setRecentBookings] = useState([]);
+  const [updatingBookingIds, setUpdatingBookingIds] = useState(new Set());
+  const [detailModal, setDetailModal] = useState(null);
   const [weeklyData] = useState([
     { day: 'Mon', amount: 0 },
     { day: 'Tue', amount: 0 },
@@ -69,18 +76,93 @@ const ProviderOverview = () => {
         arr.slice(0, 3).map((b) => ({
           id: b.id,
           client: b.client_name || 'Client',
+          client_phone: b.client_phone || '—',
           service: b.service_name || 'Service',
           date: new Date(b.booking_date).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
           }),
+          time: b.booking_time ? String(b.booking_time).slice(0, 5) : '—',
+          location: b.user_location || '—',
+          notes: b.notes || '—',
           amount: `₱${Number(b.total_price || 0).toLocaleString()}`,
           status: normalizeStatus(b.status),
         })),
       );
     }).catch(console.error);
   }, []);
+
+  const adjustPendingCount = (fromStatus, toStatus) => {
+    if (fromStatus === toStatus) return;
+
+    setOverviewStats((prev) => {
+      let pendingCount = Number(prev.pendingRequests || 0);
+      if (fromStatus === 'pending' && toStatus !== 'pending') {
+        pendingCount = Math.max(0, pendingCount - 1);
+      } else if (fromStatus !== 'pending' && toStatus === 'pending') {
+        pendingCount += 1;
+      }
+
+      return { ...prev, pendingRequests: String(pendingCount) };
+    });
+  };
+
+  const updateRecentBookingStatus = async (bookingId, nextStatus) => {
+    if (updatingBookingIds.has(bookingId)) return;
+
+    const target = recentBookings.find((booking) => booking.id === bookingId);
+    if (!target) return;
+
+    const previousStatus = target.status;
+    setUpdatingBookingIds((prev) => {
+      const next = new Set(prev);
+      next.add(bookingId);
+      return next;
+    });
+
+    setRecentBookings((prev) =>
+      prev.map((booking) =>
+        booking.id === bookingId ? { ...booking, status: nextStatus } : booking,
+      ),
+    );
+    adjustPendingCount(previousStatus, nextStatus);
+
+    try {
+      const updated = await bookingService.updateBookingStatus(
+        bookingId,
+        toApiStatus(nextStatus),
+      );
+      const resolvedStatus = normalizeStatus(updated?.status || nextStatus);
+
+      if (resolvedStatus !== nextStatus) {
+        setRecentBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === bookingId
+              ? { ...booking, status: resolvedStatus }
+              : booking,
+          ),
+        );
+        adjustPendingCount(nextStatus, resolvedStatus);
+      }
+    } catch (error) {
+      setRecentBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: previousStatus }
+            : booking,
+        ),
+      );
+      adjustPendingCount(nextStatus, previousStatus);
+      console.error('Failed to update booking status:', error);
+    } finally {
+      setUpdatingBookingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(bookingId);
+        return next;
+      });
+    }
+  };
 
   const maxVal = Math.max(...weeklyData.map((d) => d.amount), 1);
 
@@ -116,10 +198,10 @@ const ProviderOverview = () => {
   ];
 
   const quickActions = [
-    { label: 'Add New Service', icon: Plus, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-    { label: `View Pending (${overviewStats.pendingRequests})`, icon: Clock, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
-    { label: 'Update Availability', icon: CalendarCheck, iconBg: 'bg-green-100', iconColor: 'text-green-600' },
-    { label: 'View All Reviews', icon: MessageSquare, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+    { id: 'add-service', label: 'Add New Service', icon: Plus, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+    { id: 'view-pending', label: `View Pending (${overviewStats.pendingRequests})`, icon: Clock, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
+    { id: 'update-availability', label: 'Update Availability', icon: CalendarCheck, iconBg: 'bg-green-100', iconColor: 'text-green-600' },
+    { id: 'view-reviews', label: 'View All Reviews', icon: MessageSquare, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
   ];
 
   return (
@@ -213,6 +295,7 @@ const ProviderOverview = () => {
                   key={action.label}
                   variant="outline"
                   className="w-full justify-start gap-3 h-auto py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  onClick={() => onQuickAction(action.id)}
                 >
                   <div className={`p-2 rounded-lg ${action.iconBg}`}>
                     <Icon className={`h-4 w-4 ${action.iconColor}`} />
@@ -229,7 +312,12 @@ const ProviderOverview = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-bold">Recent Bookings</CardTitle>
-          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-blue-600 hover:text-blue-700"
+            onClick={() => onQuickAction('view-all-bookings')}
+          >
             View All →
           </Button>
         </CardHeader>
@@ -290,15 +378,32 @@ const ProviderOverview = () => {
                       <td className="py-4 px-4">
                         {booking.status === 'pending' ? (
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" className="text-blue-600 hover:bg-blue-50">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-blue-600 hover:bg-blue-50"
+                              disabled={updatingBookingIds.has(booking.id)}
+                              onClick={() => updateRecentBookingStatus(booking.id, 'confirmed')}
+                            >
                               Accept
                             </Button>
-                            <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:bg-red-50"
+                              disabled={updatingBookingIds.has(booking.id)}
+                              onClick={() => updateRecentBookingStatus(booking.id, 'cancelled')}
+                            >
                               Decline
                             </Button>
                           </div>
                         ) : (
-                          <Button size="sm" variant="outline" className="text-blue-600 hover:bg-blue-50">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-blue-600 hover:bg-blue-50"
+                            onClick={() => setDetailModal(booking)}
+                          >
                             Details
                           </Button>
                         )}
@@ -311,6 +416,39 @@ const ProviderOverview = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+          </DialogHeader>
+          {detailModal && (
+            <div className="space-y-3 py-4">
+              {[
+                ['Client', detailModal.client],
+                ['Phone', detailModal.client_phone],
+                ['Service', detailModal.service],
+                ['Date', detailModal.date],
+                ['Time', detailModal.time],
+                ['Amount', detailModal.amount],
+                [
+                  'Status',
+                  detailModal.status.charAt(0).toUpperCase() + detailModal.status.slice(1),
+                ],
+                ['Location', detailModal.location],
+                ['Notes', detailModal.notes],
+              ].map(([key, value]) => (
+                <div key={key} className="flex justify-between gap-6 py-2 border-b border-gray-100 dark:border-gray-800">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{key}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 text-right break-words">
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

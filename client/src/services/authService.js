@@ -22,7 +22,30 @@ export const authService = {
         const error = await response.json();
         errorMessage = error.message || errorMessage;
       } catch (e) {
-        // If response is not JSON (e.g., HTML error page), use default message
+        errorMessage = `Registration failed (${response.status})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Register a new provider (pending admin approval)
+   */
+  async registerProvider(formData) {
+    const response = await api.post('/auth/register-provider', {
+      full_name: formData.fullName,
+      email: formData.email,
+      phone_number: formData.phone,
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Registration failed';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch (e) {
         errorMessage = `Registration failed (${response.status})`;
       }
       throw new Error(errorMessage);
@@ -45,7 +68,6 @@ export const authService = {
         const error = await response.json();
         errorMessage = error.message || errorMessage;
       } catch (e) {
-        // If response is not JSON (e.g., HTML error page), use default message
         errorMessage = `Login failed (${response.status})`;
       }
       console.error('Login failed:', errorMessage);
@@ -54,20 +76,32 @@ export const authService = {
 
     const data = await response.json();
     console.log('Login successful, data:', data);
-    
-    // Store auth data in localStorage (ID is a UUID string)
+
     api.setAccessToken(data.accessToken);
     localStorage.setItem('servify_role', data.user.user_type);
     localStorage.setItem('servify_email', data.user.email);
-    localStorage.setItem('servify_user_id', data.user.id); // Store UUID as string
+    localStorage.setItem('servify_user_id', data.user.id);
     localStorage.setItem('servify_full_name', data.user.full_name);
+    
+    // Fetch full profile to get profile_image
+    try {
+      const profileRes = await api.get('/users/profile');
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.profile_image) {
+          localStorage.setItem('servify_profile_image', profile.profile_image);
+        }
+      }
+    } catch (e) {
+      // Non-critical, continue
+    }
     
     console.log('Stored in localStorage:', {
       role: data.user.user_type,
       email: data.user.email,
       id: data.user.id
     });
-    
+
     return data;
   },
 
@@ -76,17 +110,16 @@ export const authService = {
    */
   async logout() {
     try {
-      // Call backend logout endpoint
       await api.post('/auth/logout');
     } catch (error) {
       console.error('Logout API call failed:', error);
     } finally {
-      // Clear local storage regardless of API response
       localStorage.removeItem('servify_token');
       localStorage.removeItem('servify_role');
       localStorage.removeItem('servify_email');
       localStorage.removeItem('servify_user_id');
       localStorage.removeItem('servify_full_name');
+      localStorage.removeItem('servify_profile_image');
     }
   },
 
@@ -98,6 +131,7 @@ export const authService = {
     const email = localStorage.getItem('servify_email');
     const id = localStorage.getItem('servify_user_id');
     const full_name = localStorage.getItem('servify_full_name');
+    const profile_image = localStorage.getItem('servify_profile_image');
     
     if (!role) return null;
     
@@ -105,7 +139,8 @@ export const authService = {
       role, 
       email, 
       id: id || null, // ID is a UUID string, not an integer
-      full_name 
+      full_name,
+      profile_image: profile_image || null,
     };
   },
 
