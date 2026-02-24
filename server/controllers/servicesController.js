@@ -127,6 +127,7 @@ const createServices = async (req, res) => {
       service_type,
       location,
       packages,
+      image_url,
     } = req.body;
 
     const { data: normalizedPackages, error: packageError } =
@@ -152,6 +153,7 @@ const createServices = async (req, res) => {
       service_type,
       location,
       normalizedPackages,
+      image_url || null,
     );
     res.status(201).json(service);
   } catch (err) {
@@ -170,7 +172,7 @@ const editServices = async (req, res) => {
       return res
         .status(403)
         .json({ message: "You can only edit your own services" });
-    const { title, description, price, service_type, location, packages } =
+    const { title, description, price, service_type, location, packages, image_url } =
       req.body;
 
     const { data: normalizedPackages, error: packageError } =
@@ -195,6 +197,7 @@ const editServices = async (req, res) => {
       service_type,
       location,
       normalizedPackages,
+      image_url || null,
     );
     if (!service)
       return res.status(404).json({ message: "There are no services to edit" });
