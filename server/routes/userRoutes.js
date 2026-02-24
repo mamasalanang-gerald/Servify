@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getProfile, updateProfile, listUsers, promoteRole, changeUserRole } = require('../controllers/userController');
+const { getProfile, getCurrentUser, updateProfile, listUsers, promoteRole, changeUserRole } = require('../controllers/userController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const authorizeRoles = require('../middlewares/roleMiddleware');
 
+router.get('/me', verifyToken, getCurrentUser);
 router.get('/profile', verifyToken, getProfile);
 router.put('/profile', verifyToken, updateProfile);
 router.patch('/promote', verifyToken, authorizeRoles('client'), promoteRole);

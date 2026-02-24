@@ -49,4 +49,9 @@ router.delete('/reviews/:id', validateReviewIdParam, adminController.deleteRevie
 // ============ DASHBOARD ============
 router.get('/dashboard', adminController.getDashboardMetrics);
 
+// ============ APPLICATION MANAGEMENT ============
+router.get('/applications', adminController.getApplications);
+router.patch('/applications/:id/approve', adminController.approveApplication);
+router.patch('/applications/:id/reject', adminController.rejectApplication);
+
 module.exports = router;
