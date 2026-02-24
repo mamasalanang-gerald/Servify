@@ -1,6 +1,7 @@
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import SaveButton from './SaveButton';
 
 const ServiceCard = ({ service }) => {
   return (
@@ -16,6 +17,9 @@ const ServiceCard = ({ service }) => {
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
           {service.rating}
+        </div>
+        <div className="absolute top-3 left-3">
+          <SaveButton serviceId={service.id} variant="icon" size="md" />
         </div>
         <Badge className="absolute bottom-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-900">
           {service.category}

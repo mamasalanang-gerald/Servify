@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { serviceService } from '../services/serviceService';
 import { bookingService } from "../services/bookingService";
+import SaveButton from './SaveButton';
 
 export default function ServiceDetailPage({ service, onBack }) {
   const today = new Date();
@@ -210,7 +211,10 @@ export default function ServiceDetailPage({ service, onBack }) {
             </span>
           </div>
 
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">{service?.title ?? "Deep House Cleaning"}</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex-1">{service?.title ?? "Deep House Cleaning"}</h1>
+            <SaveButton serviceId={service?.id} variant="button" size="md" />
+          </div>
 
           <Card className="p-5">
             <div className="flex items-center gap-3">
