@@ -119,6 +119,13 @@ const validateCategoryBody = (req, res, next) => {
     next();
 };
 
+const isAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });
+    }
+    next();
+};
+
 module.exports = {
     validateUUID,
     validatePagination,
@@ -130,5 +137,6 @@ module.exports = {
     validateRoleFilter,
     validateStatusFilter,
     validateRatingFilter,
-    validateCategoryBody
+    validateCategoryBody,
+    isAdmin
 };

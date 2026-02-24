@@ -17,6 +17,8 @@ const providerRoutes = require('./routes/providerRoutes');
 
 const app = express();
 
+console.log(process.env.JWT_SECRET);
+
 
 process.stderr.write('Script starting...\n');
 
