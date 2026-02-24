@@ -39,6 +39,10 @@ const useAuth = () => {
     }
   };
 
+  const updateUserRole = (role) => {
+    localStorage.setItem('servify_role', role);
+  };
+
   const getToken = () => {
     return localStorage.getItem('servify_token');
   };
@@ -55,7 +59,7 @@ const useAuth = () => {
   const user = getUser();
   const isLoggedIn = !!user;
 
-  return { user, isLoggedIn, setUser, clearUser, getToken };
+  return { user, isLoggedIn, setUser, updateUserRole, clearUser, getToken };
 };
 
 export default useAuth;
