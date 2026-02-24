@@ -3,7 +3,7 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { categoryService } from '../services/categoryService';
 
-const ratings = ['4.5+ Stars', '4+ Stars', '3.5+ Stars', '3& below'];
+const ratings = ['4.5+ Stars', '4+ Stars', '3.5+ Stars', '3 & below'];
 
 const ServicesFilter = ({ filters, onFilterChange }) => {
   const [categories, setCategories] = useState([]);

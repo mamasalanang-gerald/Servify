@@ -20,7 +20,99 @@ const categoryIcons = {
       <path d="M9 21V12h6v9" strokeLinejoin="round" />
     </svg>
   ),
-  // ... add your other icons here, keyed by category name
+  Plumbing: (
+    <svg
+      width="28"
+      height="28"
+      fill="none"
+      stroke="#2c3fd1"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      {/* Water drop */}
+      <path
+        d="M12 2C12 2 5 10 5 15a7 7 0 0014 0C19 10 12 2 12 2z"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
+  Carpentry: (
+    <svg
+      width="28"
+      height="28"
+      fill="none"
+      stroke="#2c3fd1"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      {/* Hammer head */}
+      <path
+        d="M15 5l-1.5 1.5L9 2 4 7l4.5 4.5L7 13l4 4 1.5-1.5L17 20l3-3-4.5-4.5L17 11z"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
+  Gardening: (
+    <svg
+      width="28"
+      height="28"
+      fill="none"
+      stroke="#2c3fd1"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      {/* Pot */}
+      <path d="M7 17h10l-1.5 4H8.5L7 17z" strokeLinejoin="round" />
+      {/* Soil line */}
+      <path d="M6 17h12" strokeLinecap="round" />
+      {/* Stem */}
+      <path d="M12 17V9" strokeLinecap="round" />
+      {/* Left leaf */}
+      <path d="M12 13C10 11 7 11 7 8c3 0 5 2 5 5z" strokeLinejoin="round" />
+      {/* Right leaf */}
+      <path d="M12 11c2-2 5-2 5-5-3 0-5 2-5 5z" strokeLinejoin="round" />
+    </svg>
+  ),
+  Painting: (
+    <svg
+      width="28"
+      height="28"
+      fill="none"
+      stroke="#2c3fd1"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      {/* Paint roller frame */}
+      <rect x="5" y="4" width="14" height="6" rx="1.5" strokeLinejoin="round" />
+      {/* Roller handle */}
+      <path d="M12 10v4" strokeLinecap="round" />
+      {/* Handle grip */}
+      <path d="M9 14h6" strokeLinecap="round" />
+      {/* Handle stem */}
+      <path d="M12 14v4" strokeLinecap="round" />
+      {/* Drip */}
+      <path d="M12 18c0 1.1-.5 2-1 2" strokeLinecap="round" />
+    </svg>
+  ),
+  Electrical: (
+    <svg
+      width="28"
+      height="28"
+      fill="none"
+      stroke="#2c3fd1"
+      strokeWidth="1.8"
+      viewBox="0 0 24 24"
+    >
+      {/* Lightning bolt */}
+      <path
+        d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
 };
 
 const defaultIcon = (
