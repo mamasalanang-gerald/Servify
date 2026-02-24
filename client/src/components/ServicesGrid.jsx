@@ -59,6 +59,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
     category: s.category_name,
     rating: parseFloat(s.average_rating) || 0,
     providerName: s.provider_name,
+    providerImage: s.provider_image || null,
     providerInitial:
       s.provider_name
         ?.split(" ")

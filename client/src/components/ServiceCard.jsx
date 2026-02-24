@@ -26,9 +26,13 @@ const ServiceCard = ({ service }) => {
         <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">{service.title}</h3>
 
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-            {service.providerInitial}
-          </div>
+          {service.providerImage ? (
+            <img src={service.providerImage} alt={service.providerName} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+              {service.providerInitial}
+            </div>
+          )}
           <div>
             <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1">
               {service.providerName}

@@ -16,14 +16,14 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { full_name, email, phone_number } = req.body;
+    const { full_name, email, phone_number, profile_image } = req.body;
     
     // Validate required fields
     if (!full_name || !email) {
       return res.status(400).json({ message: 'Full name and email are required' });
     }
 
-    const user = await updateUserProfile(req.user.id, { full_name, email, phone_number });
+    const user = await updateUserProfile(req.user.id, { full_name, email, phone_number, profile_image: profile_image || null });
     if (!user) return res.status(404).json({ message: 'User not found' });
     
     res.status(200).json({ message: 'Profile updated successfully', user });

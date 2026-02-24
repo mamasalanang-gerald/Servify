@@ -214,9 +214,13 @@ export default function ServiceDetailPage({ service, onBack }) {
 
           <Card className="p-5">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-                {service?.providerInitial ?? service?.initials ?? "SJ"}
-              </div>
+              {service?.providerImage || service?.provider_image ? (
+                <img src={service.providerImage || service.provider_image} alt={service?.providerName} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  {service?.providerInitial ?? service?.initials ?? "SJ"}
+                </div>
+              )}
               <div className="flex-1">
                 <div className="flex items-center gap-1.5 text-base font-semibold text-slate-900 dark:text-slate-100">
                   {service?.providerName ?? service?.provider ?? "Sarah Johnson"}
