@@ -11,7 +11,6 @@ export default function LandingPage() {
       <main>
         <Hero />
         <PopularCategories />
-        <FeaturedServices />
       </main>
       <Footer />
     </div>
