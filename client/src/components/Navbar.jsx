@@ -31,50 +31,8 @@ export default function Navbar({ activePage = "" }) {
         </span>
       </a>
 
-      <ul className="flex list-none gap-9 m-0 p-0 flex-1 md:flex hidden">
-        <li>
-          <a
-            href="/services"
-            className={cn(
-              "no-underline text-app-text-muted dark:text-[#94a3b8] text-[0.9rem] font-medium transition-colors whitespace-nowrap relative",
-              "hover:text-app-text dark:hover:text-[#f1f5f9]",
-              "after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-app-accent dark:after:bg-[#7b9fff] after:rounded-sm after:scale-x-0 after:transition-transform after:duration-200",
-              "hover:after:scale-x-100",
-              activePage === "services" && "text-app-accent dark:text-[#7b9fff] font-semibold after:scale-x-100"
-            )}
-          >
-            Services
-          </a>
-        </li>
-        <li>
-          <a
-            href="/become-provider"
-            className={cn(
-              "no-underline text-app-text-muted dark:text-[#94a3b8] text-[0.9rem] font-medium transition-colors whitespace-nowrap relative",
-              "hover:text-app-text dark:hover:text-[#f1f5f9]",
-              "after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-app-accent dark:after:bg-[#7b9fff] after:rounded-sm after:scale-x-0 after:transition-transform after:duration-200",
-              "hover:after:scale-x-100",
-              activePage === "become-provider" && "text-app-accent dark:text-[#7b9fff] font-semibold after:scale-x-100"
-            )}
-          >
-            Become a Provider
-          </a>
-        </li>
-        <li>
-          <a
-            href="/dashboard"
-            className={cn(
-              "no-underline text-app-text-muted dark:text-[#94a3b8] text-[0.9rem] font-medium transition-colors whitespace-nowrap relative",
-              "hover:text-app-text dark:hover:text-[#f1f5f9]",
-              "after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-app-accent dark:after:bg-[#7b9fff] after:rounded-sm after:scale-x-0 after:transition-transform after:duration-200",
-              "hover:after:scale-x-100",
-              activePage === "dashboard" && "text-app-accent dark:text-[#7b9fff] font-semibold after:scale-x-100"
-            )}
-          >
-            Dashboard
-          </a>
-        </li>
-      </ul>
+      {/* Navigation items moved to sidebar */}
+      <div className="flex-1"></div>
 
       <div className="flex items-center gap-3 flex-shrink-0">
         {/* Dark mode toggle */}
