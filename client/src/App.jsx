@@ -26,7 +26,7 @@ function App() {
         <Route
           path="/become-provider"
           element={
-            <ProtectedRoute requiredRole="user">
+            <ProtectedRoute requiredRole="client">
               <BecomeProviderPage />
             </ProtectedRoute>
         }
