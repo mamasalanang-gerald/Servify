@@ -31,12 +31,36 @@ const getReviewByBookingId = async (booking_id) => {
     }
 };
 
+const getReviewsByService = async (service_id) => {
+    try {
+        const result = await pool.query(
+            `SELECT r.id, r.booking_id, r.client_id, r.provider_id, r.rating, r.comment, r.review_date,
+                    u.full_name AS reviewer_name
+             FROM reviews r
+             JOIN users u ON r.client_id = u.id
+             JOIN bookings b ON r.booking_id = b.id
+             WHERE b.service_id = $1
+             ORDER BY r.review_date DESC`,
+            [service_id]
+        );
+        return result.rows;
+    } catch (error) {
+        console.error('Error in getReviewsByService:', error.message);
+        throw error;
+    }
+};
+
 const getReviewsByProvider = async (provider_id) => {
     try {
         const result = await pool.query(
-            `SELECT r.*, u.full_name AS client_name
+            `SELECT r.id, r.booking_id, r.client_id, r.provider_id, r.rating, r.comment, r.review_date,
+                    u.full_name AS reviewer_name,
+                    b.service_id,
+                    s.title AS service_name
              FROM reviews r
              JOIN users u ON r.client_id = u.id
+             JOIN bookings b ON r.booking_id = b.id
+             JOIN services s ON b.service_id = s.id
              WHERE r.provider_id = $1
              ORDER BY r.review_date DESC`,
             [provider_id]
@@ -82,6 +106,7 @@ const deleteReview = async (id) => {
 module.exports = {
     createReview,
     getReviewByBookingId,
+    getReviewsByService,
     getReviewsByProvider,
     getAllReviews,
     deleteReview
