@@ -81,7 +81,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-slate-500 font-medium">
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
         {mappedServices.length} services available
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -96,7 +96,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
             </div>
           ))
         ) : (
-          <div className="col-span-full text-center py-16 text-slate-500 text-base">
+          <div className="col-span-full text-center py-16 text-slate-500 dark:text-slate-400 text-base">
             <p>No services match your filters.</p>
           </div>
         )}

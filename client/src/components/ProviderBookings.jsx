@@ -50,8 +50,8 @@ const mapProviderBooking = (booking) => {
   };
 };
 
-const ProviderBookings = () => {
-  const [activeTab, setActiveTab]     = useState('All');
+const ProviderBookings = ({ defaultTab = 'All' }) => {
+  const [activeTab, setActiveTab]     = useState(defaultTab);
   const [bookings, setBookings]       = useState([]);
   const [detailModal, setDetailModal] = useState(null);
 
