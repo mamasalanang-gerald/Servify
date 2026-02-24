@@ -59,4 +59,15 @@ export const categoryService = {
     }
     return await response.json();
   },
+
+  /**
+   * Get all categories with service counts
+   */
+  async getCategoriesWithCounts() {
+    const response = await api.get('/categories/with-count');
+    if (!response.ok) {
+      throw new Error('Failed to fetch categories with counts');
+    }
+    return await response.json();
+  },
 };

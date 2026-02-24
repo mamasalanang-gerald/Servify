@@ -1,21 +1,19 @@
-const categories = [
-  { name: 'Home Cleaning', count: 234 },
-  { name: 'Plumbing', count: 156 },
-  { name: 'Beauty & Spa', count: 189 },
-  { name: 'Tutoring', count: 298 },
-  { name: 'Repairs', count: 145 },
-  { name: 'Digital Services', count: 312 },
-  { name: 'Moving', count: 87 },
-  { name: 'Pet Care', count: 124 },
-];
-
-const ratings = ['4.5+ Stars', '4+ Stars', '3.5+ Stars', '3& below'];
-
+import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
+import { categoryService } from '../services/categoryService';
+
+const ratings = ['4.5+ Stars', '4+ Stars', '3.5+ Stars', '3 & below'];
 
 const ServicesFilter = ({ filters, onFilterChange }) => {
+  const [categories, setCategories] = useState([]);
   const { priceRange, selectedRating, selectedCategories } = filters;
+
+  useEffect(() => {
+    categoryService.getCategoriesWithCounts()
+      .then(res => setCategories(res.categories || []))
+      .catch(console.error);
+  }, []);
 
   const update = (patch) => onFilterChange({ ...filters, ...patch });
 
@@ -93,7 +91,7 @@ const ServicesFilter = ({ filters, onFilterChange }) => {
                 onChange={() => toggleCategory(cat.name)}
                 className="w-4 h-4 accent-blue-600 cursor-pointer flex-shrink-0"
               />
-              <span>{cat.name} <span className="text-slate-500 text-xs">({cat.count})</span></span>
+              <span>{cat.name} <span className="text-slate-500 text-xs">({cat.service_count})</span></span>
             </label>
           ))}
         </div>
