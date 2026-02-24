@@ -10,9 +10,11 @@ const servicesRoutes = require('./routes/servicesRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-
+const reviewRoutes = require('./routes/reviewRoutes');
 
 const app = express();
+
+console.log(process.env.JWT_SECRET);
 
 
 process.stderr.write('Script starting...\n');
@@ -42,6 +44,7 @@ app.use("/api/v1/services", servicesRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 
 app.get('/', (req, res) => {
