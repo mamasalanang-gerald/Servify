@@ -23,7 +23,7 @@ const ReviewModeration = () => {
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
-      const params = { page, limit: 10 };
+      const params = { page, limit: 8 };
       if (ratingFilter !== 'all') {
         params.rating = ratingFilter;
       }

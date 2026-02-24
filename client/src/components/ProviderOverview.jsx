@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -11,67 +11,104 @@ import {
   CalendarCheck, 
   MessageSquare 
 } from 'lucide-react';
-
-const recentBookings = [
-  { id: 1, client: 'Maria Santos',  service: 'Deep House Cleaning', date: 'Feb 22, 2026', amount: '₱149', status: 'pending' },
-  { id: 2, client: 'Rico Buendia',  service: 'Deep House Cleaning', date: 'Feb 15, 2026', amount: '₱229', status: 'completed' },
-  { id: 5, client: 'Ana Reyes',     service: 'Standard Clean',      date: 'Feb 12, 2026', amount: '₱89',  status: 'cancelled' },
-];
-
-const weeklyData = [
-  { day: 'Mon', amount: 0   },
-  { day: 'Tue', amount: 149 },
-  { day: 'Wed', amount: 89  },
-  { day: 'Thu', amount: 378 },
-  { day: 'Fri', amount: 149 },
-  { day: 'Sat', amount: 229 },
-  { day: 'Sun', amount: 89  },
-];
-const maxVal = Math.max(...weeklyData.map((d) => d.amount));
+import { bookingService } from '../services/bookingService';
+import { authService } from '../services/authService';
 
 const statusConfig = {
   pending:   { label: 'Pending',   variant: 'warning' },
   confirmed: { label: 'Confirmed', variant: 'default' },
+  accepted:  { label: 'Confirmed', variant: 'default' },
+  rejected:  { label: 'Rejected',  variant: 'destructive' },
   completed: { label: 'Completed', variant: 'success' },
   cancelled: { label: 'Cancelled', variant: 'destructive' },
 };
 
+const normalizeStatus = (status) => {
+  const current = String(status || 'pending').toLowerCase();
+  if (current === 'accepted') return 'confirmed';
+  if (current === 'rejected') return 'cancelled';
+  return current;
+};
+
 const ProviderOverview = () => {
   const [chartPeriod, setChartPeriod] = useState('Week');
+  const [overviewStats, setOverviewStats] = useState({
+    totalEarnings: '₱0',
+    totalBookings: '0',
+    pendingRequests: '0',
+    avgRating: '—',
+  });
+  const [recentBookings, setRecentBookings] = useState([]);
+  const [weeklyData] = useState([
+    { day: 'Mon', amount: 0 },
+    { day: 'Tue', amount: 0 },
+    { day: 'Wed', amount: 0 },
+    { day: 'Thu', amount: 0 },
+    { day: 'Fri', amount: 0 },
+    { day: 'Sat', amount: 0 },
+    { day: 'Sun', amount: 0 },
+  ]);
+
+  useEffect(() => {
+    const user = authService.getUser();
+    if (!user?.id) return;
+
+    bookingService.getProviderBookings(user.id).then((bookings) => {
+      const arr = Array.isArray(bookings) ? bookings : [];
+      const completed = arr.filter((b) => b.status === 'completed');
+      const pending = arr.filter((b) => b.status === 'pending');
+
+      setOverviewStats({
+        totalEarnings: `₱${completed.reduce((sum, b) => sum + parseFloat(b.total_price || 0), 0).toLocaleString()}`,
+        totalBookings: arr.length.toString(),
+        pendingRequests: pending.length.toString(),
+        avgRating: '—',
+      });
+
+      setRecentBookings(
+        arr.slice(0, 3).map((b) => ({
+          id: b.id,
+          client: b.client_name || 'Client',
+          service: b.service_name || 'Service',
+          date: new Date(b.booking_date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
+          amount: `₱${Number(b.total_price || 0).toLocaleString()}`,
+          status: normalizeStatus(b.status),
+        })),
+      );
+    }).catch(console.error);
+  }, []);
+
+  const maxVal = Math.max(...weeklyData.map((d) => d.amount), 1);
 
   const stats = [
     {
       label: 'Total Earnings',
-      value: '₱12,480',
-      change: '+18%',
-      up: true,
+      value: overviewStats.totalEarnings,
       icon: DollarSign,
       iconBg: 'bg-green-100',
       iconColor: 'text-green-600',
     },
     {
       label: 'Total Bookings',
-      value: '84',
-      change: '+12%',
-      up: true,
+      value: overviewStats.totalBookings,
       icon: Calendar,
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
     },
     {
       label: 'Pending Requests',
-      value: '3',
-      change: '+2',
-      up: false,
+      value: overviewStats.pendingRequests,
       icon: Clock,
       iconBg: 'bg-yellow-100',
       iconColor: 'text-yellow-600',
     },
     {
       label: 'Avg. Rating',
-      value: '4.9',
-      change: '+0.1',
-      up: true,
+      value: overviewStats.avgRating,
       icon: Star,
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
@@ -80,7 +117,7 @@ const ProviderOverview = () => {
 
   const quickActions = [
     { label: 'Add New Service', icon: Plus, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-    { label: 'View Pending (3)', icon: Clock, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
+    { label: `View Pending (${overviewStats.pendingRequests})`, icon: Clock, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
     { label: 'Update Availability', icon: CalendarCheck, iconBg: 'bg-green-100', iconColor: 'text-green-600' },
     { label: 'View All Reviews', icon: MessageSquare, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
   ];
@@ -98,9 +135,6 @@ const ProviderOverview = () => {
                   <div className={`p-3 rounded-xl ${stat.iconBg}`}>
                     <Icon className={`h-5 w-5 ${stat.iconColor}`} />
                   </div>
-                  <span className={`text-sm font-semibold ${stat.up ? 'text-green-600' : 'text-red-600'}`}>
-                    {stat.up ? '↑' : '↓'} {stat.change}
-                  </span>
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                   {stat.value}
@@ -146,7 +180,7 @@ const ProviderOverview = () => {
                   <div className="flex-1 w-full flex items-end justify-center">
                     <div
                       className={`w-full max-w-[32px] rounded-t-lg transition-all ${
-                        d.amount === maxVal
+                        d.amount === maxVal && d.amount > 0
                           ? 'bg-gradient-to-t from-blue-600 to-blue-500'
                           : 'bg-gradient-to-t from-blue-400 to-blue-300'
                       }`}
@@ -161,7 +195,7 @@ const ProviderOverview = () => {
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
               <span className="text-sm text-gray-600 dark:text-gray-400">This week</span>
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">₱1,083</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{overviewStats.totalEarnings}</span>
             </div>
           </CardContent>
         </Card>
@@ -226,7 +260,7 @@ const ProviderOverview = () => {
               </thead>
               <tbody>
                 {recentBookings.map((booking) => {
-                  const statusInfo = statusConfig[booking.status];
+                  const statusInfo = statusConfig[booking.status] || statusConfig.pending;
                   return (
                     <tr
                       key={booking.id}

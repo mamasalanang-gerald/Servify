@@ -9,7 +9,8 @@ const userRoutes = require('./routes/userRoutes');
 const servicesRoutes = require('./routes/servicesRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
-const adminRoutes = require('./routes/adminRoutes');
+const adminRoutes =  require('./routes/adminRoutes');
+const savedServiceRoutes = require('./routes/savedServiceRoutes');
 
 
 const app = express();
@@ -42,6 +43,7 @@ app.use("/api/v1/services", servicesRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/saved-services', savedServiceRoutes);
 
 
 app.get('/', (req, res) => {

@@ -20,7 +20,7 @@ const ProviderManagement = () => {
   const fetchProviders = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await adminService.getUsers({ page, limit: 10, role: 'provider' });
+      const response = await adminService.getUsers({ page, limit: 8, role: 'provider' });
       setProviders(response.data || []);
       setTotalPages(response.totalPages || 1);
     } catch (error) {

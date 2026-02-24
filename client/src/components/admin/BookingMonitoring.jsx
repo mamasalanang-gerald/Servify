@@ -22,7 +22,7 @@ const BookingMonitoring = () => {
     try {
       const response = await adminService.getBookings({ 
         page, 
-        limit: 10, 
+        limit: 8, 
         status: statusFilter === 'all' ? null : statusFilter 
       });
       setBookings(response.data || []);
@@ -46,8 +46,10 @@ const BookingMonitoring = () => {
     switch (status) {
       case 'pending':
         return <Badge variant="secondary">Pending</Badge>;
-      case 'confirmed':
-        return <Badge variant="default">Confirmed</Badge>;
+      case 'accepted':
+        return <Badge variant="default">Accepted</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
       case 'completed':
         return <Badge variant="default">Completed</Badge>;
       case 'cancelled':
@@ -67,7 +69,8 @@ const BookingMonitoring = () => {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>

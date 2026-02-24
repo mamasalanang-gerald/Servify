@@ -20,7 +20,7 @@ const ServiceModeration = () => {
   const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await adminService.getServices({ page, limit: 10 });
+      const response = await adminService.getServices({ page, limit: 8 });
       setServices(response.data || []);
       setTotalPages(response.totalPages || 1);
     } catch (error) {

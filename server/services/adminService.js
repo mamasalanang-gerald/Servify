@@ -5,6 +5,18 @@ const pool = require('../config/DB');
 const fetchUsers = async (page = 1, limit = 10, role = null) => {
     try {
         const offset = (page - 1) * limit;
+        
+        // Get total count
+        let countQuery = 'SELECT COUNT(*) as total FROM users';
+        const countValues = [];
+        if (role) {
+            countQuery += ' WHERE user_type = $1';
+            countValues.push(role);
+        }
+        const { rows: countRows } = await pool.query(countQuery, countValues);
+        const total = parseInt(countRows[0].total);
+        
+        // Get paginated data
         let query = 'SELECT id, full_name, email, user_type, is_verified, is_active, phone_number, created_at, updated_at FROM users';
         const values = [];
 
@@ -17,7 +29,7 @@ const fetchUsers = async (page = 1, limit = 10, role = null) => {
         }
 
         const { rows } = await pool.query(query, values);
-        return rows;
+        return { data: rows, total };
     } catch (error) {
         console.error('Error fetching users:', error.message);
         throw error;
@@ -122,6 +134,38 @@ const deleteCategoryById = async (id) => {
 const fetchServices = async (page = 1, limit = 10, filters = {}) => {
     try {
         const offset = (page - 1) * limit;
+        
+        // Build count query
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM services s
+            WHERE 1=1
+        `;
+        const countValues = [];
+        let countParamCount = 0;
+
+        if (filters.provider_id) {
+            countParamCount++;
+            countQuery += ` AND s.provider_id = $${countParamCount}`;
+            countValues.push(filters.provider_id);
+        }
+
+        if (filters.category_id) {
+            countParamCount++;
+            countQuery += ` AND s.category_id = $${countParamCount}`;
+            countValues.push(filters.category_id);
+        }
+
+        if (filters.search) {
+            countParamCount++;
+            countQuery += ` AND LOWER(s.title) LIKE LOWER($${countParamCount})`;
+            countValues.push(`%${filters.search}%`);
+        }
+
+        const { rows: countRows } = await pool.query(countQuery, countValues);
+        const total = parseInt(countRows[0].total);
+        
+        // Build data query
         let query = `
             SELECT s.id, s.provider_id, u.full_name as provider_name, s.category_id, c.name as category_name, s.title, s.description, 
                    s.price, s.service_type, s.location, s.is_active, s.created_at, s.updated_at
@@ -160,7 +204,7 @@ const fetchServices = async (page = 1, limit = 10, filters = {}) => {
         values.push(offset);
 
         const { rows } = await pool.query(query, values);
-        return rows;
+        return { data: rows, total };
     } catch (error) {
         console.error('Error fetching services:', error.message);
         throw error;
@@ -205,6 +249,38 @@ const toggleServiceActive = async (id) => {
 const fetchBookings = async (page = 1, limit = 10, filters = {}) => {
     try {
         const offset = (page - 1) * limit;
+        
+        // Build count query
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM bookings b
+            WHERE 1=1
+        `;
+        const countValues = [];
+        let countParamCount = 0;
+
+        if (filters.status) {
+            countParamCount++;
+            countQuery += ` AND b.status = $${countParamCount}`;
+            countValues.push(filters.status);
+        }
+
+        if (filters.startDate) {
+            countParamCount++;
+            countQuery += ` AND b.booking_date >= $${countParamCount}`;
+            countValues.push(filters.startDate);
+        }
+
+        if (filters.endDate) {
+            countParamCount++;
+            countQuery += ` AND b.booking_date <= $${countParamCount}`;
+            countValues.push(filters.endDate);
+        }
+
+        const { rows: countRows } = await pool.query(countQuery, countValues);
+        const total = parseInt(countRows[0].total);
+        
+        // Build data query
         let query = `
             SELECT b.id, b.service_id, s.title as service_title, b.client_id, c.full_name as client_name, 
                    b.provider_id, p.full_name as provider_name, b.booking_date, b.booking_time, 
@@ -245,7 +321,7 @@ const fetchBookings = async (page = 1, limit = 10, filters = {}) => {
         values.push(offset);
 
         const { rows } = await pool.query(query, values);
-        return rows;
+        return { data: rows, total };
     } catch (error) {
         console.error('Error fetching bookings:', error.message);
         throw error;
@@ -277,9 +353,35 @@ const fetchBookingById = async (id) => {
 const fetchReviews = async (page = 1, limit = 10, filters = {}) => {
     try {
         const offset = (page - 1) * limit;
+        
+        // Build count query
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM reviews r
+            WHERE 1=1
+        `;
+        const countValues = [];
+        let countParamCount = 0;
+
+        if (filters.rating) {
+            countParamCount++;
+            countQuery += ` AND r.rating = $${countParamCount}`;
+            countValues.push(filters.rating);
+        }
+
+        if (filters.provider_id) {
+            countParamCount++;
+            countQuery += ` AND r.provider_id = $${countParamCount}`;
+            countValues.push(filters.provider_id);
+        }
+
+        const { rows: countRows } = await pool.query(countQuery, countValues);
+        const total = parseInt(countRows[0].total);
+        
+        // Build data query
         let query = `
-            SELECT r.id, r.booking_id, r.client_id, c.full_name as reviewer_name, 
-                   r.provider_id, p.full_name as provider_name, r.rating, r.comment, r.review_date as date
+            SELECT r.id, r.booking_id, r.client_id, c.full_name as "reviewerName", 
+                   r.provider_id, p.full_name as "providerName", r.rating, r.comment, r.review_date as date
             FROM reviews r
             JOIN users c ON r.client_id = c.id
             JOIN users p ON r.provider_id = p.id
@@ -309,7 +411,7 @@ const fetchReviews = async (page = 1, limit = 10, filters = {}) => {
         values.push(offset);
 
         const { rows } = await pool.query(query, values);
-        return rows;
+        return { data: rows, total };
     } catch (error) {
         console.error('Error fetching reviews:', error.message);
         throw error;
@@ -319,8 +421,8 @@ const fetchReviews = async (page = 1, limit = 10, filters = {}) => {
 const fetchReviewById = async (id) => {
     try {
         const query = `
-            SELECT r.id, r.booking_id, r.client_id, c.full_name as client_name, 
-                   r.provider_id, p.full_name as provider_name, r.rating, r.comment, r.review_date
+            SELECT r.id, r.booking_id, r.client_id, c.full_name as "clientName", 
+                   r.provider_id, p.full_name as "providerName", r.rating, r.comment, r.review_date
             FROM reviews r
             JOIN users c ON r.client_id = c.id
             JOIN users p ON r.provider_id = p.id

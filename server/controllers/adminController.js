@@ -9,17 +9,17 @@ const getUsers = async (req, res) => {
         // Convert 'null' string or empty string to actual null
         const roleFilter = (role && role !== 'null' && role !== '') ? role : null;
         
-        const users = await adminService.fetchUsers(page, limit, roleFilter);
+        const result = await adminService.fetchUsers(page, limit, roleFilter);
         
         // Transform data to match frontend expectations
-        const transformedUsers = users.map(user => ({
+        const transformedUsers = result.data.map(user => ({
             id: user.id,
             name: user.full_name,
             email: user.email,
             role: user.user_type,
             status: user.is_active ? 'active' : 'inactive',
             verificationStatus: user.is_verified ? 'verified' : 'pending',
-            joinedDate: new Date(user.created_at).toLocaleDateString(),
+            joinedDate: user.created_at || null,
             servicesCount: user.services_count || 0,
             rating: user.avg_rating || null
         }));
@@ -29,7 +29,8 @@ const getUsers = async (req, res) => {
             data: transformedUsers,
             page: parseInt(page),
             limit: parseInt(limit),
-            totalPages: Math.ceil(transformedUsers.length / limit) || 1
+            total: result.total,
+            totalPages: Math.ceil(result.total / limit)
         });
     } catch (err) {
         console.error('Admin getUsers error:', err);
@@ -175,10 +176,10 @@ const deleteCategory = async (req, res) => {
 const getServices = async (req, res) => {
     try {
         const { page = 1, limit = 10, provider_id, category_id, search } = req.query;
-        const services = await adminService.fetchServices(page, limit, { provider_id, category_id, search });
+        const result = await adminService.fetchServices(page, limit, { provider_id, category_id, search });
         
         // Transform data to match frontend expectations
-        const transformedServices = services.map(service => ({
+        const transformedServices = result.data.map(service => ({
             id: service.id,
             name: service.title,
             provider: service.provider_name,
@@ -192,7 +193,8 @@ const getServices = async (req, res) => {
             data: transformedServices,
             page: parseInt(page),
             limit: parseInt(limit),
-            totalPages: Math.ceil(transformedServices.length / limit) || 1
+            total: result.total,
+            totalPages: Math.ceil(result.total / limit)
         });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
@@ -233,10 +235,10 @@ const getBookings = async (req, res) => {
         if (startDate && startDate !== 'null') filters.startDate = startDate;
         if (endDate && endDate !== 'null') filters.endDate = endDate;
         
-        const bookings = await adminService.fetchBookings(page, limit, filters);
+        const result = await adminService.fetchBookings(page, limit, filters);
         
         // Transform data to match frontend expectations
-        const transformedBookings = bookings.map(booking => ({
+        const transformedBookings = result.data.map(booking => ({
             id: booking.id,
             clientName: booking.client_name,
             providerName: booking.provider_name,
@@ -251,7 +253,8 @@ const getBookings = async (req, res) => {
             data: transformedBookings,
             page: parseInt(page),
             limit: parseInt(limit),
-            totalPages: Math.ceil(transformedBookings.length / limit) || 1
+            total: result.total,
+            totalPages: Math.ceil(result.total / limit)
         });
     } catch (err) {
         console.error('Admin getBookings error:', err);
@@ -275,12 +278,14 @@ const getBookingById = async (req, res) => {
 const getReviews = async (req, res) => {
     try {
         const { page = 1, limit = 10, rating, provider_id } = req.query;
-        const reviews = await adminService.fetchReviews(page, limit, { rating, provider_id });
+        const result = await adminService.fetchReviews(page, limit, { rating, provider_id });
         res.status(200).json({
             success: true,
-            data: reviews,
+            data: result.data,
             page: parseInt(page),
-            limit: parseInt(limit)
+            limit: parseInt(limit),
+            total: result.total,
+            totalPages: Math.ceil(result.total / limit)
         });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Server error', error: err.message });
