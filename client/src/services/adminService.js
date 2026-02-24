@@ -16,7 +16,7 @@ export const adminService = {
   getUsers: async (params = {}) => {
     // Filter out null/undefined values
     const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v != null)
+      Object.entries(params).filter(([, v]) => v != null)
     );
     const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/users?${queryString}` : '/admin/users';
@@ -53,7 +53,7 @@ export const adminService = {
   getServices: async (params = {}) => {
     // Filter out null/undefined values
     const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v != null)
+      Object.entries(params).filter(([, v]) => v != null)
     );
     const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/services?${queryString}` : '/admin/services';
@@ -96,7 +96,7 @@ export const adminService = {
   getBookings: async (params = {}) => {
     // Filter out null/undefined values
     const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v != null)
+      Object.entries(params).filter(([, v]) => v != null)
     );
     const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/bookings?${queryString}` : '/admin/bookings';
@@ -115,7 +115,7 @@ export const adminService = {
   getReviews: async (params = {}) => {
     // Filter out null/undefined values
     const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v != null)
+      Object.entries(params).filter(([, v]) => v != null)
     );
     const queryString = new URLSearchParams(filteredParams).toString();
     const endpoint = queryString ? `/admin/reviews?${queryString}` : '/admin/reviews';
@@ -133,12 +133,6 @@ export const adminService = {
   deleteReview: async (id) => {
     const response = await api.delete(`/admin/reviews/${id}`);
     if (!response.ok) throw new Error('Failed to delete review');
-    return response.json();
-  },
-
-  moderateReview: async (reviewId, action) => {
-    const response = await api.patch(`/admin/reviews/${reviewId}/moderate`, { action });
-    if (!response.ok) throw new Error('Failed to moderate review');
     return response.json();
   },
 

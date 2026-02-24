@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import useAuth from '../hooks/useAuth';
 import { bookingService } from '../services/bookingService';
+import { reviewService } from '../services/reviewService';
 import {
   normalizeBookingStatus,
   toApiBookingStatus,
@@ -17,6 +18,10 @@ const UserBookings = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
   const [detailModal, setDetailModal] = useState(null);
+  const [reviewModal, setReviewModal] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState('');
 
@@ -33,6 +38,7 @@ const UserBookings = () => {
           source.map((booking) => ({
             ...booking,
             status: normalizeBookingStatus(booking.status),
+            has_review: Boolean(booking.review_id),
           })),
         );
       } catch (err) {
@@ -85,6 +91,65 @@ const UserBookings = () => {
       setError(err.message || 'Failed to update booking status');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const openReviewModal = (booking) => {
+    setReviewModal(booking);
+    setReviewRating(5);
+    setReviewComment('');
+    setError('');
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewModal?.id) return;
+
+    try {
+      setSubmittingReview(true);
+      setError('');
+
+      const payload = {
+        booking_id: reviewModal.id,
+        rating: reviewRating,
+        comment: reviewComment.trim() || null,
+      };
+
+      const response = await reviewService.createReview(payload);
+      const createdReview = response?.review || {};
+
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === reviewModal.id
+            ? {
+                ...booking,
+                has_review: true,
+                review_id: createdReview.id || 'submitted',
+                review_rating: createdReview.rating ?? reviewRating,
+                review_comment: createdReview.comment ?? reviewComment.trim(),
+              }
+            : booking,
+        ),
+      );
+
+      setDetailModal((prev) =>
+        prev?.id === reviewModal.id
+          ? {
+              ...prev,
+              has_review: true,
+              review_id: createdReview.id || 'submitted',
+              review_rating: createdReview.rating ?? reviewRating,
+              review_comment: createdReview.comment ?? reviewComment.trim(),
+            }
+          : prev,
+      );
+
+      setReviewModal(null);
+      setReviewComment('');
+      setReviewRating(5);
+    } catch (err) {
+      setError(err.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -211,6 +276,24 @@ const UserBookings = () => {
                           {updatingId === booking.id ? 'Updating...' : 'Mark Completed'}
                         </Button>
                       )}
+                      {booking.status === 'completed' && !booking.has_review && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openReviewModal(booking)}
+                        >
+                          Leave Review
+                        </Button>
+                      )}
+                      {booking.status === 'completed' && booking.has_review && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled
+                        >
+                          Reviewed
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -270,6 +353,71 @@ const UserBookings = () => {
                     {updatingId === detailModal.id ? 'Updating...' : 'Mark as Completed'}
                   </Button>
                 )}
+                {detailModal.status === 'completed' && !detailModal.has_review && (
+                  <Button
+                    onClick={() => openReviewModal(detailModal)}
+                  >
+                    Leave Review
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reviewModal} onOpenChange={() => setReviewModal(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Leave a Review</DialogTitle>
+          </DialogHeader>
+          {reviewModal && (
+            <>
+              <div className="space-y-4 py-2">
+                <div>
+                  <div className="text-sm font-medium mb-2">Service</div>
+                  <p className="text-sm text-muted-foreground">{reviewModal.service_name || 'Service'}</p>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Rating</div>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setReviewRating(value)}
+                        className="text-2xl leading-none"
+                      >
+                        {value <= reviewRating ? '★' : '☆'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Comment</div>
+                  <textarea
+                    rows={4}
+                    value={reviewComment}
+                    onChange={(event) => setReviewComment(event.target.value)}
+                    placeholder="Share your experience (optional)"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setReviewModal(null)}
+                  disabled={submittingReview}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={submittingReview}
+                >
+                  {submittingReview ? 'Submitting...' : 'Submit Review'}
+                </Button>
               </DialogFooter>
             </>
           )}

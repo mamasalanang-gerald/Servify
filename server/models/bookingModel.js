@@ -80,10 +80,14 @@ const getBookingsByClientId = async (client_id) => {
                 b.*,
                 s.title as service_name,
                 s.description as service_description,
-                p.full_name as provider_name
+                p.full_name as provider_name,
+                r.id as review_id,
+                r.rating as review_rating,
+                r.comment as review_comment
             FROM bookings b
             JOIN services s ON b.service_id = s.id
             JOIN users p ON b.provider_id = p.id
+            LEFT JOIN reviews r ON r.booking_id = b.id
             WHERE b.client_id = $1
             ORDER BY b.booking_date DESC, b.booking_time DESC
         `;

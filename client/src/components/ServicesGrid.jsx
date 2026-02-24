@@ -67,6 +67,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
         .join("")
         .slice(0, 2) || "??",
     jobs: parseInt(s.jobs_completed) || 0,
+    reviewCount: parseInt(s.review_count) || 0,
     priceNum: parseFloat(s.price),
     price: `₱${Number(s.price).toLocaleString()}`,
     img: s.image_url || "/placeholder-service.jpg",

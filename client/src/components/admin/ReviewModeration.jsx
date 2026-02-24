@@ -4,10 +4,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
 import { adminService } from '@/services/adminService';
 import { Loader2, Trash2 } from 'lucide-react';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ReviewModeration = () => {
   const [reviews, setReviews] = useState([]);
@@ -15,6 +18,7 @@ const ReviewModeration = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [ratingFilter, setRatingFilter] = useState('all');
+  const [providerFilter, setProviderFilter] = useState('');
   const [selectedReview, setSelectedReview] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -26,6 +30,9 @@ const ReviewModeration = () => {
       const params = { page, limit: 8 };
       if (ratingFilter !== 'all') {
         params.rating = ratingFilter;
+      }
+      if (providerFilter.trim() && UUID_REGEX.test(providerFilter.trim())) {
+        params.provider_id = providerFilter.trim();
       }
       const response = await adminService.getReviews(params);
       setReviews(response.data || []);
@@ -39,11 +46,15 @@ const ReviewModeration = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, ratingFilter, toast]);
+  }, [page, ratingFilter, providerFilter, toast]);
 
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [ratingFilter, providerFilter]);
 
   const handleDeleteReview = async (reviewId) => {
     try {
@@ -88,6 +99,12 @@ const ReviewModeration = () => {
             <SelectItem value="1">1 Star</SelectItem>
           </SelectContent>
         </Select>
+        <Input
+          placeholder="Filter by provider UUID"
+          value={providerFilter}
+          onChange={(event) => setProviderFilter(event.target.value)}
+          className="max-w-[320px]"
+        />
       </div>
 
       <div className="border rounded-lg overflow-hidden">
