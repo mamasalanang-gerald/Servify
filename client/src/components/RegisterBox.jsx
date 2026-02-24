@@ -87,47 +87,50 @@ const RegisterBox = () => {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* ── Left decorative panel ── */}
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 lg:block">
-        <div className="relative z-10 flex h-full flex-col justify-center px-12 xl:px-16">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-2xl font-bold text-white backdrop-blur-sm">
+      {/* ── Left decorative panel (from LoginBox design) ── */}
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-[#1a3a8f] via-[#2b52cc] to-[#4f70e0] dark:from-[#0f1e5c] dark:via-[#1a2fa8] dark:to-[#2a3fd4] lg:flex lg:items-center lg:justify-center lg:p-[60px_52px]">
+        <div className="absolute w-[400px] h-[400px] bg-white/[0.06] dark:bg-white/[0.04] rounded-full -top-[120px] -right-[120px]" />
+        <div className="absolute w-[300px] h-[300px] bg-white/[0.05] dark:bg-white/[0.03] rounded-full -bottom-[80px] -left-[60px]" />
+        
+        <div className="relative z-10 text-white max-w-[380px]">
+          <div className="flex items-center gap-3 mb-12 font-extrabold text-[1.3rem]">
+            <div className="w-11 h-11 bg-white/20 dark:bg-white/10 border-2 border-white/30 dark:border-white/20 rounded-xl flex items-center justify-center font-extrabold text-[1.2rem] backdrop-blur-sm">
               S
             </div>
-            <span className="text-2xl font-bold text-white">Servify</span>
+            <span>Servify</span>
           </div>
-          <h2 className="mb-4 text-4xl font-bold leading-tight text-white xl:text-5xl">
-            Join thousands who trust Servify every day.
+          <h2 className="text-[1.85rem] max-[900px]:text-[1.4rem] font-bold leading-[1.25] mb-4 tracking-tight">
+            Your trusted platform for every service need.
           </h2>
-          <p className="mb-10 max-w-md text-lg leading-relaxed text-blue-100">
-            Create your free account and get instant access to verified professionals ready to help you anytime, anywhere.
+          <p className="text-[0.95rem] text-white/70 leading-[1.7] mb-10">
+            Connect with thousands of verified professionals ready to help you anytime, anywhere.
           </p>
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3.5">
             {[
-              'Free to join — no hidden fees',
-              'Browse 3,200+ verified providers',
-              'Secure bookings & payments',
+              '50,000+ satisfied customers',
+              '3,200+ verified providers',
+              'Secure & instant payments',
             ].map((f) => (
-              <div key={f} className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+              <div key={f} className="flex items-center gap-3 text-[0.9rem] text-white/85 font-medium">
+                <div className="w-7 h-7 bg-white/[0.18] rounded-full flex items-center justify-center flex-shrink-0 text-white">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <span className="text-base text-white">{f}</span>
+                <span>{f}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
       </div>
 
-      {/* ── Right form panel ── */}
+      {/* ── Right form panel (ORIGINAL - UNCHANGED) ── */}
       <div className="flex items-center justify-center bg-background p-6 sm:p-8">
         <div className="w-full max-w-[500px]">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-2xl font-bold text-primary">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl text-2xl font-bold text-white shadow-[0_8px_24px_rgba(26,58,143,0.3)]" style={{
+              background: 'linear-gradient(to bottom right, #1a3a8f, #2b52cc, #4f70e0)'
+            }}>
               S
             </div>
             <h1 className="mb-2 text-3xl font-bold text-foreground">Create an account</h1>
