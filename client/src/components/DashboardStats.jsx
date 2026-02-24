@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
-
-const normalizeStatus = (status) => {
-  const current = String(status || 'pending').toLowerCase();
-  if (current === 'accepted') return 'confirmed';
-  if (current === 'rejected') return 'cancelled';
-  return current;
-};
+import { normalizeBookingStatus } from '../utils/bookingStatus';
 
 const DashboardStats = () => {
   const [stats, setStats] = useState({
@@ -32,7 +26,7 @@ const DashboardStats = () => {
           // Calculate stats from bookings
           const bookingsArray = (Array.isArray(bookings) ? bookings : []).map((booking) => ({
             ...booking,
-            status: normalizeStatus(booking.status),
+            status: normalizeBookingStatus(booking.status),
           }));
           const upcoming = bookingsArray.filter(b => b.status === 'pending' || b.status === 'confirmed').length;
           const completed = bookingsArray.filter(b => b.status === 'completed').length;

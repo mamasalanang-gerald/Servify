@@ -1,15 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import useAuth from '../hooks/useAuth';
 import { bookingService } from '../services/bookingService';
+import {
+  normalizeBookingStatus,
+  toApiBookingStatus,
+  formatBookingStatus,
+} from '../utils/bookingStatus';
 
 const UserBookings = () => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
+  const [detailModal, setDetailModal] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -17,10 +26,18 @@ const UserBookings = () => {
 
       try {
         setLoading(true);
+        setError('');
         const data = await bookingService.getClientBookings(user.id);
-        setBookings(data || []);
+        const source = Array.isArray(data) ? data : [];
+        setBookings(
+          source.map((booking) => ({
+            ...booking,
+            status: normalizeBookingStatus(booking.status),
+          })),
+        );
       } catch (err) {
         console.error('Failed to fetch bookings:', err);
+        setError(err.message || 'Failed to fetch bookings');
       } finally {
         setLoading(false);
       }
@@ -31,7 +48,7 @@ const UserBookings = () => {
 
   const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
-  const filteredBookings = activeTab === 'All' 
+  const filteredBookings = activeTab === 'All'
     ? bookings 
     : bookings.filter(b => b.status.toLowerCase() === activeTab.toLowerCase());
 
@@ -43,6 +60,32 @@ const UserBookings = () => {
       cancelled: 'bg-red-100 text-red-800',
     };
     return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800';
+  };
+
+  const updateStatus = async (id, nextStatus) => {
+    try {
+      setUpdatingId(id);
+      setError('');
+      const updated = await bookingService.updateBookingStatus(
+        id,
+        toApiBookingStatus(nextStatus),
+      );
+      const resolvedStatus = normalizeBookingStatus(updated?.status || nextStatus);
+
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === id ? { ...booking, status: resolvedStatus } : booking,
+        ),
+      );
+      setDetailModal((prev) =>
+        prev?.id === id ? { ...prev, status: resolvedStatus } : prev,
+      );
+    } catch (err) {
+      console.error('Failed to update booking status:', err);
+      setError(err.message || 'Failed to update booking status');
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   if (loading) {
@@ -57,6 +100,14 @@ const UserBookings = () => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tabs */}
       <Card>
         <CardContent className="p-4">
@@ -139,11 +190,35 @@ const UserBookings = () => {
                     <div className="text-2xl font-bold text-primary">
                       ₱{parseFloat(booking.total_price || 0).toFixed(2)}
                     </div>
-                    {booking.status === 'pending' && (
-                      <Button variant="outline" size="sm" className="mt-3">
-                        Cancel
+                    <div className="mt-3 flex items-center justify-end gap-2">
+                      {booking.status === 'pending' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateStatus(booking.id, 'cancelled')}
+                          disabled={updatingId === booking.id}
+                        >
+                          {updatingId === booking.id ? 'Updating...' : 'Cancel'}
+                        </Button>
+                      )}
+                      {booking.status === 'confirmed' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateStatus(booking.id, 'completed')}
+                          disabled={updatingId === booking.id}
+                        >
+                          {updatingId === booking.id ? 'Updating...' : 'Mark Completed'}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDetailModal(booking)}
+                      >
+                        View Details
                       </Button>
-                    )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -151,6 +226,55 @@ const UserBookings = () => {
           ))}
         </div>
       )}
+
+      <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+          </DialogHeader>
+          {detailModal && (
+            <>
+              <div className="space-y-3 py-2">
+                {[
+                  ['Service', detailModal.service_name || 'Service'],
+                  ['Date', detailModal.booking_date ? new Date(detailModal.booking_date).toLocaleDateString() : '—'],
+                  ['Time', detailModal.booking_time ? String(detailModal.booking_time).slice(0, 5) : '—'],
+                  ['Provider', detailModal.provider_name || 'Unknown'],
+                  ['Location', detailModal.user_location || '—'],
+                  ['Total', `₱${parseFloat(detailModal.total_price || 0).toFixed(2)}`],
+                  ['Status', formatBookingStatus(detailModal.status)],
+                  ['Notes', detailModal.notes || '—'],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 border-b border-border py-2">
+                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <span className="text-sm font-medium text-foreground text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <DialogFooter>
+                {detailModal.status === 'pending' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => updateStatus(detailModal.id, 'cancelled')}
+                    disabled={updatingId === detailModal.id}
+                  >
+                    {updatingId === detailModal.id ? 'Updating...' : 'Cancel Booking'}
+                  </Button>
+                )}
+                {detailModal.status === 'confirmed' && (
+                  <Button
+                    onClick={() => updateStatus(detailModal.id, 'completed')}
+                    disabled={updatingId === detailModal.id}
+                  >
+                    {updatingId === detailModal.id ? 'Updating...' : 'Mark as Completed'}
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
