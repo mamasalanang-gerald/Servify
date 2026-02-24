@@ -20,7 +20,7 @@ const getAllUsers = async () => {
 }
 
 const getUserById = async (id) => {
-    const query = 'SELECT id, full_name, email, phone_number, user_type, created_at FROM users WHERE id = $1';
+    const query = 'SELECT id, full_name, email, phone_number, user_type, profile_image, bio, address, experience, created_at FROM users WHERE id = $1';
     const { rows } = await pool.query(query, [id]);
     return rows[0];
 }
@@ -39,14 +39,14 @@ const updateUserType = async (id, user_type) => {
      return rows[0];
 }
 
-const updateUserProfile = async (id, { full_name, email, phone_number }) => {
+const updateUserProfile = async (id, { full_name, email, phone_number, profile_image }) => {
     const query = `
         UPDATE users 
-        SET full_name = $1, email = $2, phone_number = $3, updated_at = NOW() 
-        WHERE id = $4 
-        RETURNING id, full_name, email, phone_number, user_type, created_at
+        SET full_name = $1, email = $2, phone_number = $3, profile_image = COALESCE($4, profile_image), updated_at = NOW() 
+        WHERE id = $5 
+        RETURNING id, full_name, email, phone_number, user_type, profile_image, bio, address, experience, created_at
     `;
-    const { rows } = await pool.query(query, [full_name, email, phone_number, id]);
+    const { rows } = await pool.query(query, [full_name, email, phone_number, profile_image, id]);
     return rows[0];
 }
 

@@ -5,6 +5,7 @@ const getServices = async (filters = {}) => {
         SELECT s.*,
                c.name AS category_name,
                u.full_name AS provider_name,
+               u.profile_image AS provider_image,
                COALESCE(AVG(r.rating), 0) AS average_rating,
                COUNT(DISTINCT r.id) AS review_count,
                (SELECT COUNT(*) FROM bookings b 
@@ -41,7 +42,7 @@ const getServices = async (filters = {}) => {
     values.push(filters.category_name);
   }
 
-  query += ` GROUP BY s.id, c.name, u.full_name ORDER BY s.created_at DESC`;
+  query += ` GROUP BY s.id, c.name, u.full_name, u.profile_image ORDER BY s.created_at DESC`;
 
   const result = await pool.query(query, values);
   return result.rows;
@@ -53,6 +54,7 @@ const getServicesbyId = async (id) => {
         SELECT s.*,
                c.name AS category_name,
                u.full_name AS provider_name,
+               u.profile_image AS provider_image,
                u.bio AS provider_bio,
                COALESCE(AVG(r.rating), 0) AS average_rating,
                COUNT(DISTINCT r.id) AS review_count,
@@ -65,7 +67,7 @@ const getServicesbyId = async (id) => {
         LEFT JOIN bookings bk ON bk.service_id = s.id
         LEFT JOIN reviews r ON r.booking_id = bk.id
         WHERE s.id = $1
-        GROUP BY s.id, c.name, u.full_name, u.bio
+        GROUP BY s.id, c.name, u.full_name, u.profile_image, u.bio
     `,
     [id],
   );
@@ -100,10 +102,11 @@ const createServices = async (
   service_type,
   location,
   packages = [],
+  image_url = null,
 ) => {
   const result = await pool.query(
-    `INSERT INTO services (provider_id, category_id, title, description, price, service_type, location, packages)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    `INSERT INTO services (provider_id, category_id, title, description, price, service_type, location, packages, image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
     [
       provider_id,
       category_id,
@@ -113,6 +116,7 @@ const createServices = async (
       service_type,
       location,
       JSON.stringify(packages),
+      image_url,
     ],
   );
   return result.rows[0];
@@ -126,11 +130,12 @@ const editServices = async (
   service_type,
   location,
   packages,
+  image_url = null,
 ) => {
   const result = await pool.query(
     `UPDATE services SET title = $1, description = $2, price = $3, service_type = $4, 
-         location = $5, packages = $6, updated_at = NOW()
-         WHERE id = $7 RETURNING *`,
+         location = $5, packages = $6, image_url = $7, updated_at = NOW()
+         WHERE id = $8 RETURNING *`,
     [
       title,
       description,
@@ -138,6 +143,7 @@ const editServices = async (
       service_type,
       location,
       JSON.stringify(packages || []),
+      image_url,
       id,
     ],
   );

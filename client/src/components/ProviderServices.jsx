@@ -5,13 +5,14 @@ import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Upload, X, ImageIcon } from 'lucide-react';
 import { serviceService } from '../services/serviceService';
 import { categoryService } from '../services/categoryService';
+import { uploadServiceImage } from '../services/cloudinaryService';
 
 const MAX_PACKAGES = 4;
 const emptyPackage = () => ({ name: '', price: '', description: '', duration: '' });
-const emptyForm = { title: '', category_id: '', price: '', description: '', service_type: 'onsite', location: '', packages: [] };
+const emptyForm = { title: '', category_id: '', price: '', description: '', service_type: 'onsite', location: '', packages: [], image_url: '' };
 
 const parsePackages = (value) => {
   if (Array.isArray(value)) return value;
@@ -45,14 +46,18 @@ const normalizePackages = (packages = []) =>
         pkg.duration !== '',
     );
 
-const ProviderServices = () => {
+const ProviderServices = ({ openAddOnMount = false }) => {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(openAddOnMount);
   const [editTarget, setEditTarget] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [togglingIds, setTogglingIds] = useState(new Set());
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     serviceService
@@ -65,7 +70,15 @@ const ProviderServices = () => {
       .catch(console.error);
   }, []);
 
-  const openAdd = () => { setForm(emptyForm); setEditTarget(null); setShowModal(true); };
+  const openAdd = () => {
+    setForm(emptyForm);
+    setEditTarget(null);
+    setImageFile(null);
+    setImagePreview('');
+    setUploadError('');
+    setShowModal(true);
+  };
+
   const openEdit = (svc) => {
     const parsedPackages = parsePackages(svc.packages).map((pkg) => ({
       name: String(pkg?.name || ''),
@@ -85,9 +98,39 @@ const ProviderServices = () => {
       service_type: svc.service_type || 'onsite',
       location: svc.location || '',
       packages: parsedPackages,
+      image_url: svc.image_url || '',
     });
     setEditTarget(svc.id);
+    setImageFile(null);
+    setImagePreview(svc.image_url || '');
+    setUploadError('');
     setShowModal(true);
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Invalid file type. Use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('File too large. Maximum 5MB.');
+      return;
+    }
+
+    setUploadError('');
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    setForm((prev) => ({ ...prev, image_url: '' }));
+    setUploadError('');
   };
 
   const addPackage = () => {
@@ -173,17 +216,33 @@ const ProviderServices = () => {
 
     if (!Number.isFinite(resolvedPrice) || resolvedPrice <= 0) return;
 
-    const payload = {
-      title: form.title,
-      category_id: form.category_id,
-      price: resolvedPrice,
-      description: form.description,
-      service_type: form.service_type || 'onsite',
-      location: form.location || '',
-      packages: packageTiers,
-    };
-
     try {
+      // Upload image to Cloudinary if a new file was selected
+      let imageUrl = form.image_url || null;
+      if (imageFile) {
+        setUploading(true);
+        setUploadError('');
+        try {
+          imageUrl = await uploadServiceImage(imageFile);
+        } catch (err) {
+          setUploadError(err.message || 'Image upload failed');
+          setUploading(false);
+          return;
+        }
+        setUploading(false);
+      }
+
+      const payload = {
+        title: form.title,
+        category_id: form.category_id,
+        price: resolvedPrice,
+        description: form.description,
+        service_type: form.service_type || 'onsite',
+        location: form.location || '',
+        packages: packageTiers,
+        image_url: imageUrl,
+      };
+
       if (editTarget) {
         await serviceService.updateService(editTarget, payload);
       } else {
@@ -276,7 +335,37 @@ const ProviderServices = () => {
           <DialogHeader>
             <DialogTitle>{editTarget ? 'Edit Service' : 'Add New Service'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="hide-scrollbar space-y-4 px-2 py-4 max-h-[70vh] overflow-y-auto overflow-x-hidden">
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo</label>
+              {imagePreview ? (
+                <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <img src={imagePreview} alt="Preview" className="w-full h-[180px] object-cover" />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all cursor-pointer">
+                  <ImageIcon className="h-8 w-8 text-gray-400" />
+                  <span className="text-sm text-gray-500">Click to upload a photo</span>
+                  <span className="text-xs text-gray-400">JPEG, PNG, or WebP · Max 5MB</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
+              )}
+              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Title</label>
               <Input 
@@ -303,7 +392,7 @@ const ProviderServices = () => {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Base Price (₱)</label>
                 <Input 
                   type="number" 
-                  placeholder="Required only when no package tier is added" 
+                  placeholder="Required (if no package tier is added)" 
                   value={form.price} 
                   onChange={(e) => setForm({ ...form, price: e.target.value })} 
                 />
@@ -383,8 +472,14 @@ const ProviderServices = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button onClick={handleSave}>{editTarget ? 'Save Changes' : 'Add Service'}</Button>
+            <Button variant="outline" onClick={() => setShowModal(false)} disabled={uploading}>Cancel</Button>
+            <Button onClick={handleSave} disabled={uploading}>
+              {uploading ? (
+                <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />Uploading...</>
+              ) : (
+                editTarget ? 'Save Changes' : 'Add Service'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

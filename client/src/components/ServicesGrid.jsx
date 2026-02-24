@@ -59,6 +59,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
     category: s.category_name,
     rating: parseFloat(s.average_rating) || 0,
     providerName: s.provider_name,
+    providerImage: s.provider_image || null,
     providerInitial:
       s.provider_name
         ?.split(" ")
@@ -66,6 +67,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
         .join("")
         .slice(0, 2) || "??",
     jobs: parseInt(s.jobs_completed) || 0,
+    reviewCount: parseInt(s.review_count) || 0,
     priceNum: parseFloat(s.price),
     price: `₱${Number(s.price).toLocaleString()}`,
     img: s.image_url || "/placeholder-service.jpg",
@@ -81,7 +83,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-slate-500 font-medium">
+      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
         {mappedServices.length} services available
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -96,7 +98,7 @@ const ServicesGrid = ({ searchQuery, filters, onSelectService }) => {
             </div>
           ))
         ) : (
-          <div className="col-span-full text-center py-16 text-slate-500 text-base">
+          <div className="col-span-full text-center py-16 text-slate-500 dark:text-slate-400 text-base">
             <p>No services match your filters.</p>
           </div>
         )}
