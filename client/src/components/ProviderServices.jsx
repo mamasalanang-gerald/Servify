@@ -46,10 +46,10 @@ const normalizePackages = (packages = []) =>
         pkg.duration !== '',
     );
 
-const ProviderServices = () => {
+const ProviderServices = ({ openAddOnMount = false }) => {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(openAddOnMount);
   const [editTarget, setEditTarget] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -335,7 +335,7 @@ const ProviderServices = () => {
           <DialogHeader>
             <DialogTitle>{editTarget ? 'Edit Service' : 'Add New Service'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="hide-scrollbar space-y-4 px-2 py-4 max-h-[70vh] overflow-y-auto overflow-x-hidden">
             {/* Image Upload */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo</label>
@@ -392,7 +392,7 @@ const ProviderServices = () => {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Base Price (₱)</label>
                 <Input 
                   type="number" 
-                  placeholder="Required only when no package tier is added" 
+                  placeholder="Required (if no package tier is added)" 
                   value={form.price} 
                   onChange={(e) => setForm({ ...form, price: e.target.value })} 
                 />
