@@ -83,7 +83,7 @@ const ProviderDashboardPage = () => {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <ProviderSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="ml-64 flex-1 flex flex-col min-h-screen">
         <div className="bg-white/90 backdrop-blur-2xl border-b border-slate-200 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
           <div>
             <div className="text-lg font-bold text-slate-900">{meta.title}</div>
