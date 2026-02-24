@@ -100,13 +100,17 @@ export default function Navbar({ activePage = "" }) {
           /* Logged in: profile dropdown */
           <div className="relative inline-flex group">
             <button
-              className="w-9 h-9 rounded-full border-[1.5px] border-app-border dark:border-[#1e293b] bg-transparent cursor-pointer flex items-center justify-center text-app-text-muted dark:text-[#94a3b8] transition-all hover:bg-app-accent-light hover:text-app-accent hover:border-app-accent dark:hover:bg-[#1e3a5f] dark:hover:text-[#7b9fff] dark:hover:border-[#7b9fff]"
+              className="w-9 h-9 rounded-full border-[1.5px] border-app-border dark:border-[#1e293b] bg-transparent cursor-pointer flex items-center justify-center text-app-text-muted dark:text-[#94a3b8] transition-all hover:border-app-accent dark:hover:border-[#7b9fff] overflow-hidden"
               aria-label="Account"
             >
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              {user.profile_image ? (
+                <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              )}
             </button>
 
             {/* Dropdown */}

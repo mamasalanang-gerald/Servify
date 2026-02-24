@@ -9,6 +9,7 @@ const useAuth = () => {
     const email = localStorage.getItem('servify_email');
     const id = localStorage.getItem('servify_user_id');
     const full_name = localStorage.getItem('servify_full_name');
+    const profile_image = localStorage.getItem('servify_profile_image');
     
     if (!role) return null;
     
@@ -16,11 +17,12 @@ const useAuth = () => {
       role, 
       email, 
       id: id || null, // ID is a UUID string, not an integer
-      full_name
+      full_name,
+      profile_image: profile_image || null,
     };
   };
 
-  const setUser = ({ role, email, accessToken, id, full_name }) => {
+  const setUser = ({ role, email, accessToken, id, full_name, profile_image }) => {
     localStorage.setItem('servify_role', role);
     localStorage.setItem('servify_email', email);
     if (id) {
@@ -31,6 +33,9 @@ const useAuth = () => {
     }
     if (accessToken) {
       localStorage.setItem('servify_token', accessToken);
+    }
+    if (profile_image) {
+      localStorage.setItem('servify_profile_image', profile_image);
     }
   };
 
@@ -44,6 +49,7 @@ const useAuth = () => {
     localStorage.removeItem('servify_token');
     localStorage.removeItem('servify_user_id');
     localStorage.removeItem('servify_full_name');
+    localStorage.removeItem('servify_profile_image');
   };
 
   const user = getUser();

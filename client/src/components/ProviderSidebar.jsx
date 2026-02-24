@@ -4,11 +4,13 @@ import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
 import useAuth from '../hooks/useAuth';
 import { bookingService } from '../services/bookingService';
+import { userService } from '../services/userService';
 
 const ProviderSidebar = ({ activeNav, setActiveNav }) => {
   const { user } = useAuth();
   const [bookingCount, setBookingCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileImage, setProfileImage] = useState(user?.profile_image || '');
 
   useEffect(() => {
     let isMounted = true;
@@ -31,7 +33,20 @@ const ProviderSidebar = ({ activeNav, setActiveNav }) => {
       }
     };
 
+    const fetchProfile = async () => {
+      try {
+        const profile = await userService.getProfile();
+        if (isMounted && profile.profile_image) {
+          setProfileImage(profile.profile_image);
+          localStorage.setItem('servify_profile_image', profile.profile_image);
+        }
+      } catch (err) {
+        // Non-critical
+      }
+    };
+
     fetchBookingCount();
+    fetchProfile();
 
     return () => {
       isMounted = false;
@@ -113,9 +128,13 @@ const ProviderSidebar = ({ activeNav, setActiveNav }) => {
 
       {/* Provider info */}
       <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
-          {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'JD'}
-        </div>
+        {profileImage ? (
+          <img src={profileImage} alt="Profile" className="h-12 w-12 rounded-full object-cover border-2 border-gray-200" />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
+            {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'JD'}
+          </div>
+        )}
         <div className="flex-1">
           <div className="font-semibold text-foreground">{user?.full_name || 'Juan dela Cruz'}</div>
           <div className="text-sm text-muted-foreground">Service Provider</div>

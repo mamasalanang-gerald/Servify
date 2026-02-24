@@ -62,6 +62,19 @@ export const authService = {
     localStorage.setItem('servify_user_id', data.user.id); // Store UUID as string
     localStorage.setItem('servify_full_name', data.user.full_name);
     
+    // Fetch full profile to get profile_image
+    try {
+      const profileRes = await api.get('/users/profile');
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.profile_image) {
+          localStorage.setItem('servify_profile_image', profile.profile_image);
+        }
+      }
+    } catch (e) {
+      // Non-critical, continue
+    }
+    
     console.log('Stored in localStorage:', {
       role: data.user.user_type,
       email: data.user.email,
@@ -87,6 +100,7 @@ export const authService = {
       localStorage.removeItem('servify_email');
       localStorage.removeItem('servify_user_id');
       localStorage.removeItem('servify_full_name');
+      localStorage.removeItem('servify_profile_image');
     }
   },
 
@@ -98,6 +112,7 @@ export const authService = {
     const email = localStorage.getItem('servify_email');
     const id = localStorage.getItem('servify_user_id');
     const full_name = localStorage.getItem('servify_full_name');
+    const profile_image = localStorage.getItem('servify_profile_image');
     
     if (!role) return null;
     
@@ -105,7 +120,8 @@ export const authService = {
       role, 
       email, 
       id: id || null, // ID is a UUID string, not an integer
-      full_name 
+      full_name,
+      profile_image: profile_image || null,
     };
   },
 

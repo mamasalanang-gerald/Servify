@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react';
 import LogoutButton from '../LogoutButton';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import useAuth from '../../hooks/useAuth';
+import { userService } from '../../services/userService';
 
 const navItems = [
   {
