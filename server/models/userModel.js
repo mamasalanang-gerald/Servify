@@ -39,6 +39,17 @@ const updateUserType = async (id, user_type) => {
      return rows[0];
 }
 
+const updateUserProfile = async (id, { full_name, email, phone_number }) => {
+    const query = `
+        UPDATE users 
+        SET full_name = $1, email = $2, phone_number = $3, updated_at = NOW() 
+        WHERE id = $4 
+        RETURNING id, full_name, email, phone_number, user_type, created_at
+    `;
+    const { rows } = await pool.query(query, [full_name, email, phone_number, id]);
+    return rows[0];
+}
+
 const findUserByEmail = async (email) => {
     const query = 'SELECT * FROM users WHERE email = $1';
     const { rows } = await pool.query(query, [email]);
@@ -50,5 +61,7 @@ module.exports = {
     getAllUsers,
     getUserById,
     deleteUser,
-    findUserByEmail
+    findUserByEmail,
+    updateUserType,
+    updateUserProfile
 }

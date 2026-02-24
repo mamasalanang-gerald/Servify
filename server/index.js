@@ -1,12 +1,20 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
 const runMigrations = require('./migrate');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const servicesRoutes = require('./routes/servicesRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const adminRoutes =  require('./routes/adminRoutes');
+const savedServiceRoutes = require('./routes/savedServiceRoutes');
+
 
 const app = express();
+
 
 process.stderr.write('Script starting...\n');
 
@@ -26,11 +34,17 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
-// Setup routes
+
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/services", servicesRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/saved-services', savedServiceRoutes);
+
 
 app.get('/', (req, res) => {
     res.send('Servify API is running!');

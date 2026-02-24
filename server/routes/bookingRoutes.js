@@ -1,21 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const {getAllBookings, createBooking, getClientBookings, getProviderBookings, updateBookingStatus, deleteBooking} = require('../controllers/bookingController');
+const { getAllBookings, createBooking, getClientBookings, getProviderBookings, updateBookingStatus, deleteBooking} = require('../controllers/bookingController');
+const { verifyToken } = require('../middlewares/authMiddleware');
+const authorizeRoles = require('../middlewares/roleMiddleware');
 
-console.log('routes loaded');
+router.get('/', verifyToken, authorizeRoles('admin'), getAllBookings);
 
-router.get('/', getAllBookings);
+router.post('/createBooking',verifyToken, createBooking);
 
-router.post('/',createBooking);
-
-router.get('/client/:clientId', getClientBookings);
-
-
-router.get('/provider/:providerId', getProviderBookings);
-
-router.patch('/:id/status', updateBookingStatus);
+router.get('/client/:clientId',verifyToken, getClientBookings);
 
 
-router.delete('/:id', deleteBooking);
+router.get('/provider/:providerId',verifyToken, getProviderBookings);
+
+router.patch('/:id/status',verifyToken, updateBookingStatus);
+
+
+router.delete('/:id',verifyToken, deleteBooking);
 
 module.exports = router;
