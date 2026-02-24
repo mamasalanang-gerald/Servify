@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
 import LogoutButton from "./LogoutButton";
-import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
 export default function Navbar({ activePage = "" }) {
@@ -77,7 +76,7 @@ export default function Navbar({ activePage = "" }) {
         </li>
       </ul>
 
-      <div className="flex items-center gap-2.5 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-shrink-0">
         {/* Dark mode toggle */}
         <button
           className="w-9 h-9 rounded-full border-[1.5px] border-app-border dark:border-[#1e293b] bg-transparent cursor-pointer flex items-center justify-center text-app-text-muted dark:text-[#94a3b8] transition-all hover:bg-app-accent-light hover:text-app-accent hover:border-app-accent dark:hover:bg-[#1e3a5f] dark:hover:text-[#7b9fff] dark:hover:border-[#7b9fff]"
@@ -142,13 +141,13 @@ export default function Navbar({ activePage = "" }) {
           <>
             <a
               href="/login"
-              className="py-2 px-4.5 bg-transparent text-app-accent dark:text-[#7b9fff] border-[1.5px] border-app-accent dark:border-[#7b9fff] rounded-[10px] font-sans text-[0.88rem] font-semibold cursor-pointer no-underline inline-flex items-center transition-all whitespace-nowrap hover:bg-app-accent-light dark:hover:bg-[#1e3a5f] hover:-translate-y-0.5"
+              className="py-2 px-4 bg-transparent text-app-accent dark:text-[#7b9fff] border-[1.5px] border-app-accent dark:border-[#7b9fff] rounded-[10px] font-sans text-[0.88rem] font-semibold cursor-pointer no-underline inline-flex items-center transition-all whitespace-nowrap hover:bg-app-accent-light dark:hover:bg-[#1e3a5f] hover:-translate-y-0.5"
             >
               Log In
             </a>
             <a
               href="/signup"
-              className="py-2 px-5.5 bg-gradient-to-br from-app-primary to-app-accent text-white border-none rounded-[10px] font-sans text-[0.88rem] font-semibold cursor-pointer no-underline inline-flex items-center transition-all shadow-[0_4px_12px_rgba(26,58,143,0.25)] whitespace-nowrap hover:opacity-90 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(26,58,143,0.35)]"
+              className="py-2 px-5 bg-gradient-to-br from-app-primary to-app-accent text-white border-none rounded-[10px] font-sans text-[0.88rem] font-semibold cursor-pointer no-underline inline-flex items-center transition-all shadow-[0_4px_12px_rgba(26,58,143,0.25)] whitespace-nowrap hover:opacity-90 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(26,58,143,0.35)]"
             >
               Register
             </a>
