@@ -1,28 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import LogoutButton from './LogoutButton';
 import { cn } from '../lib/utils';
 import useAuth from '../hooks/useAuth';
 import { userService } from '../services/userService';
+import useTheme from '../hooks/useTheme';
 
 const UserSidebar = ({ activeNav, setActiveNav }) => {
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [profileImage, setProfileImage] = useState(
     user?.profile_image || localStorage.getItem('servify_profile_image') || ''
   );
-
-  const [dark, setDark] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
-
-  useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [dark]);
 
   useEffect(() => {
     let isMounted = true;
@@ -176,11 +164,11 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
         {/* Dark mode toggle */}
         <button
           className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          onClick={() => setDark(!dark)}
+          onClick={toggleTheme}
           aria-label="Toggle theme"
         >
           <span className="flex-shrink-0">
-            {dark ? (
+            {isDark ? (
               <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="5" />
                 <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeLinecap="round" />
@@ -191,7 +179,7 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
               </svg>
             )}
           </span>
-          <span className="flex-1 text-left">{dark ? 'Light Mode' : 'Dark Mode'}</span>
+          <span className="flex-1 text-left">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
         </button>
 
         <LogoutButton />

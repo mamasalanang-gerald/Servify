@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ServicesFilter from './ServicesFilter';
 import ServicesGrid from './ServicesGrid';
 import ServiceDetailPage from './ServiceDetailPage';
@@ -13,6 +13,25 @@ const ServicesPanel = ({ initialCategory = null }) => {
     selectedRating: '',
     selectedCategories: initialCategory ? [initialCategory] : [],
   });
+
+  useEffect(() => {
+    setFilters((prev) => {
+      const nextCategories = initialCategory ? [initialCategory] : [];
+      const current = prev.selectedCategories || [];
+      const isSameLength = current.length === nextCategories.length;
+      const isSameValue =
+        isSameLength && current.every((value, index) => value === nextCategories[index]);
+
+      if (isSameValue) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        selectedCategories: nextCategories,
+      };
+    });
+  }, [initialCategory]);
 
   const handleFilterChange = (updated) => setFilters(updated);
 

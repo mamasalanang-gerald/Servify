@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { categoryService } from "../services/categoryService";
+import useAuth from "../hooks/useAuth";
 
 // Map category names to SVG icons
 const categoryIcons = {
@@ -16,9 +17,24 @@ const categoryIcons = {
     </svg>
   ),
   Carpentry: (
-    <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-      <path d="M15 5l-1.5 1.5L9 2 4 7l4.5 4.5L7 13l4 4 1.5-1.5L17 20l3-3-4.5-4.5L17 11z" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <g transform="scale(1.2)">
+    <path
+      d="M 11.638672 0.89257812 C 9.6968368 0.80815061 8.1796875 2.1152344 8.1796875 2.1152344 A 0.50005 0.50005 0 0 0 8.6210938 2.984375 C 8.6210938 2.984375 10.342903 2.5499342 11.646484 3.8535156 C 11.719708 3.9267389 11.875 4.3333333 11.875 4.75 C 11.875 5.1666667 11.719708 5.5732611 11.646484 5.6464844 L 8.734375 8.5585938 L 8.7324219 8.5585938 A 0.50005 0.50005 0 0 0 8.4921875 8.5 A 0.50005 0.50005 0 0 0 8.1464844 8.6464844 L 0.14648438 16.646484 A 0.50005 0.50005 0 0 0 0.14648438 17.353516 L 2.1464844 19.353516 A 0.50005 0.50005 0 0 0 2.8535156 19.353516 L 10.853516 11.353516 A 0.50005 0.50005 0 0 0 10.941406 10.765625 L 14.75 6.9570312 L 15.292969 7.5 L 15.146484 7.6464844 A 0.50005 0.50005 0 0 0 15.146484 8.3535156 L 16.646484 9.8535156 A 0.50005 0.50005 0 0 0 17.353516 9.8535156 L 19.853516 7.3535156 A 0.50005 0.50005 0 0 0 19.853516 6.6464844 L 18.353516 5.1464844 A 0.50005 0.50005 0 0 0 17.646484 5.1464844 L 17.5 5.2929688 L 16.941406 4.734375 L 16.941406 4.7324219 A 0.50005 0.50005 0 0 0 16.853516 4.1464844 L 15.353516 2.6464844 A 0.50005 0.50005 0 0 0 14.765625 2.5585938 L 14.353516 2.1464844 C 13.49128 1.2842485 12.521207 0.93094933 11.638672 0.89257812 z M 11.595703 1.8925781 C 12.257356 1.9213461 12.94622 2.1532515 13.646484 2.8535156 L 14.396484 3.6035156 A 0.50005 0.50005 0 0 0 14.984375 3.6914062 L 15.808594 4.515625 A 0.50005 0.50005 0 0 0 15.808594 4.5175781 A 0.50005 0.50005 0 0 0 15.896484 5.1035156 L 17.146484 6.3535156 A 0.50005 0.50005 0 0 0 17.853516 6.3535156 L 18 6.2070312 L 18.792969 7 L 17 8.7929688 L 16.207031 8 L 16.353516 7.8535156 A 0.50005 0.50005 0 0 0 16.353516 7.1464844 L 15.103516 5.8964844 A 0.50005 0.50005 0 0 0 14.396484 5.8964844 L 10.25 10.042969 L 9.4570312 9.25 L 12.353516 6.3535156 C 12.780292 5.9267389 12.875 5.3333333 12.875 4.75 C 12.875 4.1666667 12.780292 3.5732611 12.353516 3.1464844 C 11.779442 2.5724108 11.159019 2.310211 10.5625 2.1445312 C 10.909394 2.0432192 11.206918 1.8756745 11.595703 1.8925781 z M 8.5 9.7070312 L 9.7929688 11 L 2.5 18.292969 L 1.2070312 17 L 8.5 9.7070312 z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+  </g>
+</svg>
   ),
   Gardening: (
     <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -54,6 +70,7 @@ const defaultIcon = (
 
 export default function PopularCategories() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -62,6 +79,40 @@ export default function PopularCategories() {
       .then((res) => setCategories(res.categories || []))
       .catch(console.error);
   }, []);
+
+  const handleCategoryClick = (categoryName) => {
+    const role = user?.role;
+
+    if (!role) {
+      navigate("/login", {
+        state: {
+          redirectAfterLogin: "/dashboard",
+          initialNav: "Services",
+          initialCategory: categoryName,
+          source: "popular-categories",
+        },
+      });
+      return;
+    }
+
+    if (role === "provider") {
+      navigate("/provider");
+      return;
+    }
+
+    if (role === "admin") {
+      navigate("/admin");
+      return;
+    }
+
+    navigate("/dashboard", {
+      state: {
+        initialNav: "Services",
+        initialCategory: categoryName,
+        source: "popular-categories",
+      },
+    });
+  };
 
   return (
     <section className="py-20 px-12 bg-[#f0f2f8] dark:bg-[#131929] transition-colors">
@@ -81,7 +132,7 @@ export default function PopularCategories() {
           {categories.map((cat) => (
             <div
               key={cat.id}
-              onClick={() => navigate("/services", { state: { category: cat.name } })}
+              onClick={() => handleCategoryClick(cat.name)}
               className="group flex flex-col items-center text-center py-10 px-6 rounded-2xl bg-white dark:bg-[#1a1f2e] border border-[#e2e6f0] dark:border-[#2a3045] cursor-pointer transition-all duration-200 hover:border-[#2c3fd1] dark:hover:border-[#7b93ff] hover:shadow-[0_8px_28px_rgba(44,63,209,0.12)] dark:hover:shadow-[0_8px_28px_rgba(123,147,255,0.12)] hover:-translate-y-1"
 
             >

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import LoginPage             from './pages/LoginPage';
 import DashboardPage         from './pages/Dashboardpage';
 import LandingPage           from './pages/LandingPage';
@@ -12,8 +13,13 @@ import ProtectedRoute        from './components/ProtectedRoute';
 import { authService }       from './services/authService';
 import BecomeProviderPage from './pages/BecomeProviderPage';
 import { SavedServicesProvider } from './contexts/SavedServicesContext';
+import { initializeTheme } from './hooks/useTheme';
 
 function App() {
+  useEffect(() => {
+    initializeTheme();
+  }, []);
+
   return (
     <SavedServicesProvider>
       <BrowserRouter>

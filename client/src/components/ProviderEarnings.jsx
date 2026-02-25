@@ -40,7 +40,7 @@ const ProviderEarnings = () => {
         setLoading(true);
         
         // Fetch all earnings data
-        const [summaryData, transactionsData, payoutsData, monthlyDataRes] = await Promise.all([
+        const [summaryData, transactionsData, payoutsData, monthlyDataRes] = await Promise.allSettled([
           providerService.getEarningsSummary(user.id),
           providerService.getTransactions(user.id),
           providerService.getPayouts(user.id),

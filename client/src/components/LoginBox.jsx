@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
 const ROLE_HOME = {
+  user:     '/dashboard',
   client:   '/dashboard',
   provider: '/provider',
   admin:    '/admin',
 };
 
 const LoginBox = () => {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useRedirectIfAuth();
 
@@ -36,9 +38,31 @@ const LoginBox = () => {
       const data = await authService.login(formData);
       console.log('Login response:', data);
       console.log('User type:', data.user.user_type);
-      console.log('Navigating to:', ROLE_HOME[data.user.user_type]);
+      const role = data.user.user_type;
+      const isClientRole = role === 'client' || role === 'user';
+
+      const redirectState = location.state || {};
+      const shouldOpenClientServices =
+        isClientRole &&
+        redirectState.redirectAfterLogin === '/dashboard' &&
+        redirectState.initialNav === 'Services';
+
+      const destination = ROLE_HOME[role] || '/dashboard';
+      console.log('Navigating to:', destination);
       setLoading(false);
-      navigate(ROLE_HOME[data.user.user_type]);
+      navigate(
+        destination,
+        shouldOpenClientServices
+          ? {
+              replace: true,
+              state: {
+                initialNav: 'Services',
+                initialCategory: redirectState.initialCategory || null,
+                source: redirectState.source || 'login-redirect',
+              },
+            }
+          : { replace: true },
+      );
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'An error occurred. Please try again.');

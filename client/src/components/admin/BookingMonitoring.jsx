@@ -77,7 +77,7 @@ const BookingMonitoring = () => {
         </Select>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -93,24 +93,24 @@ const BookingMonitoring = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan="7" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="7" className="text-center py-8 text-muted-foreground">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : bookings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan="7" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="7" className="text-center py-8 text-muted-foreground">
                   No bookings found
                 </TableCell>
               </TableRow>
             ) : (
               bookings.map((booking) => (
                 <TableRow key={booking.id}>
-                  <TableCell className="font-semibold text-slate-900">#{booking.id}</TableCell>
-                  <TableCell className="text-slate-600">{booking.clientName}</TableCell>
-                  <TableCell className="text-slate-600">{booking.providerName}</TableCell>
-                  <TableCell className="text-slate-600">{booking.service}</TableCell>
-                  <TableCell className="text-slate-600">{booking.date}</TableCell>
+                  <TableCell className="font-semibold text-foreground">#{booking.id}</TableCell>
+                  <TableCell className="text-muted-foreground">{booking.clientName}</TableCell>
+                  <TableCell className="text-muted-foreground">{booking.providerName}</TableCell>
+                  <TableCell className="text-muted-foreground">{booking.service}</TableCell>
+                  <TableCell className="text-muted-foreground">{booking.date}</TableCell>
                   <TableCell>{getStatusBadge(booking.status)}</TableCell>
                   <TableCell>
                     <Button
@@ -133,7 +133,7 @@ const BookingMonitoring = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Page {page} of {totalPages}
         </p>
         <div className="flex gap-2">
@@ -165,32 +165,32 @@ const BookingMonitoring = () => {
           {selectedBooking && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-medium text-slate-700">Booking ID</div>
-                <p className="text-slate-900">#{selectedBooking.id}</p>
+                <div className="text-sm font-medium text-muted-foreground">Booking ID</div>
+                <p className="text-foreground">#{selectedBooking.id}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Client</div>
-                <p className="text-slate-900">{selectedBooking.clientName}</p>
+                <div className="text-sm font-medium text-muted-foreground">Client</div>
+                <p className="text-foreground">{selectedBooking.clientName}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Provider</div>
-                <p className="text-slate-900">{selectedBooking.providerName}</p>
+                <div className="text-sm font-medium text-muted-foreground">Provider</div>
+                <p className="text-foreground">{selectedBooking.providerName}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Service</div>
-                <p className="text-slate-900">{selectedBooking.service}</p>
+                <div className="text-sm font-medium text-muted-foreground">Service</div>
+                <p className="text-foreground">{selectedBooking.service}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Date</div>
-                <p className="text-slate-900">{selectedBooking.date}</p>
+                <div className="text-sm font-medium text-muted-foreground">Date</div>
+                <p className="text-foreground">{selectedBooking.date}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Amount</div>
-                <p className="text-slate-900">${selectedBooking.amount}</p>
+                <div className="text-sm font-medium text-muted-foreground">Amount</div>
+                <p className="text-foreground">${selectedBooking.amount}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Status</div>
-                <p className="text-slate-900">{selectedBooking.status}</p>
+                <div className="text-sm font-medium text-muted-foreground">Status</div>
+                <p className="text-foreground">{selectedBooking.status}</p>
               </div>
             </div>
           )}
