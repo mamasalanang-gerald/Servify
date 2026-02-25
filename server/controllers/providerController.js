@@ -55,7 +55,7 @@ const getTransactions = async (req, res) => {
         b.booking_date as date,
         b.total_price as gross,
         u.full_name as client,
-        s.name as service,
+        s.title as service,
         b.status
        FROM bookings b
        JOIN users u ON b.client_id = u.id

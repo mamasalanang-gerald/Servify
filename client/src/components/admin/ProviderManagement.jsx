@@ -86,7 +86,7 @@ const ProviderManagement = () => {
         />
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -101,23 +101,23 @@ const ProviderManagement = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan="6" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredProviders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan="6" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
                   No providers found
                 </TableCell>
               </TableRow>
             ) : (
               filteredProviders.map((provider) => (
                 <TableRow key={provider.id}>
-                  <TableCell className="font-semibold text-slate-900">{provider.name}</TableCell>
-                  <TableCell className="text-slate-600">{provider.email}</TableCell>
-                  <TableCell className="text-slate-600">{provider.servicesCount || 0}</TableCell>
-                  <TableCell className="text-slate-600">
+                  <TableCell className="font-semibold text-foreground">{provider.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{provider.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{provider.servicesCount || 0}</TableCell>
+                  <TableCell className="text-muted-foreground">
                     {provider.rating ? `${provider.rating.toFixed(1)} ⭐` : 'N/A'}
                   </TableCell>
                   <TableCell>
@@ -144,7 +144,7 @@ const ProviderManagement = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Page {page} of {totalPages}
         </p>
         <div className="flex gap-2">
@@ -176,26 +176,26 @@ const ProviderManagement = () => {
           {selectedProvider && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-medium text-slate-700">Name</div>
-                <p className="text-slate-900">{selectedProvider.name}</p>
+                <div className="text-sm font-medium text-muted-foreground">Name</div>
+                <p className="text-foreground">{selectedProvider.name}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Email</div>
-                <p className="text-slate-900">{selectedProvider.email}</p>
+                <div className="text-sm font-medium text-muted-foreground">Email</div>
+                <p className="text-foreground">{selectedProvider.email}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Services</div>
-                <p className="text-slate-900">{selectedProvider.servicesCount || 0}</p>
+                <div className="text-sm font-medium text-muted-foreground">Services</div>
+                <p className="text-foreground">{selectedProvider.servicesCount || 0}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Rating</div>
-                <p className="text-slate-900">
+                <div className="text-sm font-medium text-muted-foreground">Rating</div>
+                <p className="text-foreground">
                   {selectedProvider.rating ? `${selectedProvider.rating.toFixed(1)} ⭐` : 'N/A'}
                 </p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Verification Status</div>
-                <p className="text-slate-900">{selectedProvider.verificationStatus}</p>
+                <div className="text-sm font-medium text-muted-foreground">Verification Status</div>
+                <p className="text-foreground">{selectedProvider.verificationStatus}</p>
               </div>
             </div>
           )}

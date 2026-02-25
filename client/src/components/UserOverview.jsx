@@ -129,7 +129,7 @@ const UserOverview = ({ onQuickAction }) => {
           <path d="m21 21-4.35-4.35" />
         </svg>
       ),
-      onClick: () => navigate('/services'),
+      onClick: () => onQuickAction?.('browse-services'),
     },
     {
       id: 'view-bookings',
