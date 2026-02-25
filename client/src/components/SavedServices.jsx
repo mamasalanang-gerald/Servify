@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import ServiceDetailPage from './ServiceDetailPage.jsx';
@@ -6,11 +7,74 @@ import { useSavedServices } from '../contexts/SavedServicesContext';
 import { savedServiceService } from '../services/savedServiceService.js';
 import { toast } from '../hooks/use-toast';
 
+const toNumber = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^0-9.-]/g, '');
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+};
+
+const buildInitials = (name, fallback = 'SP') => {
+  if (!name || typeof name !== 'string') return fallback;
+  return (
+    name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || fallback
+  );
+};
+
+const normalizeSavedService = (savedService) => {
+  const serviceId = savedService.service_id || savedService.id;
+  if (!serviceId) return null;
+
+  const priceNum = toNumber(savedService.price);
+  const rating = toNumber(savedService.average_rating ?? savedService.rating);
+  const reviewCount = Number(savedService.review_count || savedService.reviewCount || 0);
+  const jobs = Number(savedService.jobs_completed || savedService.jobs || 0);
+  const providerName = savedService.provider_name || savedService.providerName || 'Service Provider';
+  const providerImage = savedService.provider_image || savedService.providerImage || null;
+  const category = savedService.category_name || savedService.category || 'Service';
+
+  return {
+    ...savedService,
+    id: serviceId,
+    title: savedService.title || 'Untitled Service',
+    img: savedService.image_url || savedService.img || '/placeholder-service.jpg',
+    category,
+    rating,
+    reviewCount,
+    priceNum,
+    price: `₱${priceNum.toLocaleString()}`,
+    providerName,
+    provider: providerName,
+    providerImage,
+    provider_image: providerImage,
+    providerInitial: buildInitials(providerName),
+    provider_id: savedService.provider_id || savedService.providerId,
+    providerId: savedService.provider_id || savedService.providerId,
+    description: savedService.description || '',
+    location: savedService.location || '',
+    packages: savedService.packages,
+    jobs,
+  };
+};
+
 const SavedServices = () => {
   const [savedServices, setSavedServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingService, setViewingService] = useState(null);
-  const { unsaveService, refreshSavedServices } = useSavedServices();
+  const { refreshSavedServices } = useSavedServices();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSavedServices();
@@ -20,7 +84,8 @@ const SavedServices = () => {
     try {
       setLoading(true);
       const data = await savedServiceService.getSaved();
-      setSavedServices(Array.isArray(data) ? data : []);
+      const source = Array.isArray(data) ? data : [];
+      setSavedServices(source.map(normalizeSavedService).filter(Boolean));
     } catch (error) {
       console.error('Failed to load saved services:', error);
       toast({
@@ -39,7 +104,7 @@ const SavedServices = () => {
     
     try {
       await savedServiceService.unsave(serviceId);
-      setSavedServices(prev => prev.filter(s => (s.service_id || s.id) !== serviceId));
+      setSavedServices((prev) => prev.filter((s) => s.id !== serviceId));
       
       toast({
         title: 'Service Removed',
@@ -57,42 +122,10 @@ const SavedServices = () => {
     }
   };
 
-  // Transform saved service data to match ServiceDetailPage format
-  const transformServiceData = (savedService) => {
-    try {
-      return {
-        id: savedService.service_id || savedService.id,
-        title: savedService.title,
-        img: savedService.image_url || savedService.img,
-        category: savedService.category,
-        rating: savedService.rating || 0,
-        reviewCount: savedService.review_count || 0,
-        price: savedService.price,
-        priceNum: parseInt(savedService.price) || 0,
-        providerName: savedService.provider_name,
-        provider: savedService.provider_name,
-        provider_id: savedService.provider_id,
-        providerId: savedService.provider_id,
-        description: savedService.description,
-        location: savedService.location || 'San Diego, CA',
-        packages: savedService.packages,
-        reviews: savedService.reviews,
-        jobs: savedService.jobs_completed || 0,
-        rating: savedService.rating || 0,
-      };
-    } catch (error) {
-      console.error('Error transforming service:', error);
-      return null;
-    }
-  };
-
   // Handle viewing a service
   const handleViewService = (savedService) => {
     try {
-      const transformedService = transformServiceData(savedService);
-      if (transformedService) {
-        setViewingService(transformedService);
-      }
+      setViewingService(savedService);
     } catch (error) {
       console.error('Failed to view service:', error);
       toast({
@@ -172,7 +205,11 @@ const SavedServices = () => {
             Start exploring services and save your favorites to easily find them later.
           </p>
           <Button
-            onClick={() => window.location.href = '/services'}
+            onClick={() =>
+              navigate('/dashboard', {
+                state: { initialNav: 'Services', source: 'saved-services-empty' },
+              })
+            }
             className="bg-gradient-to-br from-blue-900 to-blue-600 text-white"
           >
             Browse Services
@@ -188,7 +225,7 @@ const SavedServices = () => {
       <p className="text-muted-foreground">Your favorite services for quick access.</p>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {savedServices.map((service) => {
-          const serviceId = service.service_id || service.id;
+          const serviceId = service.id;
           
           return (
             <Card 
@@ -206,7 +243,7 @@ const SavedServices = () => {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
-                  {service.rating || 0}
+                  {service.rating}
                 </div>
                 <div className="absolute top-3 left-3">
                   <button
@@ -231,28 +268,28 @@ const SavedServices = () => {
 
                 <div className="flex items-center gap-2.5">
                   {service.provider_image ? (
-                    <img src={service.provider_image} alt={service.provider_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                    <img src={service.provider_image} alt={service.providerName} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                      {service.provider_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'SP'}
+                      {service.providerName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'SP'}
                     </div>
                   )}
                   <div>
                     <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                      {service.provider_name || 'Service Provider'}
+                      {service.providerName}
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" fill="#2b52cc" opacity="0.15" />
                         <polyline points="9 12 11 14 15 10" stroke="#2b52cc" strokeWidth="2" fill="none" strokeLinecap="round" />
                       </svg>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{service.jobs_completed || 0} jobs completed</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{service.jobs} jobs completed</div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-700 mt-1">
                   <div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-0.5">Starting at</div>
-                    <div className="text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">₱{service.price || 0}</div>
+                    <div className="text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">{service.price}</div>
                   </div>
                   <Button 
                     className="bg-gradient-to-br from-blue-900 to-blue-600 text-white hover:opacity-90 shadow-md hover:shadow-lg transition-all"

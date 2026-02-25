@@ -100,7 +100,7 @@ const ViewService = ({ service, onBack }) => {
   const providerJobs = service.providerJobs || 0;
   const providerJoined = service.providerJoined || new Date().getFullYear();
   const description = service.description || 'Professional service provider';
-  const serviceLocation = service.location || 'San Diego, CA';
+  const serviceLocation = service.location ;
   const safeIncludes = Array.isArray(service.includes) ? service.includes : ['Professional service', 'Quality guaranteed', 'On-time delivery'];
   const safeReviews = Array.isArray(service.reviews) ? service.reviews : [];
 

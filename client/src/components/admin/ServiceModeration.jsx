@@ -73,7 +73,7 @@ const ServiceModeration = () => {
         />
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -88,23 +88,23 @@ const ServiceModeration = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan="6" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredServices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan="6" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
                   No services found
                 </TableCell>
               </TableRow>
             ) : (
               filteredServices.map((service) => (
                 <TableRow key={service.id}>
-                  <TableCell className="font-semibold text-slate-900">{service.name}</TableCell>
-                  <TableCell className="text-slate-600">{service.provider}</TableCell>
-                  <TableCell className="text-slate-600">{service.category}</TableCell>
-                  <TableCell className="text-slate-600">${service.price}</TableCell>
+                  <TableCell className="font-semibold text-foreground">{service.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{service.provider}</TableCell>
+                  <TableCell className="text-muted-foreground">{service.category}</TableCell>
+                  <TableCell className="text-muted-foreground">${service.price}</TableCell>
                   <TableCell>
                     <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
                       {service.status}
@@ -131,7 +131,7 @@ const ServiceModeration = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Page {page} of {totalPages}
         </p>
         <div className="flex gap-2">
@@ -163,24 +163,24 @@ const ServiceModeration = () => {
           {selectedService && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-medium text-slate-700">Name</div>
-                <p className="text-slate-900">{selectedService.name}</p>
+                <div className="text-sm font-medium text-muted-foreground">Name</div>
+                <p className="text-foreground">{selectedService.name}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Provider</div>
-                <p className="text-slate-900">{selectedService.provider}</p>
+                <div className="text-sm font-medium text-muted-foreground">Provider</div>
+                <p className="text-foreground">{selectedService.provider}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Category</div>
-                <p className="text-slate-900">{selectedService.category}</p>
+                <div className="text-sm font-medium text-muted-foreground">Category</div>
+                <p className="text-foreground">{selectedService.category}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Price</div>
-                <p className="text-slate-900">${selectedService.price}</p>
+                <div className="text-sm font-medium text-muted-foreground">Price</div>
+                <p className="text-foreground">${selectedService.price}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Status</div>
-                <p className="text-slate-900">{selectedService.status}</p>
+                <div className="text-sm font-medium text-muted-foreground">Status</div>
+                <p className="text-foreground">{selectedService.status}</p>
               </div>
             </div>
           )}

@@ -40,6 +40,7 @@ const mapProviderBooking = (booking) => {
       : '—',
     time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
     amount: `₱${Number(booking.total_price || 0).toLocaleString()}`,
+    location: booking.user_location || '—',
     avatar: clientName
       .split(' ')
       .map((part) => part[0])
@@ -196,6 +197,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
                 {[
                   ['Client',  detailModal.client],
                   ['Service', detailModal.service],
+                  ['Location', detailModal.location],
                   ['Date',    detailModal.date],
                   ['Time',    detailModal.time],
                   ['Amount',  detailModal.amount],

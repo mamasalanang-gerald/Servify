@@ -23,7 +23,15 @@ const getSavedByUser = async (user_id) => {
   const result = await pool.query(
     `
         SELECT s.*, c.name AS category_name, u.full_name AS provider_name,
+               u.profile_image AS provider_image,
                COALESCE(AVG(r.rating), 0) AS average_rating,
+               COUNT(DISTINCT r.id) AS review_count,
+               (
+                 SELECT COUNT(*)
+                 FROM bookings completed_bookings
+                 WHERE completed_bookings.provider_id = s.provider_id
+                   AND completed_bookings.status = 'completed'
+               ) AS jobs_completed,
                sv.created_at AS saved_at
         FROM saved_services sv
         JOIN services s ON sv.service_id = s.id
@@ -32,7 +40,7 @@ const getSavedByUser = async (user_id) => {
         LEFT JOIN bookings bk ON bk.service_id = s.id
         LEFT JOIN reviews r ON r.booking_id = bk.id
         WHERE sv.user_id = $1
-        GROUP BY s.id, c.name, u.full_name, sv.created_at
+        GROUP BY s.id, c.name, u.full_name, u.profile_image, sv.created_at
         ORDER BY sv.created_at DESC
     `,
     [user_id],

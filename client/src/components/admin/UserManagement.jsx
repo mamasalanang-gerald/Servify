@@ -108,7 +108,7 @@ const UserManagement = () => {
         </Select>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -123,27 +123,27 @@ const UserManagement = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan="6" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan="6" className="text-center py-8 text-slate-500">
+                <TableCell colSpan="6" className="text-center py-8 text-muted-foreground">
                   No users found
                 </TableCell>
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-semibold text-slate-900">{user.name}</TableCell>
-                  <TableCell className="text-slate-600">{user.email}</TableCell>
+                  <TableCell className="font-semibold text-foreground">{user.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
                   <TableCell>
                     <Badge variant={user.role === 'provider' ? 'secondary' : 'default'}>
                       {user.role}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-slate-600">
+                  <TableCell className="text-muted-foreground">
                     {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
@@ -177,7 +177,7 @@ const UserManagement = () => {
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Page {page} of {totalPages}
         </p>
         <div className="flex gap-2">
@@ -209,24 +209,24 @@ const UserManagement = () => {
           {selectedUser && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-medium text-slate-700">Name</div>
-                <p className="text-slate-900">{selectedUser.name}</p>
+                <div className="text-sm font-medium text-muted-foreground">Name</div>
+                <p className="text-foreground">{selectedUser.name}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Email</div>
-                <p className="text-slate-900">{selectedUser.email}</p>
+                <div className="text-sm font-medium text-muted-foreground">Email</div>
+                <p className="text-foreground">{selectedUser.email}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Role</div>
-                <p className="text-slate-900">{selectedUser.role}</p>
+                <div className="text-sm font-medium text-muted-foreground">Role</div>
+                <p className="text-foreground">{selectedUser.role}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Status</div>
-                <p className="text-slate-900">{selectedUser.status}</p>
+                <div className="text-sm font-medium text-muted-foreground">Status</div>
+                <p className="text-foreground">{selectedUser.status}</p>
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-700">Joined</div>
-                <p className="text-slate-900">
+                <div className="text-sm font-medium text-muted-foreground">Joined</div>
+                <p className="text-foreground">
                   {selectedUser.joinedDate ? new Date(selectedUser.joinedDate).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
