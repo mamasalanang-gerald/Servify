@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import LogoutButton from './LogoutButton';
 import { cn } from '../lib/utils';
 import useAuth from '../hooks/useAuth';
@@ -10,12 +10,25 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
     user?.profile_image || localStorage.getItem('servify_profile_image') || ''
   );
 
+  const [dark, setDark] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [dark]);
+
   useEffect(() => {
     let isMounted = true;
 
     const fetchProfile = async () => {
       if (!user?.id) return;
-
       try {
         const profile = await userService.getProfile();
         if (isMounted && profile?.profile_image) {
@@ -23,28 +36,15 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
           localStorage.setItem('servify_profile_image', profile.profile_image);
         }
       } catch (err) {
-        // Non-critical if profile fetch fails
+        // Non-critical
       }
     };
 
     fetchProfile();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [user?.id]);
 
   const navItems = [
-    {
-      label: 'Services',
-      icon: (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-        </svg>
-      ),
-      href: '/services',
-    },
     {
       label: 'Dashboard',
       icon: (
@@ -53,6 +53,15 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
           <rect x="14" y="3" width="7" height="7" rx="1" />
           <rect x="3" y="14" width="7" height="7" rx="1" />
           <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Services',
+      icon: (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
         </svg>
       ),
     },
@@ -122,42 +131,22 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
 
       {/* Nav */}
       <nav className="flex-1 space-y-1 p-4">
-        {navItems.map((item) => {
-          // If item has href, render as link
-          if (item.href) {
-            return (
-              <a
-                key={item.label}
-                href={item.href}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors no-underline",
-                  "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <span className="flex-shrink-0">{item.icon}</span>
-                <span className="flex-1 text-left">{item.label}</span>
-              </a>
-            );
-          }
-          
-          // Otherwise render as button (for dashboard sections)
-          return (
-            <button
-              key={item.label}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                activeNav === item.label
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-              onClick={() => setActiveNav(item.label)}
-            >
-              <span className="flex-shrink-0">{item.icon}</span>
-              <span className="flex-1 text-left">{item.label}</span>
-            </button>
-          );
-        })}
-        
+        {navItems.map((item) => (
+          <button
+            key={item.label}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+              activeNav === item.label
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+            onClick={() => setActiveNav(item.label)}
+          >
+            <span className="flex-shrink-0">{item.icon}</span>
+            <span className="flex-1 text-left">{item.label}</span>
+          </button>
+        ))}
+
         {/* Show "Become a Provider" link for clients only */}
         {user && user.role === 'client' && (
           <>
@@ -183,7 +172,28 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4 flex flex-col gap-2">
+        {/* Dark mode toggle */}
+        <button
+          className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          onClick={() => setDark(!dark)}
+          aria-label="Toggle theme"
+        >
+          <span className="flex-shrink-0">
+            {dark ? (
+              <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+          <span className="flex-1 text-left">{dark ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+
         <LogoutButton />
       </div>
     </aside>
