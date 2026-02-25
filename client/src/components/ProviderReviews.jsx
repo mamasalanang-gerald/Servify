@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { serviceService } from '../services/serviceService';
 import { authService } from '../services/authService';
+import { reviewService } from '../services/reviewService';
 
 const renderStars = (n, size = 'text-base') =>
   Array.from({ length: 5 }, (_, i) => (
@@ -12,24 +10,32 @@ const renderStars = (n, size = 'text-base') =>
 
 const ProviderReviews = () => {
   const [reviewList, setReviewList] = useState([]);
-  const [replyDraft, setReplyDraft] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filter, setFilter]         = useState(0);
 
   useEffect(() => {
     const user = authService.getUser();
-    if (user?.id) {
-      serviceService.getMyServices().then(async (services) => {
-        const data = Array.isArray(services) ? services : [];
-        const allReviews = [];
-        for (const svc of data) {
-          try {
-            const reviews = await serviceService.getServiceReviews(svc.id);
-            allReviews.push(...reviews.map((r) => ({ ...r, service: svc.title })));
-          } catch (e) { /* skip */ }
-        }
-        setReviewList(allReviews);
-      }).catch(console.error);
+    if (!user?.id) {
+      setLoading(false);
+      return;
     }
+
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const reviews = await reviewService.getProviderReviews(user.id);
+        setReviewList(Array.isArray(reviews) ? reviews : []);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch reviews');
+        setReviewList([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
   }, []);
 
   const ratingCounts = [5, 4, 3, 2, 1].map((n) => ({
@@ -40,12 +46,6 @@ const ProviderReviews = () => {
   const avgRating = reviewList.length > 0
     ? (reviewList.reduce((s, r) => s + r.rating, 0) / reviewList.length).toFixed(1)
     : '0.0';
-
-  const submitReply = (id) => {
-    if (!replyDraft[id]?.trim()) return;
-    setReviewList(reviewList.map((r) => r.id === id ? { ...r, reply: replyDraft[id] } : r));
-    setReplyDraft({ ...replyDraft, [id]: '' });
-  };
 
   const filtered = filter === 0 ? reviewList : reviewList.filter((r) => r.rating === filter);
 
@@ -103,7 +103,23 @@ const ProviderReviews = () => {
 
       {/* Right: review cards */}
       <div className="lg:col-span-3 space-y-4">
-        {filtered.length === 0 && (
+        {loading && (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-gray-600 dark:text-gray-400">
+              Loading reviews...
+            </CardContent>
+          </Card>
+        )}
+
+        {error && !loading && (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-red-600">
+              {error}
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <div className="text-4xl mb-3">⭐</div>
@@ -112,42 +128,23 @@ const ProviderReviews = () => {
           </Card>
         )}
 
-        {filtered.map((r) => (
+        {!loading && !error && filtered.map((r) => (
           <Card key={r.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
-                  {(r.reviewer_name || r.client || '?')[0]}
+                  {(r.reviewer_name || '?')[0]}
                 </div>
                 <div className="flex-1">
-                  <div className="font-semibold text-gray-900 dark:text-gray-100">{r.reviewer_name || r.client}</div>
+                  <div className="font-semibold text-gray-900 dark:text-gray-100">{r.reviewer_name || 'Unknown reviewer'}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {r.service} · {new Date(r.review_date || r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {r.service_name || 'Service'} · {new Date(r.review_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
                 <div className="flex">{renderStars(r.rating, 'text-sm')}</div>
               </div>
 
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{r.comment || r.text}</p>
-
-              {r.reply && (
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-                  <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Your Reply</div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{r.reply}</p>
-                </div>
-              )}
-
-              {!r.reply && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Write a reply..."
-                    value={replyDraft[r.id] || ''}
-                    onChange={(e) => setReplyDraft({ ...replyDraft, [r.id]: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Enter' && submitReply(r.id)}
-                  />
-                  <Button size="sm" variant="outline" onClick={() => submitReply(r.id)}>Reply</Button>
-                </div>
-              )}
+              <p className="text-sm text-gray-700 dark:text-gray-300">{r.comment || 'No comment provided.'}</p>
             </CardContent>
           </Card>
         ))}

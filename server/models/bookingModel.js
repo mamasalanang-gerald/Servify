@@ -80,10 +80,14 @@ const getBookingsByClientId = async (client_id) => {
                 b.*,
                 s.title as service_name,
                 s.description as service_description,
-                p.full_name as provider_name
+                p.full_name as provider_name,
+                r.id as review_id,
+                r.rating as review_rating,
+                r.comment as review_comment
             FROM bookings b
             JOIN services s ON b.service_id = s.id
             JOIN users p ON b.provider_id = p.id
+            LEFT JOIN reviews r ON r.booking_id = b.id
             WHERE b.client_id = $1
             ORDER BY b.booking_date DESC, b.booking_time DESC
         `;
@@ -99,7 +103,12 @@ const getBookingsByClientId = async (client_id) => {
 const getBookingsByProviderId = async (provider_id) => {
     try {
         const query = `
-            SELECT b.*, s.title as service_name, u.full_name as client_name, u.phone_number as client_phone
+            SELECT
+                b.*,
+                s.title as service_name,
+                u.full_name as client_name,
+                u.phone_number as client_phone,
+                u.profile_image as client_profile_image
             FROM bookings b
             JOIN services s ON b.service_id = s.id
             JOIN users u ON b.client_id = u.id

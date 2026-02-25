@@ -28,6 +28,12 @@ export default function ServiceDetailPage({ service, onBack }) {
   const [bookingError, setBookingError] = useState("");
 
   const [reviews, setReviews] = useState([]);
+  const displayedReviewCount =
+    Number.isFinite(Number(service?.reviewCount))
+      ? Number(service?.reviewCount)
+      : Number.isFinite(Number(service?.review_count))
+        ? Number(service?.review_count)
+        : reviews.length;
 
   const toNumber = (value) => {
     if (typeof value === "number") {
@@ -207,7 +213,7 @@ export default function ServiceDetailPage({ service, onBack }) {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              {service?.rating ?? 4.9} ({service?.reviewCount ?? 156} reviews)
+              {service?.rating ?? 4.9} ({displayedReviewCount} reviews)
             </span>
           </div>
 

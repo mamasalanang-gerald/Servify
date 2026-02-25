@@ -5,14 +5,25 @@ import { providerService } from '../services/providerService';
 import useAuth from '../hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
+const defaultSummary = {
+  totalEarned: 0,
+  monthEarned: 0,
+  pendingPayout: 0,
+};
+
+const defaultMonthlyData = [
+  { month: 'Jan', net: 0 },
+  { month: 'Feb', net: 0 },
+  { month: 'Mar', net: 0 },
+  { month: 'Apr', net: 0 },
+  { month: 'May', net: 0 },
+  { month: 'Jun', net: 0 },
+];
+
 const ProviderEarnings = () => {
   const [activeTab, setActiveTab] = useState('Transactions');
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({
-    totalEarned: 0,
-    monthEarned: 0,
-    pendingPayout: 0,
-  });
+  const [summary, setSummary] = useState(defaultSummary);
   const [transactions, setTransactions] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
@@ -20,7 +31,10 @@ const ProviderEarnings = () => {
 
   useEffect(() => {
     const fetchEarningsData = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -33,19 +47,24 @@ const ProviderEarnings = () => {
           providerService.getMonthlyEarnings(user.id, 6),
         ]);
 
-        setSummary(summaryData);
-        setTransactions(transactionsData);
-        setPayouts(payoutsData);
-        setMonthlyData(monthlyDataRes.length > 0 ? monthlyDataRes : [
-          { month: 'Jan', net: 0 },
-          { month: 'Feb', net: 0 },
-          { month: 'Mar', net: 0 },
-          { month: 'Apr', net: 0 },
-          { month: 'May', net: 0 },
-          { month: 'Jun', net: 0 },
-        ]);
+        setSummary(summaryData && typeof summaryData === 'object' ? {
+          totalEarned: Number(summaryData.totalEarned) || 0,
+          monthEarned: Number(summaryData.monthEarned) || 0,
+          pendingPayout: Number(summaryData.pendingPayout) || 0,
+        } : defaultSummary);
+        setTransactions(Array.isArray(transactionsData) ? transactionsData : []);
+        setPayouts(Array.isArray(payoutsData) ? payoutsData : []);
+        setMonthlyData(
+          Array.isArray(monthlyDataRes) && monthlyDataRes.length > 0
+            ? monthlyDataRes
+            : defaultMonthlyData
+        );
       } catch (error) {
         console.error('Error fetching earnings data:', error);
+        setSummary(defaultSummary);
+        setTransactions([]);
+        setPayouts([]);
+        setMonthlyData(defaultMonthlyData);
       } finally {
         setLoading(false);
       }

@@ -46,6 +46,7 @@ const mapProviderBooking = (booking) => {
       .join('')
       .slice(0, 2)
       .toUpperCase(),
+    clientProfileImage: booking.client_profile_image || '',
     status: normalizeStatus(booking.status),
   };
 };
@@ -132,9 +133,17 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             <Card key={b.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
-                    {b.avatar}
-                  </div>
+                  {b.clientProfileImage ? (
+                    <img
+                      src={b.clientProfileImage}
+                      alt={b.client}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
+                      {b.avatar}
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-gray-900 dark:text-gray-100">{b.client}</div>
