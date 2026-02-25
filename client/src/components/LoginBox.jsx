@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import useRedirectIfAuth from '../hooks/useRedirectIfAuth';
 import { Input } from './ui/input';
@@ -7,12 +7,14 @@ import { Button } from './ui/button';
 
 const ROLE_HOME = {
   client:   '/dashboard',
+  user:     '/dashboard',
   provider: '/provider',
   admin:    '/admin',
 };
 
 const LoginBox = () => {
   const navigate  = useNavigate();
+  const location = useLocation();
 
   useRedirectIfAuth();
 
@@ -36,9 +38,21 @@ const LoginBox = () => {
       const data = await authService.login(formData);
       console.log('Login response:', data);
       console.log('User type:', data.user.user_type);
-      console.log('Navigating to:', ROLE_HOME[data.user.user_type]);
+      const userType = data.user.user_type;
+      const postLoginRedirect = location.state?.postLoginRedirect;
+      const dashboardState = location.state?.dashboardState;
+      const shouldGoToDashboardWithState =
+        postLoginRedirect === '/dashboard' &&
+        dashboardState?.openNav === 'Services' &&
+        (userType === 'client' || userType === 'user');
+
+      console.log('Navigating to:', shouldGoToDashboardWithState ? postLoginRedirect : ROLE_HOME[userType]);
       setLoading(false);
-      navigate(ROLE_HOME[data.user.user_type]);
+      if (shouldGoToDashboardWithState) {
+        navigate('/dashboard', { state: dashboardState });
+      } else {
+        navigate(ROLE_HOME[userType]);
+      }
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'An error occurred. Please try again.');

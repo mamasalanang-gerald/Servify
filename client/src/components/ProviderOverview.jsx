@@ -218,10 +218,10 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
                     <Icon className={`h-5 w-5 ${stat.iconColor}`} />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                <div className="text-2xl font-bold text-foreground mb-1">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   {stat.label}
                 </div>
               </CardContent>
@@ -236,15 +236,15 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-bold">Earnings Overview</CardTitle>
-            <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div className="flex gap-1 p-1 bg-muted rounded-lg">
               {['Week', 'Month'].map((period) => (
                 <button
                   key={period}
                   onClick={() => setChartPeriod(period)}
                   className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
                     chartPeriod === period
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {period}
@@ -256,7 +256,7 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
             <div className="flex items-end justify-between gap-2 h-48 mb-4">
               {weeklyData.map((d) => (
                 <div key={d.day} className="flex flex-col items-center flex-1 h-full">
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 h-5">
+                  <span className="text-xs font-semibold text-foreground mb-2 h-5">
                     {d.amount > 0 ? `₱${d.amount}` : ''}
                   </span>
                   <div className="flex-1 w-full flex items-end justify-center">
@@ -269,15 +269,15 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
                       style={{ height: d.amount > 0 ? `${(d.amount / maxVal) * 100}%` : '4px' }}
                     />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                  <span className="text-xs text-muted-foreground mt-2">
                     {d.day}
                   </span>
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400">This week</span>
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{overviewStats.totalEarnings}</span>
+            <div className="flex items-center justify-between pt-4 border-t border-border">
+              <span className="text-sm text-muted-foreground">This week</span>
+              <span className="text-lg font-bold text-foreground">{overviewStats.totalEarnings}</span>
             </div>
           </CardContent>
         </Card>
@@ -294,7 +294,7 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
                 <Button
                   key={action.label}
                   variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="w-full justify-start gap-3 h-auto py-3 hover:bg-accent"
                   onClick={() => onQuickAction(action.id)}
                 >
                   <div className={`p-2 rounded-lg ${action.iconBg}`}>
@@ -325,23 +325,23 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                <tr className="border-b border-border">
+                  <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4">
                     Client
                   </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                  <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4">
                     Service
                   </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                  <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4">
                     Date
                   </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                  <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4">
                     Amount
                   </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                  <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4">
                     Status
                   </th>
-                  <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-4">
+                  <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-4">
                     Action
                   </th>
                 </tr>
@@ -352,18 +352,18 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
                   return (
                     <tr
                       key={booking.id}
-                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      className="border-b border-border hover:bg-accent/40 transition-colors"
                     >
-                      <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <td className="py-4 px-4 text-sm font-medium text-foreground">
                         {booking.client}
                       </td>
-                      <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="py-4 px-4 text-sm text-muted-foreground">
                         {booking.service}
                       </td>
-                      <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="py-4 px-4 text-sm text-muted-foreground">
                         {booking.date}
                       </td>
-                      <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      <td className="py-4 px-4 text-sm font-semibold text-foreground">
                         {booking.amount}
                       </td>
                       <td className="py-4 px-4">
@@ -438,9 +438,9 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
                 ['Location', detailModal.location],
                 ['Notes', detailModal.notes],
               ].map(([key, value]) => (
-                <div key={key} className="flex justify-between gap-6 py-2 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{key}</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 text-right break-words">
+                <div key={key} className="flex justify-between gap-6 py-2 border-b border-border">
+                  <span className="text-sm font-medium text-muted-foreground">{key}</span>
+                  <span className="text-sm font-semibold text-foreground text-right break-words">
                     {value}
                   </span>
                 </div>

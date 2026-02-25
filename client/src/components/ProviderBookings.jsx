@@ -39,6 +39,7 @@ const mapProviderBooking = (booking) => {
         })
       : '—',
     time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
+    location: booking.user_location || '—',
     amount: `₱${Number(booking.total_price || 0).toLocaleString()}`,
     avatar: clientName
       .split(' ')
@@ -91,14 +92,14 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
   return (
     <div className="space-y-6">
       {/* Tab bar */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 border-b border-border">
         {tabs.map((tab) => (
           <button
             key={tab}
             className={`px-4 py-3 text-sm font-medium transition-colors relative ${
               activeTab === tab
                 ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => setActiveTab(tab)}
           >
@@ -106,7 +107,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
               activeTab === tab
                 ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                : 'bg-muted text-muted-foreground'
             }`}>
               {counts[tab]}
             </span>
@@ -123,7 +124,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <div className="text-4xl mb-3">📭</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">No bookings in this category</div>
+              <div className="text-sm text-muted-foreground">No bookings in this category</div>
             </CardContent>
           </Card>
         )}
@@ -146,16 +147,16 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-900 dark:text-gray-100">{b.client}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{b.service}</div>
+                    <div className="font-semibold text-foreground">{b.client}</div>
+                    <div className="text-sm text-muted-foreground">{b.service}</div>
                   </div>
 
                   <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{b.date}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{b.time}</div>
+                    <div className="text-sm font-medium text-foreground">{b.date}</div>
+                    <div className="text-sm text-muted-foreground">{b.time}</div>
                   </div>
 
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100 min-w-[80px] text-right">
+                  <div className="text-lg font-bold text-foreground min-w-[80px] text-right">
                     {b.amount}
                   </div>
 
@@ -198,12 +199,13 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
                   ['Service', detailModal.service],
                   ['Date',    detailModal.date],
                   ['Time',    detailModal.time],
+                  ['Location', detailModal.location || '—'],
                   ['Amount',  detailModal.amount],
                   ['Status',  detailModal.status.charAt(0).toUpperCase() + detailModal.status.slice(1)],
                 ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{k}</span>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{v}</span>
+                  <div key={k} className="flex justify-between py-2 border-b border-border">
+                    <span className="text-sm font-medium text-muted-foreground">{k}</span>
+                    <span className="text-sm font-semibold text-foreground">{v}</span>
                   </div>
                 ))}
               </div>

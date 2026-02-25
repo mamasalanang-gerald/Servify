@@ -272,8 +272,8 @@ const ProviderServices = ({ openAddOnMount = false }) => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">{svc.title}</h3>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{svc.category_name}</span>
+                  <h3 className="text-lg font-bold text-foreground mb-1">{svc.title}</h3>
+                  <span className="text-sm text-muted-foreground">{svc.category_name}</span>
                 </div>
                 <Badge variant={svc.is_active ? 'success' : 'secondary'} className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -283,20 +283,20 @@ const ProviderServices = ({ openAddOnMount = false }) => {
 
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div>
-                  <div className="text-xl font-bold text-gray-900 dark:text-gray-100">₱{Number(svc.price).toLocaleString()}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Starting price</div>
+                  <div className="text-xl font-bold text-foreground">₱{Number(svc.price).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Starting price</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{svc.total_bookings || 0}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Bookings</div>
+                  <div className="text-xl font-bold text-foreground">{svc.total_bookings || 0}</div>
+                  <div className="text-xs text-muted-foreground">Bookings</div>
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{parseFloat(svc.average_rating) > 0 ? parseFloat(svc.average_rating).toFixed(1) : '—'}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Rating</div>
+                  <div className="text-xl font-bold text-foreground">{parseFloat(svc.average_rating) > 0 ? parseFloat(svc.average_rating).toFixed(1) : '—'}</div>
+                  <div className="text-xs text-muted-foreground">Rating</div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="flex items-center gap-2">
                   <label htmlFor={`service-toggle-${svc.id}`} className="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -309,7 +309,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                     />
                     <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 peer-disabled:opacity-60"></div>
                   </label>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{svc.is_active ? 'Listed' : 'Hidden'}</span>
+                  <span className="text-sm text-muted-foreground">{svc.is_active ? 'Listed' : 'Hidden'}</span>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => openEdit(svc)}>Edit</Button>
@@ -322,10 +322,10 @@ const ProviderServices = ({ openAddOnMount = false }) => {
 
         <button 
           onClick={openAdd}
-          className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all cursor-pointer min-h-[280px]"
+          className="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed border-border rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 transition-all cursor-pointer min-h-[280px]"
         >
           <Plus className="h-7 w-7 text-gray-400" />
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Add New Service</span>
+          <span className="text-sm font-medium text-muted-foreground">Add New Service</span>
         </button>
       </div>
 
@@ -338,9 +338,9 @@ const ProviderServices = ({ openAddOnMount = false }) => {
           <div className="hide-scrollbar space-y-4 px-2 py-4 max-h-[70vh] overflow-y-auto overflow-x-hidden">
             {/* Image Upload */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo</label>
+              <label className="text-sm font-medium text-foreground">Service Photo</label>
               {imagePreview ? (
-                <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                <div className="relative rounded-lg overflow-hidden border border-border">
                   <img src={imagePreview} alt="Preview" className="w-full h-[180px] object-cover" />
                   <button
                     type="button"
@@ -351,9 +351,9 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all cursor-pointer">
+                <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-border rounded-lg hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all cursor-pointer">
                   <ImageIcon className="h-8 w-8 text-gray-400" />
-                  <span className="text-sm text-gray-500">Click to upload a photo</span>
+                  <span className="text-sm text-muted-foreground">Click to upload a photo</span>
                   <span className="text-xs text-gray-400">JPEG, PNG, or WebP · Max 5MB</span>
                   <input
                     type="file"
@@ -367,7 +367,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Title</label>
+              <label className="text-sm font-medium text-foreground">Service Title</label>
               <Input 
                 placeholder="e.g. Deep House Cleaning" 
                 value={form.title} 
@@ -376,7 +376,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                <label className="text-sm font-medium text-foreground">Category</label>
                 <Select value={String(form.category_id)} onValueChange={(value) => setForm({ ...form, category_id: Number(value) })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -389,7 +389,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Base Price (₱)</label>
+                <label className="text-sm font-medium text-foreground">Base Price (₱)</label>
                 <Input 
                   type="number" 
                   placeholder="Required (if no package tier is added)" 
@@ -400,7 +400,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-foreground">
                   Price Packages (Optional, up to {MAX_PACKAGES})
                 </label>
                 <Button
@@ -414,7 +414,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                 </Button>
               </div>
               {form.packages.length === 0 ? (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   No package tiers added. Base Price will be used.
                 </p>
               ) : (
@@ -454,7 +454,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <label className="text-sm font-medium text-foreground">Description</label>
               <textarea 
                 className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Describe your service..." 
@@ -463,7 +463,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estimated Duration</label>
+              <label className="text-sm font-medium text-foreground">Estimated Duration</label>
               <Input 
                 placeholder="e.g. 3–5 hours" 
                 value={form.duration} 
@@ -491,7 +491,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
             <DialogTitle>Delete Service?</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               This will permanently remove the service. This action cannot be undone.
             </p>
           </div>

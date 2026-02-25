@@ -10,17 +10,54 @@ const SavedServices = () => {
   const [savedServices, setSavedServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingService, setViewingService] = useState(null);
-  const { unsaveService, refreshSavedServices } = useSavedServices();
+  const { refreshSavedServices } = useSavedServices();
 
   useEffect(() => {
     loadSavedServices();
   }, []);
 
+  const normalizeSavedService = (service) => {
+    const serviceId = service.service_id || service.id;
+    const providerName = service.provider_name || service.providerName || service.provider || 'Service Provider';
+    const providerImage = service.provider_image || service.providerImage || null;
+    const rating = Number(service.rating ?? service.average_rating ?? 0);
+    const reviewCount = Number(service.reviewCount ?? service.review_count ?? 0);
+    const jobsCompleted = Number(service.jobs_completed ?? service.jobs ?? 0);
+    const priceValue = Number(service.priceNum ?? service.price ?? 0);
+
+    return {
+      ...service,
+      id: serviceId,
+      service_id: serviceId,
+      img: service.image_url || service.img || '/placeholder-service.jpg',
+      category: service.category || service.category_name || 'Service',
+      rating,
+      reviewCount,
+      review_count: reviewCount,
+      price: priceValue,
+      priceNum: priceValue,
+      provider_name: providerName,
+      providerName,
+      provider_image: providerImage,
+      providerImage,
+      providerInitial:
+        providerName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase() || 'SP',
+      jobs_completed: jobsCompleted,
+      jobs: jobsCompleted,
+    };
+  };
+
   const loadSavedServices = async () => {
     try {
       setLoading(true);
       const data = await savedServiceService.getSaved();
-      setSavedServices(Array.isArray(data) ? data : []);
+      const source = Array.isArray(data) ? data : [];
+      setSavedServices(source.map(normalizeSavedService));
     } catch (error) {
       console.error('Failed to load saved services:', error);
       toast({
@@ -55,6 +92,61 @@ const SavedServices = () => {
     }
   };
 
+  // Transform saved service data to match ServiceDetailPage format
+  const transformServiceData = (savedService) => {
+    try {
+      return {
+        id: savedService.service_id || savedService.id,
+        title: savedService.title,
+        img: savedService.image_url || savedService.img,
+        category: savedService.category || savedService.category_name || 'Service',
+        rating: Number(savedService.rating ?? savedService.average_rating ?? 0),
+        reviewCount: Number(savedService.reviewCount ?? savedService.review_count ?? 0),
+        price: savedService.price,
+        priceNum: Number(savedService.priceNum ?? savedService.price ?? 0),
+        providerName: savedService.provider_name,
+        provider: savedService.provider_name,
+        provider_id: savedService.provider_id,
+        providerId: savedService.provider_id,
+        providerImage: savedService.provider_image,
+        provider_image: savedService.provider_image,
+        providerInitial:
+          savedService.provider_name
+            ?.split(' ')
+            .map((n) => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase() || 'SP',
+        description: savedService.description,
+        location: savedService.location || 'San Diego, CA',
+        packages: savedService.packages,
+        reviews: savedService.reviews,
+        jobs: Number(savedService.jobs_completed ?? savedService.jobs ?? 0),
+      };
+    } catch (error) {
+      console.error('Error transforming service:', error);
+      return null;
+    }
+  };
+
+  // Handle viewing a service
+  const handleViewService = (savedService) => {
+    try {
+      const transformedService = transformServiceData(savedService);
+      if (transformedService) {
+        setViewingService(transformedService);
+      }
+    } catch (error) {
+      console.error('Failed to view service:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load service details.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Show ServiceDetailPage when viewing a saved service
   if (viewingService) {
     return <ViewService service={viewingService} onBack={() => setViewingService(null)} />;
   }

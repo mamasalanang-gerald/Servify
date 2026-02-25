@@ -6,6 +6,7 @@ const {
   removeService: removeServiceFromDB,
   editServices: editServiceInDB,
   updateServiceStatus: updateServiceStatusInDB,
+  searchServiceQuery: searchService
 } = require("../models/servicesModel");
 const { getReviewsByService } = require("../models/reviewModel");
 
@@ -250,6 +251,19 @@ const updateServiceStatus = async (req, res) => {
     }
 };
 
+const searchServiceQuery = async (req, res) => {
+    try {
+        const { search } = req.query;
+        if(!search){
+            return res.status(400).json({message: "There are no services to return."});
+        }
+        
+        const services = await searchService(search);
+        res.status(200).json(services);
+    } catch (err) {
+        res.status(500).json({message: "Internal server error", error: err.message});
+    }
+};
 
 
 module.exports = {
@@ -261,4 +275,5 @@ module.exports = {
   editServices,
   removeService,
   updateServiceStatus,
+  searchServiceQuery,
 };

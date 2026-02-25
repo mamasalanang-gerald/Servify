@@ -166,6 +166,14 @@ const updateServiceStatus = async (id, is_active) => {
   return result.rows[0];
 };
 
+const searchServiceQuery = async (search) => {
+  const result = await pool.query(
+    `SELECT * FROM services WHERE title ILIKE $1 OR description ILIKE $1`,
+    [`%${search}%`],
+  );
+  return result.rows;
+};
+
 module.exports = {
   getServices,
   getServicesbyId,
@@ -174,4 +182,5 @@ module.exports = {
   editServices,
   removeService,
   updateServiceStatus,
+  searchServiceQuery,
 };

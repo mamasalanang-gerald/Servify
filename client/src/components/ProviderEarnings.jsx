@@ -40,7 +40,7 @@ const ProviderEarnings = () => {
         setLoading(true);
         
         // Fetch all earnings data
-        const [summaryData, transactionsData, payoutsData, monthlyDataRes] = await Promise.all([
+        const [summaryData, transactionsData, payoutsData, monthlyDataRes] = await Promise.allSettled([
           providerService.getEarningsSummary(user.id),
           providerService.getTransactions(user.id),
           providerService.getPayouts(user.id),
@@ -114,10 +114,10 @@ const ProviderEarnings = () => {
               <div className={`text-3xl font-bold mb-2 ${s.color.replace('bg-', 'text-')}`}>
                 {s.value}
               </div>
-              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <div className="text-sm font-medium text-foreground mb-1">
                 {s.label}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
+              <div className="text-xs text-muted-foreground">
                 {s.sub}
               </div>
             </CardContent>
@@ -133,7 +133,7 @@ const ProviderEarnings = () => {
           <div className="flex items-end justify-between gap-4 h-64">
             {monthlyData.map((d) => (
               <div key={d.month} className="flex flex-col items-center flex-1 h-full">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 h-5">
+                <span className="text-xs font-semibold text-foreground mb-2 h-5">
                   {d.net > 0 ? `₱${d.net}` : ''}
                 </span>
                 <div className="flex-1 w-full flex items-end justify-center">
@@ -146,7 +146,7 @@ const ProviderEarnings = () => {
                     style={{ height: d.net > 0 ? `${(d.net / maxM) * 100}%` : '4px' }}
                   />
                 </div>
-                <span className="text-xs text-gray-600 dark:text-gray-400 mt-3">
+                <span className="text-xs text-muted-foreground mt-3">
                   {d.month}
                 </span>
               </div>
@@ -155,14 +155,14 @@ const ProviderEarnings = () => {
         </CardContent>
       </Card>
 
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 border-b border-border">
         {['Transactions', 'Payouts'].map((t) => (
           <button
             key={t}
             className={`px-4 py-3 text-sm font-medium transition-colors relative ${
               activeTab === t
                 ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => setActiveTab(t)}
           >
@@ -178,29 +178,29 @@ const ProviderEarnings = () => {
         <Card>
           <CardContent className="p-0">
             {transactions.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-muted-foreground">
                 No transactions yet
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Date</th>
-                      <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Client</th>
-                      <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Service</th>
-                      <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Gross</th>
-                      <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Platform Fee</th>
-                      <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Net Earned</th>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Date</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Client</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Service</th>
+                      <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Gross</th>
+                      <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Platform Fee</th>
+                      <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Net Earned</th>
                     </tr>
                   </thead>
                   <tbody>
                     {transactions.map((t) => (
-                      <tr key={t.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">{t.date}</td>
-                        <td className="py-4 px-6 text-sm font-medium text-gray-900 dark:text-gray-100">{t.client}</td>
-                        <td className="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">{t.service}</td>
-                        <td className="py-4 px-6 text-sm text-right font-mono text-gray-900 dark:text-gray-100">₱{t.gross.toLocaleString()}</td>
+                      <tr key={t.id} className="border-b border-border hover:bg-accent/40 transition-colors">
+                        <td className="py-4 px-6 text-sm text-muted-foreground">{t.date}</td>
+                        <td className="py-4 px-6 text-sm font-medium text-foreground">{t.client}</td>
+                        <td className="py-4 px-6 text-sm text-muted-foreground">{t.service}</td>
+                        <td className="py-4 px-6 text-sm text-right font-mono text-foreground">₱{t.gross.toLocaleString()}</td>
                         <td className="py-4 px-6 text-sm text-right font-mono text-red-600 dark:text-red-400">−₱{t.fee.toLocaleString()}</td>
                         <td className="py-4 px-6 text-sm text-right font-mono font-semibold text-green-600 dark:text-green-400">₱{t.net.toLocaleString()}</td>
                       </tr>
@@ -217,26 +217,26 @@ const ProviderEarnings = () => {
         <Card>
           <CardContent className="p-0">
             {payouts.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-muted-foreground">
                 No payouts yet
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Date</th>
-                      <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Method</th>
-                      <th className="text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Amount</th>
-                      <th className="text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider py-3 px-6">Status</th>
+                    <tr className="border-b border-border">
+                      <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Date</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Method</th>
+                      <th className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Amount</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider py-3 px-6">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {payouts.map((p) => (
-                      <tr key={p.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="py-4 px-6 text-sm text-gray-700 dark:text-gray-300">{p.date}</td>
-                        <td className="py-4 px-6 text-sm font-medium text-gray-900 dark:text-gray-100">{p.method}</td>
-                        <td className="py-4 px-6 text-sm text-right font-mono font-semibold text-gray-900 dark:text-gray-100">₱{p.amount.toLocaleString()}</td>
+                      <tr key={p.id} className="border-b border-border hover:bg-accent/40 transition-colors">
+                        <td className="py-4 px-6 text-sm text-muted-foreground">{p.date}</td>
+                        <td className="py-4 px-6 text-sm font-medium text-foreground">{p.method}</td>
+                        <td className="py-4 px-6 text-sm text-right font-mono font-semibold text-foreground">₱{p.amount.toLocaleString()}</td>
                         <td className="py-4 px-6">
                           <Badge variant="success" className="flex items-center gap-1.5 w-fit">
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />

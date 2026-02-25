@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage             from './pages/LoginPage';
 import DashboardPage         from './pages/Dashboardpage';
@@ -16,6 +17,15 @@ import BecomeProviderPage from './pages/BecomeProviderPage';
 import { SavedServicesProvider } from './contexts/SavedServicesContext';
 
 function App() {
+  useEffect(() => {
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   return (
     <SavedServicesProvider>
       <BrowserRouter>
