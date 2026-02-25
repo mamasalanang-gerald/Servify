@@ -103,7 +103,12 @@ const getBookingsByClientId = async (client_id) => {
 const getBookingsByProviderId = async (provider_id) => {
     try {
         const query = `
-            SELECT b.*, s.title as service_name, u.full_name as client_name, u.phone_number as client_phone
+            SELECT
+                b.*,
+                s.title as service_name,
+                u.full_name as client_name,
+                u.phone_number as client_phone,
+                u.profile_image as client_profile_image
             FROM bookings b
             JOIN services s ON b.service_id = s.id
             JOIN users u ON b.client_id = u.id
