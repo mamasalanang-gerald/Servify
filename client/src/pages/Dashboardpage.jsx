@@ -6,6 +6,7 @@ import UserBookings from '../components/UserBookings';
 import SavedServices from '../components/SavedServices';
 import ProfileSettings from '../components/ProfileSettings';
 import AccountSettings from '../components/AccountSettings';
+import ServicesPanel from '../components/ServicesPanel';
 import useAuth from '../hooks/useAuth';
 import { userService } from '../services/userService';
 
@@ -27,13 +28,11 @@ const DashboardPage = () => {
   useEffect(() => {
     const refreshUserData = async () => {
       if (!user) return;
-      
+
       try {
         const userData = await userService.getCurrentUser();
-        // Update role if it changed
         if (userData.role !== user.role) {
           updateUserRole(userData.role);
-          // Force page reload to update UI
           window.location.reload();
         }
       } catch (err) {
@@ -43,21 +42,18 @@ const DashboardPage = () => {
 
     refreshUserData();
 
-    // Refresh when window gains focus (user comes back to tab)
-    const handleFocus = () => {
-      refreshUserData();
-    };
-
+    const handleFocus = () => refreshUserData();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [user, updateUserRole]);
 
   const pageMeta = {
-    Dashboard: { title: 'Dashboard', sub: `Welcome back, ${firstName}! Here's your overview.` },
-    Bookings: { title: 'My Bookings', sub: 'View and manage your service bookings.' },
-    'Saved Services': { title: 'Saved Services', sub: 'Your favorite services for quick access.' },
-    Profile: { title: 'Profile Settings', sub: 'Update your personal information.' },
-    Settings: { title: 'Account Settings', sub: 'Manage your account preferences.' },
+    Dashboard:        { title: 'Dashboard',        sub: `Welcome back, ${firstName}! Here's your overview.` },
+    Services:         { title: 'Services',          sub: 'Browse and book services.' },
+    Bookings:         { title: 'My Bookings',       sub: 'View and manage your service bookings.' },
+    'Saved Services': { title: 'Saved Services',    sub: 'Your favorite services for quick access.' },
+    Profile:          { title: 'Profile Settings',  sub: 'Update your personal information.' },
+    Settings:         { title: 'Account Settings',  sub: 'Manage your account preferences.' },
   };
 
   const meta = pageMeta[activeNav] || pageMeta.Dashboard;
@@ -73,7 +69,6 @@ const DashboardPage = () => {
       setQuickActionContext('view-bookings');
       return;
     }
-
     if (actionId === 'saved-services') {
       setActiveNav('Saved Services');
       setQuickActionContext(null);
@@ -84,6 +79,8 @@ const DashboardPage = () => {
     switch (activeNav) {
       case 'Dashboard':
         return <UserOverview onQuickAction={handleQuickAction} />;
+      case 'Services':
+        return <ServicesPanel />;
       case 'Bookings':
         return <UserBookings />;
       case 'Saved Services':
@@ -97,9 +94,7 @@ const DashboardPage = () => {
     }
   };
 
-  if (!user) {
-    return null; // Will redirect via useEffect
-  }
+  if (!user) return null;
 
   return (
     <div className="flex min-h-screen bg-slate-50">
