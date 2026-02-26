@@ -8,6 +8,7 @@ import { authService } from '../services/authService';
 import { formatBookingTime } from '../utils/bookingTime';
 
 const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
+const PAGE_SIZE = 10;
 
 const statusMap = {
   pending:   { label: 'Pending',   variant: 'warning' },
@@ -57,6 +58,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
   const [activeTab, setActiveTab]     = useState(defaultTab);
   const [bookings, setBookings]       = useState([]);
   const [detailModal, setDetailModal] = useState(null);
+  const [page, setPage]               = useState(1);
 
   useEffect(() => {
     const user = authService.getUser();
@@ -71,9 +73,18 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
     }
   }, []);
 
+  // Reset to page 1 whenever the tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
   const filtered = activeTab === 'All'
     ? bookings
     : bookings.filter((b) => b.status === activeTab.toLowerCase());
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const updateStatus = async (id, newStatus) => {
     try {
@@ -102,7 +113,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
                 ? 'text-blue-600 dark:text-blue-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
           >
             {tab}
             <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
@@ -129,7 +140,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             </CardContent>
           </Card>
         )}
-        {filtered.map((b) => {
+        {paginated.map((b) => {
           const s = statusMap[b.status] || statusMap.pending;
           return (
             <Card key={b.id} className="hover:shadow-md transition-shadow">
@@ -185,6 +196,33 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
           );
         })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {page} of {totalPages} &mdash; {filtered.length} total
+          </span>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Detail modal */}
       <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
