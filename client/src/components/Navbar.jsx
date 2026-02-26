@@ -2,26 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { authService } from "../services/authService";
 import LogoutButton from "./LogoutButton";
 import { cn } from "@/lib/utils";
+import useTheme from "../hooks/useTheme";
 
-export default function Navbar({ activePage = "" }) {
+export default function Navbar() {
   const user = authService.getUser();
-
-  const [dark, setDark] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
+  const { isDark, toggleTheme } = useTheme();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    if (dark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [dark]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -54,10 +42,10 @@ export default function Navbar({ activePage = "" }) {
         {/* Dark mode toggle */}
         <button
           className="w-9 h-9 rounded-full border-[1.5px] border-app-border dark:border-[#1e293b] bg-transparent cursor-pointer flex items-center justify-center text-app-text-muted dark:text-[#94a3b8] transition-all hover:bg-app-accent-light hover:text-app-accent hover:border-app-accent dark:hover:bg-[#1e3a5f] dark:hover:text-[#7b9fff] dark:hover:border-[#7b9fff]"
-          onClick={() => setDark(!dark)}
+          onClick={toggleTheme}
           aria-label="Toggle theme"
         >
-          {dark ? (
+          {isDark ? (
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="5" />
               <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeLinecap="round" />
