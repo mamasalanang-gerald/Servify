@@ -24,6 +24,7 @@ const UserBookings = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState('');
+  const [cancelConfirmModal, setCancelConfirmModal] = useState(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -260,10 +261,11 @@ const UserBookings = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateStatus(booking.id, 'cancelled')}
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                          onClick={() => setCancelConfirmModal(booking)}
                           disabled={updatingId === booking.id}
                         >
-                          {updatingId === booking.id ? 'Updating...' : 'Cancel'}
+                          Cancel
                         </Button>
                       )}
                       {booking.status === 'confirmed' && (
@@ -339,10 +341,14 @@ const UserBookings = () => {
                 {detailModal.status === 'pending' && (
                   <Button
                     variant="outline"
-                    onClick={() => updateStatus(detailModal.id, 'cancelled')}
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                    onClick={() => {
+                      setDetailModal(null);
+                      setCancelConfirmModal(detailModal);
+                    }}
                     disabled={updatingId === detailModal.id}
                   >
-                    {updatingId === detailModal.id ? 'Updating...' : 'Cancel Booking'}
+                    Cancel Booking
                   </Button>
                 )}
                 {detailModal.status === 'confirmed' && (
@@ -417,6 +423,56 @@ const UserBookings = () => {
                   disabled={submittingReview}
                 >
                   {submittingReview ? 'Submitting...' : 'Submit Review'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={!!cancelConfirmModal} onOpenChange={() => setCancelConfirmModal(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Cancel Booking</DialogTitle>
+          </DialogHeader>
+          {cancelConfirmModal && (
+            <>
+              <div className="py-3 space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to cancel this booking?
+                </p>
+                <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {cancelConfirmModal.service_name || 'Service'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {cancelConfirmModal.booking_date
+                      ? new Date(cancelConfirmModal.booking_date).toLocaleDateString()
+                      : '—'}{' '}
+                    {cancelConfirmModal.booking_time
+                      ? `at ${String(cancelConfirmModal.booking_time).slice(0, 5)}`
+                      : ''}
+                  </p>
+                </div>
+                <p className="text-xs text-red-500">This action cannot be undone.</p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setCancelConfirmModal(null)}
+                  disabled={updatingId === cancelConfirmModal.id}
+                >
+                  Keep Booking
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    await updateStatus(cancelConfirmModal.id, 'cancelled');
+                    setCancelConfirmModal(null);
+                  }}
+                  disabled={updatingId === cancelConfirmModal.id}
+                >
+                  {updatingId === cancelConfirmModal.id ? 'Cancelling...' : 'Yes, Cancel'}
                 </Button>
               </DialogFooter>
             </>
