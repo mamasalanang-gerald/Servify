@@ -6,7 +6,7 @@ import { useSavedServices } from '../contexts/SavedServicesContext';
 import { savedServiceService } from '../services/savedServiceService.js';
 import { toast } from '../hooks/use-toast';
 
-const SavedServices = () => {
+const SavedServices = ({ onNavigate }) => {
   const [savedServices, setSavedServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingService, setViewingService] = useState(null);
@@ -78,7 +78,6 @@ const SavedServices = () => {
         packages: savedService.packages,
         reviews: savedService.reviews,
         jobs: savedService.jobs_completed || 0,
-        rating: savedService.rating || 0,
       };
     } catch (error) {
       console.error('Error transforming service:', error);
@@ -111,7 +110,12 @@ const SavedServices = () => {
         onBack={() => {
           setViewingService(null);
           loadSavedServices();
-        }} 
+        }}
+        onNavigate={(tab) => {
+          setViewingService(null);
+          onNavigate(tab);
+        }}
+        backButtonText="Back to Saved Services"
       />
     );
   }
@@ -172,7 +176,7 @@ const SavedServices = () => {
             Start exploring services and save your favorites to easily find them later.
           </p>
           <Button
-            onClick={() => window.location.href = '/services'}
+            onClick={() => onNavigate ? onNavigate('Services') : window.location.href = '/services'}
             className="bg-gradient-to-br from-blue-900 to-blue-600 text-white"
           >
             Browse Services

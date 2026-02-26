@@ -8,8 +8,10 @@ import { Badge } from "./ui/badge";
 import { serviceService } from '../services/serviceService';
 import { bookingService } from "../services/bookingService";
 import SaveButton from './SaveButton';
+import BookingConfirmation from './BookingConfirmation';
+import BookingConfirmationDialog from './BookingConfirmationDialog';
 
-export default function ServiceDetailPage({ service, onBack }) {
+export default function ServiceDetailPage({ service, onBack, backButtonText = "Back to Services", onNavigate }) {
   const today = new Date();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,6 +28,10 @@ export default function ServiceDetailPage({ service, onBack }) {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  const [showBookingConfirmationDialog, setShowBookingConfirmationDialog] = useState(false);
+  const [showBookingConfirmation, setShowBookingConfirmation] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState(null);
+  const [pendingBookingData, setPendingBookingData] = useState(null);
 
   const [reviews, setReviews] = useState([]);
   const displayedReviewCount =
@@ -39,13 +45,11 @@ export default function ServiceDetailPage({ service, onBack }) {
     if (typeof value === "number") {
       return Number.isFinite(value) ? value : 0;
     }
-
     if (typeof value === "string") {
       const cleaned = value.replace(/[^0-9.-]/g, "");
       const parsed = Number(cleaned);
       return Number.isFinite(parsed) ? parsed : 0;
     }
-
     return 0;
   };
 
@@ -91,7 +95,6 @@ export default function ServiceDetailPage({ service, onBack }) {
 
   useEffect(() => {
     if (!service?.id) return;
-
     serviceService
       .getServiceReviews(service.id)
       .then((data) => setReviews(Array.isArray(data) ? data : []))
@@ -131,29 +134,51 @@ export default function ServiceDetailPage({ service, onBack }) {
       return;
     }
 
+    setPendingBookingData({
+      service_id: service.id,
+      client_id: user.id,
+      provider_id: providerId,
+      booking_date: selectedDateISO,
+      booking_time: bookingTime,
+      user_location: userLocation.trim(),
+      total_price: toNumber(pkg.price),
+      notes: [note?.trim(), `Package: ${pkg?.name || "Standard"}`]
+        .filter(Boolean)
+        .join(" | "),
+    });
+
+    const dialogData = {
+      serviceName: service.title,
+      providerName: service?.providerName || service?.provider || 'Service Provider',
+      date: selectedDateISO,
+      time: bookingTime,
+      location: userLocation.trim(),
+      totalAmount: toNumber(pkg.price),
+    };
+
+    setBookingDetails(dialogData);
+    setShowBookingConfirmationDialog(true);
+  };
+
+  const handleConfirmBooking = async () => {
+    setShowBookingConfirmationDialog(false);
     setIsBooking(true);
     setBookingError("");
 
     try {
-      await bookingService.createBooking({
-        service_id: service.id,
-        client_id: user.id,
-        provider_id: providerId,
-        booking_date: selectedDateISO,
-        booking_time: bookingTime,
-        user_location: userLocation.trim(),
-        total_price: toNumber(pkg.price),
-        notes: [note?.trim(), `Package: ${pkg?.name || "Standard"}`]
-          .filter(Boolean)
-          .join(" | "),
-      });
-
-      navigate("/dashboard");
+      await bookingService.createBooking(pendingBookingData);
+      setShowBookingConfirmation(true);
     } catch (err) {
       setBookingError(err.message || "Failed to create booking");
     } finally {
       setIsBooking(false);
     }
+  };
+
+  const handleCancelBooking = () => {
+    setShowBookingConfirmationDialog(false);
+    setPendingBookingData(null);
+    setBookingDetails(null);
   };
 
   return (
@@ -190,13 +215,36 @@ export default function ServiceDetailPage({ service, onBack }) {
         </div>
       , document.body)}
 
+      {/* Booking Confirmation Dialog - Ask for confirmation */}
+      <BookingConfirmationDialog 
+        isOpen={showBookingConfirmationDialog}
+        onConfirm={handleConfirmBooking}
+        onCancel={handleCancelBooking}
+        bookingData={bookingDetails}
+      />
+
+      {/* Booking Success Confirmation Modal */}
+      <BookingConfirmation 
+        isOpen={showBookingConfirmation}
+        onClose={() => setShowBookingConfirmation(false)}
+        bookingData={bookingDetails}
+        onNavigate={(tab) => {
+          setShowBookingConfirmation(false);
+          if (tab === 'Services') {
+            onBack();
+          } else {
+            onNavigate(tab);
+          }
+        }}
+      />
+
       {/* Back */}
       <div className="bg-white dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-700 px-6 py-4 transition-colors">
         <Button variant="ghost" onClick={onBack} className="gap-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Back to Services
+          {backButtonText}
         </Button>
       </div>
 
@@ -259,35 +307,35 @@ export default function ServiceDetailPage({ service, onBack }) {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">About this service</h3>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                {service?.description ?? "Professional deep cleaning service for your entire home. Our team uses eco-friendly products and advanced cleaning techniques to ensure every corner sparkles. Perfect for move-ins, move-outs, or seasonal deep cleans."}
+                {service?.description ?? "Professional deep cleaning service for your entire home."}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {reviews.map((r, i) => (
-              <Card key={r.id || i} className="p-5">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                    {(r.reviewer_name || r.name || "?")[0]}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">
-                      {r.reviewer_name || r.name}
+                <Card key={r.id || i} className="p-5">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                      {(r.reviewer_name || r.name || "?")[0]}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {new Date(r.review_date || r.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        year: "numeric",
-                      })}
+                    <div className="flex-1">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">
+                        {r.reviewer_name || r.name}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(r.review_date || r.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                    <div className="text-amber-500">
+                      {"★".repeat(r.rating)}
+                      {"☆".repeat(5 - r.rating)}
                     </div>
                   </div>
-                  <div className="text-amber-500">
-                    {"★".repeat(r.rating)}
-                    {"☆".repeat(5 - r.rating)}
-                  </div>
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-300">{r.comment || r.text}</p>
-              </Card>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">{r.comment || r.text}</p>
+                </Card>
               ))}
             </div>
           )}

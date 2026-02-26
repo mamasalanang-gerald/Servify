@@ -4,7 +4,7 @@ import ServicesGrid from './ServicesGrid';
 import ServiceDetailPage from './ServiceDetailPage';
 import { Input } from './ui/input';
 
-const ServicesPanel = ({ initialCategory = null }) => {
+const ServicesPanel = ({ initialCategory = null, onNavigate }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedService, setSelectedService] = useState(null);
 
@@ -21,6 +21,7 @@ const ServicesPanel = ({ initialCategory = null }) => {
       <ServiceDetailPage
         service={selectedService}
         onBack={() => setSelectedService(null)}
+        onNavigate={onNavigate}
       />
     );
   }

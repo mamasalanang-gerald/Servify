@@ -28,7 +28,6 @@ const DashboardPage = () => {
   useEffect(() => {
     const refreshUserData = async () => {
       if (!user) return;
-
       try {
         const userData = await userService.getCurrentUser();
         if (userData.role !== user.role) {
@@ -80,11 +79,11 @@ const DashboardPage = () => {
       case 'Dashboard':
         return <UserOverview onQuickAction={handleQuickAction} />;
       case 'Services':
-        return <ServicesPanel />;
+        return <ServicesPanel onNavigate={handleSidebarNavChange} />;
       case 'Bookings':
         return <UserBookings />;
       case 'Saved Services':
-        return <SavedServices />;
+        return <SavedServices onNavigate={handleSidebarNavChange} />;
       case 'Profile':
         return <ProfileSettings />;
       case 'Settings':
