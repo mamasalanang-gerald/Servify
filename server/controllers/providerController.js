@@ -126,6 +126,9 @@ const getMonthlyEarnings = async (req, res) => {
   try {
     const { providerId } = req.params;
     const months = parseInt(req.query.months) || 6;
+    if (!Number.isFinite(months) || months < 1 || months > 24) {
+      return res.status(400).json({ message: 'months must be an integer between 1 and 24' });
+    }
 
     const monthlyData = await db.query(
       `SELECT 
@@ -135,10 +138,10 @@ const getMonthlyEarnings = async (req, res) => {
        FROM bookings
        WHERE provider_id = $1 
        AND status = 'completed'
-       AND booking_date >= CURRENT_DATE - INTERVAL '${months} months'
+       AND booking_date >= CURRENT_DATE - make_interval(months => $2)
        GROUP BY TO_CHAR(booking_date, 'Mon'), EXTRACT(MONTH FROM booking_date), EXTRACT(YEAR FROM booking_date)
        ORDER BY EXTRACT(YEAR FROM booking_date), EXTRACT(MONTH FROM booking_date)`,
-      [providerId]
+      [providerId, months]
     );
 
     const formattedData = monthlyData.rows.map(d => ({

@@ -18,9 +18,6 @@ const reviewRoutes = require('./routes/reviewRoutes');
 
 const app = express();
 
-console.log(process.env.JWT_SECRET);
-
-
 process.stderr.write('Script starting...\n');
 
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
