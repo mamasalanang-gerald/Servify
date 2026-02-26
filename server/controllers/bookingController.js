@@ -31,6 +31,21 @@ const createBooking = async (req, res) => {
 			return res.status(400).json({ message: 'Invalid total_price value' });
 		}
 
+		const service = await bookingModel.getServiceForBooking(service_id);
+		if (!service) {
+			return res.status(404).json({ message: 'Service not found' });
+		}
+
+		if (service.provider_id !== provider_id) {
+			return res.status(400).json({ message: 'Service/provider mismatch' });
+		}
+
+		if (!service.is_active) {
+			return res.status(409).json({
+				message: 'This service is no longer active. Please return to Services and choose another one.',
+			});
+		}
+
 		const booking = await bookingModel.createBooking({
 			service_id,
 			client_id: req.user.id,

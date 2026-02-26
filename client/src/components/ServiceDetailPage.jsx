@@ -29,6 +29,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  const [bookingSummaryError, setBookingSummaryError] = useState("");
   const [showBookingConfirmationDialog, setShowBookingConfirmationDialog] = useState(false);
   const [showBookingConfirmation, setShowBookingConfirmation] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -135,6 +136,9 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
       return;
     }
 
+    setBookingError("");
+    setBookingSummaryError("");
+
     setPendingBookingData({
       service_id: service.id,
       client_id: user.id,
@@ -162,15 +166,53 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   };
 
   const handleConfirmBooking = async () => {
-    setShowBookingConfirmationDialog(false);
     setIsBooking(true);
     setBookingError("");
+    setBookingSummaryError("");
 
     try {
       await bookingService.createBooking(pendingBookingData);
+      setShowBookingConfirmationDialog(false);
       setShowBookingConfirmation(true);
     } catch (err) {
-      setBookingError(err.message || "Failed to create booking");
+      const message = err.message || "Failed to create booking";
+      setBookingError(message);
+      setBookingSummaryError(message);
+
+      const normalizedMessage = message.toLowerCase();
+      const isInactiveServiceError =
+        normalizedMessage.includes("no longer active") ||
+        normalizedMessage.includes("inactive") ||
+        normalizedMessage.includes("no longer available");
+
+      if (isInactiveServiceError) {
+        setBookingSummaryError(
+          `${message} Redirecting you to Services...`,
+        );
+
+        setTimeout(() => {
+          setShowBookingConfirmationDialog(false);
+          setPendingBookingData(null);
+          setBookingDetails(null);
+          let redirected = false;
+
+          if (typeof onBack === "function") {
+            onBack();
+            redirected = true;
+          }
+
+          if (typeof onNavigate === "function") {
+            onNavigate("Services");
+            redirected = true;
+          }
+
+          if (redirected) {
+            return;
+          }
+
+          navigate("/dashboard");
+        }, 1400);
+      }
     } finally {
       setIsBooking(false);
     }
@@ -180,6 +222,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
     setShowBookingConfirmationDialog(false);
     setPendingBookingData(null);
     setBookingDetails(null);
+    setBookingSummaryError("");
   };
 
   return (
@@ -222,6 +265,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
         onConfirm={handleConfirmBooking}
         onCancel={handleCancelBooking}
         bookingData={bookingDetails}
+        errorMessage={bookingSummaryError}
+        isSubmitting={isBooking}
       />
 
       {/* Booking Success Confirmation Modal */}

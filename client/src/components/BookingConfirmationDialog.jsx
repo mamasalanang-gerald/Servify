@@ -1,7 +1,14 @@
 import { createPortal } from 'react-dom';
 import { Button } from './ui/button';
 
-const BookingConfirmationDialog = ({ isOpen, onConfirm, onCancel, bookingData }) => {
+const BookingConfirmationDialog = ({
+  isOpen,
+  onConfirm,
+  onCancel,
+  bookingData,
+  errorMessage = '',
+  isSubmitting = false,
+}) => {
   if (!isOpen) return null;
 
   const formatDate = (dateString) => {
@@ -123,20 +130,28 @@ const BookingConfirmationDialog = ({ isOpen, onConfirm, onCancel, bookingData })
           </div>
         </div>
 
+        {errorMessage ? (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-xs text-red-700 dark:text-red-300">{errorMessage}</p>
+          </div>
+        ) : null}
+
         {/* Buttons */}
         <div className="flex gap-2.5">
           <Button 
             onClick={onCancel}
             variant="outline"
             className="flex-1 text-sm"
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button 
             onClick={onConfirm}
             className="flex-1 bg-gradient-to-br from-blue-900 to-blue-600 text-white hover:opacity-90 text-sm"
+            disabled={isSubmitting}
           >
-            Proceed
+            {isSubmitting ? 'Processing...' : 'Proceed'}
           </Button>
         </div>
       </div>
