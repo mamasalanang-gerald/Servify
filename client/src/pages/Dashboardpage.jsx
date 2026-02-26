@@ -14,6 +14,7 @@ const DashboardPage = () => {
   const [activeNav, setActiveNav] = useState('Dashboard');
   const [quickActionContext, setQuickActionContext] = useState(null);
   const [servicesInitialCategory, setServicesInitialCategory] = useState(null);
+  const [servicesInitialSearchQuery, setServicesInitialSearchQuery] = useState('');
   const { user, updateUserRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,19 +54,22 @@ const DashboardPage = () => {
   useEffect(() => {
     const navFromState = location.state?.initialNav;
     const categoryFromState = location.state?.initialCategory;
+    const searchFromState = location.state?.initialSearchQuery;
 
-    if (!navFromState && !categoryFromState) return;
+    if (!navFromState && !categoryFromState && !searchFromState) return;
 
-    const nextNav = categoryFromState ? 'Services' : navFromState;
+    const nextNav = categoryFromState || searchFromState ? 'Services' : navFromState;
     if (nextNav) {
       setQuickActionContext(null);
       setActiveNav(nextNav);
     }
 
-    if (categoryFromState) {
-      setServicesInitialCategory(categoryFromState);
-    } else if (nextNav && nextNav !== 'Services') {
+    if (nextNav === 'Services') {
+      setServicesInitialCategory(categoryFromState || null);
+      setServicesInitialSearchQuery(searchFromState || '');
+    } else if (nextNav) {
       setServicesInitialCategory(null);
+      setServicesInitialSearchQuery('');
     }
 
     navigate(location.pathname, { replace: true, state: null });
@@ -86,6 +90,7 @@ const DashboardPage = () => {
     setQuickActionContext(null);
     if (nextNav !== 'Services') {
       setServicesInitialCategory(null);
+      setServicesInitialSearchQuery('');
     }
     setActiveNav(nextNav);
   };
@@ -94,6 +99,7 @@ const DashboardPage = () => {
     if (actionId === 'browse-services') {
       setQuickActionContext(null);
       setServicesInitialCategory(null);
+      setServicesInitialSearchQuery('');
       setActiveNav('Services');
       return;
     }
@@ -113,7 +119,12 @@ const DashboardPage = () => {
       case 'Dashboard':
         return <UserOverview onQuickAction={handleQuickAction} />;
       case 'Services':
-        return <ServicesPanel initialCategory={servicesInitialCategory} />;
+        return (
+          <ServicesPanel
+            initialCategory={servicesInitialCategory}
+            initialSearchQuery={servicesInitialSearchQuery}
+          />
+        );
       case 'Bookings':
         return <UserBookings />;
       case 'Saved Services':

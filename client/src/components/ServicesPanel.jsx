@@ -4,8 +4,8 @@ import ServicesGrid from './ServicesGrid';
 import ServiceDetailPage from './ServiceDetailPage';
 import { Input } from './ui/input';
 
-const ServicesPanel = ({ initialCategory = null }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const ServicesPanel = ({ initialCategory = null, initialSearchQuery = '' }) => {
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
   const [selectedService, setSelectedService] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -32,6 +32,10 @@ const ServicesPanel = ({ initialCategory = null }) => {
       };
     });
   }, [initialCategory]);
+
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery || '');
+  }, [initialSearchQuery]);
 
   const handleFilterChange = (updated) => setFilters(updated);
 
