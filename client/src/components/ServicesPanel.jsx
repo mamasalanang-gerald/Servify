@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ServicesFilter from './ServicesFilter';
 import ServicesGrid from './ServicesGrid';
 import ServiceDetailPage from './ServiceDetailPage';
 import { Input } from './ui/input';
 
-const ServicesPanel = ({ initialCategory = null, initialSearchQuery = '' }) => {
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
+const ServicesPanel = ({ initialCategory = null, onNavigate }) => {
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedService, setSelectedService] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -14,29 +14,6 @@ const ServicesPanel = ({ initialCategory = null, initialSearchQuery = '' }) => {
     selectedCategories: initialCategory ? [initialCategory] : [],
   });
 
-  useEffect(() => {
-    setFilters((prev) => {
-      const nextCategories = initialCategory ? [initialCategory] : [];
-      const current = prev.selectedCategories || [];
-      const isSameLength = current.length === nextCategories.length;
-      const isSameValue =
-        isSameLength && current.every((value, index) => value === nextCategories[index]);
-
-      if (isSameValue) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        selectedCategories: nextCategories,
-      };
-    });
-  }, [initialCategory]);
-
-  useEffect(() => {
-    setSearchQuery(initialSearchQuery || '');
-  }, [initialSearchQuery]);
-
   const handleFilterChange = (updated) => setFilters(updated);
 
   if (selectedService) {
@@ -44,6 +21,7 @@ const ServicesPanel = ({ initialCategory = null, initialSearchQuery = '' }) => {
       <ServiceDetailPage
         service={selectedService}
         onBack={() => setSelectedService(null)}
+        onNavigate={onNavigate}
       />
     );
   }
