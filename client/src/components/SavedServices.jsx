@@ -10,7 +10,7 @@ const SavedServices = ({ onNavigate }) => {
   const [savedServices, setSavedServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingService, setViewingService] = useState(null);
-  const { unsaveService, refreshSavedServices } = useSavedServices();
+  const { refreshSavedServices } = useSavedServices();
 
   useEffect(() => {
     loadSavedServices();
@@ -60,21 +60,27 @@ const SavedServices = ({ onNavigate }) => {
   // Transform saved service data to match ServiceDetailPage format
   const transformServiceData = (savedService) => {
     try {
+      const parsedRating = Number(savedService.average_rating ?? savedService.rating ?? 0);
+      const rating = Number.isFinite(parsedRating) ? parsedRating : 0;
+      const category = savedService.category_name || savedService.category || 'Service';
+
       return {
         id: savedService.service_id || savedService.id,
         title: savedService.title,
         img: savedService.image_url || savedService.img,
-        category: savedService.category,
-        rating: savedService.rating || 0,
+        category,
+        rating,
         reviewCount: savedService.review_count || 0,
         price: savedService.price,
-        priceNum: parseInt(savedService.price) || 0,
+        priceNum: parseFloat(savedService.price) || 0,
         providerName: savedService.provider_name,
         provider: savedService.provider_name,
+        providerImage: savedService.provider_image || null,
+        provider_image: savedService.provider_image || null,
         provider_id: savedService.provider_id,
         providerId: savedService.provider_id,
         description: savedService.description,
-        location: savedService.location || 'San Diego, CA',
+        location: savedService.location,
         packages: savedService.packages,
         reviews: savedService.reviews,
         jobs: savedService.jobs_completed || 0,
@@ -193,6 +199,9 @@ const SavedServices = ({ onNavigate }) => {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {savedServices.map((service) => {
           const serviceId = service.service_id || service.id;
+          const parsedRating = Number(service.average_rating ?? service.rating ?? 0);
+          const listRating = Number.isFinite(parsedRating) ? parsedRating : 0;
+          const listCategory = service.category_name || service.category || 'Service';
           
           return (
             <Card 
@@ -210,7 +219,7 @@ const SavedServices = ({ onNavigate }) => {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
-                  {service.rating || 0}
+                  {listRating > 0 ? listRating.toFixed(1) : '—'}
                 </div>
                 <div className="absolute top-3 left-3">
                   <button
@@ -225,7 +234,7 @@ const SavedServices = ({ onNavigate }) => {
                 </div>
                 <div className="absolute bottom-3 left-3">
                   <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    {service.category || 'Service'}
+                    {listCategory}
                   </div>
                 </div>
               </div>

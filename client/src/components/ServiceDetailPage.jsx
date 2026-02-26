@@ -118,6 +118,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
     currentMonth.getMonth() + 1,
   ).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
   const pkg = packages[selectedPackage] || packages[0] || { name: '', price: 0, description: '', features: [] };
+  const rawServiceRating = toNumber(service?.rating ?? service?.average_rating ?? 0);
+  const displayServiceRating = rawServiceRating > 0 ? rawServiceRating.toFixed(1) : '—';
 
   const handleBooking = async () => {
     if (!user) {
@@ -307,7 +309,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              {service?.rating ?? 4.9} ({displayedReviewCount} reviews)
+              {displayServiceRating} ({displayedReviewCount} reviews)
             </span>
           </div>
 
@@ -337,7 +339,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
-                  {service?.rating ?? 4.9} rating · {service?.jobs ?? 342} jobs completed
+                  {displayServiceRating} rating · {service?.jobs ?? 342} jobs completed
                 </div>
               </div>
               <Button variant="outline" size="sm">Contact</Button>
@@ -361,9 +363,17 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
               {reviews.map((r, i) => (
                 <Card key={r.id || i} className="p-5">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                      {(r.reviewer_name || r.name || "?")[0]}
-                    </div>
+                    {r.reviewer_profile_image ? (
+                      <img
+                        src={r.reviewer_profile_image}
+                        alt={r.reviewer_name || r.name || 'Reviewer'}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                        {(r.reviewer_name || r.name || "?")[0]}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="font-semibold text-slate-900 dark:text-slate-100">
                         {r.reviewer_name || r.name}
