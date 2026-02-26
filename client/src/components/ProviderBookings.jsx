@@ -27,6 +27,25 @@ const toApiStatus = (uiStatus) => (
   uiStatus === 'confirmed' ? 'accepted' : uiStatus
 );
 
+const STATUS_ORDER = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 };
+
+const sortBookings = (bookings) => {
+  return [...bookings].sort((a, b) => {
+    const aOrder = STATUS_ORDER[a.status] ?? 99;
+    const bOrder = STATUS_ORDER[b.status] ?? 99;
+
+    if (aOrder !== bOrder) return aOrder - bOrder;
+
+    // Pending: oldest booking_date first (longest waiting)
+    if (a.status === 'pending') {
+      return new Date(a.booking_date) - new Date(b.booking_date);
+    }
+
+    // Everything else (including cancelled): newest first
+    return new Date(b.booking_date) - new Date(a.booking_date);
+  });
+};
+
 const mapProviderBooking = (booking) => {
   const clientName = booking.client_name || 'Unknown Client';
   return {
@@ -67,13 +86,12 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
         .getProviderBookings(user.id)
         .then((data) => {
           const source = Array.isArray(data) ? data : [];
-          setBookings(source.map(mapProviderBooking));
+          setBookings(sortBookings(source.map(mapProviderBooking)));
         })
         .catch(console.error);
     }
   }, []);
 
-  // Reset to page 1 whenever the tab changes
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setPage(1);
@@ -90,7 +108,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
     try {
       await bookingService.updateBookingStatus(id, toApiStatus(newStatus));
       setBookings((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)),
+        sortBookings(prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)))
       );
       setDetailModal(null);
     } catch (err) { console.error(err); }
@@ -204,20 +222,10 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             Page {page} of {totalPages} &mdash; {filtered.length} total
           </span>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
+            <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
               Next
             </Button>
           </div>
@@ -234,13 +242,13 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             <>
               <div className="space-y-3 py-4">
                 {[
-                  ['Client',  detailModal.client],
-                  ['Service', detailModal.service],
+                  ['Client',   detailModal.client],
+                  ['Service',  detailModal.service],
                   ['Location', detailModal.location],
-                  ['Date',    detailModal.date],
-                  ['Time',    detailModal.time],
-                  ['Amount',  detailModal.amount],
-                  ['Status',  detailModal.status.charAt(0).toUpperCase() + detailModal.status.slice(1)],
+                  ['Date',     detailModal.date],
+                  ['Time',     detailModal.time],
+                  ['Amount',   detailModal.amount],
+                  ['Status',   detailModal.status.charAt(0).toUpperCase() + detailModal.status.slice(1)],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{k}</span>
