@@ -34,6 +34,7 @@ const BookingCard = ({
   booking,
   onViewDetails,
   onMarkCompleted,
+  onCancel,
   isUpdating = false,
 }) => {
   const status = statusConfig[booking.status] || statusConfig.pending;
@@ -73,6 +74,17 @@ const BookingCard = ({
           <div className="text-xl font-bold text-foreground">{booking.total}</div>
         </div>
         <div className="flex gap-2">
+          {booking.status === 'pending' && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+              onClick={onCancel}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+          )}
           {booking.status === 'confirmed' && (
             <Button
               variant="outline"
