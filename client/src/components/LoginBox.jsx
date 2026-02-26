@@ -58,6 +58,7 @@ const LoginBox = () => {
               state: {
                 initialNav: 'Services',
                 initialCategory: redirectState.initialCategory || null,
+                initialSearchQuery: redirectState.initialSearchQuery || '',
                 source: redirectState.source || 'login-redirect',
               },
             }
