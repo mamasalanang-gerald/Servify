@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { cn } from '../lib/utils';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
+import { formatBookingTime } from '../utils/bookingTime';
 
 const normalizeStatus = (status) => {
   const current = String(status || 'pending').toLowerCase();
@@ -30,7 +31,7 @@ const mapClientBooking = (booking) => {
     title: booking.service_name || 'Service',
     subtitle: booking.user_location || booking.service_description || 'No location provided',
     date: dateLabel,
-    time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
+    time: formatBookingTime(booking.booking_time),
     total: `₱${Number(booking.total_price || 0).toLocaleString()}`,
     img: '/placeholder-service.jpg',
   };

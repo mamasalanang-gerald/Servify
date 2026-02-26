@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
+import { formatBookingTime } from '../utils/bookingTime';
 
 const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
@@ -38,7 +39,7 @@ const mapProviderBooking = (booking) => {
           year: 'numeric',
         })
       : '—',
-    time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
+    time: formatBookingTime(booking.booking_time),
     amount: `₱${Number(booking.total_price || 0).toLocaleString()}`,
     location: booking.user_location || '—',
     avatar: clientName
