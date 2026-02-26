@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
+import { providerService } from '../services/providerService';
 import { formatBookingTime } from '../utils/bookingTime';
 
 const statusConfig = {
@@ -61,20 +62,41 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
     const user = authService.getUser();
     if (!user?.id) return;
 
-    bookingService.getProviderBookings(user.id).then((bookings) => {
-      const arr = Array.isArray(bookings) ? bookings : [];
-      const completed = arr.filter((b) => b.status === 'completed');
-      const pending = arr.filter((b) => b.status === 'pending');
+    const fetchOverview = async () => {
+      const [bookingsResult, summaryResult] = await Promise.allSettled([
+        bookingService.getProviderBookings(user.id),
+        providerService.getEarningsSummary(user.id),
+      ]);
+
+      const bookings =
+        bookingsResult.status === 'fulfilled' && Array.isArray(bookingsResult.value)
+          ? bookingsResult.value
+          : [];
+
+      const completed = bookings.filter((b) => b.status === 'completed');
+      const pending = bookings.filter((b) => b.status === 'pending');
+
+      const summary =
+        summaryResult.status === 'fulfilled' && summaryResult.value
+          ? summaryResult.value
+          : {};
+
+      const reviewCount = Number(summary.reviewCount || 0);
+      const avgRatingNumber = Number(summary.avgRating || 0);
+      const avgRating =
+        reviewCount > 0 && Number.isFinite(avgRatingNumber)
+          ? avgRatingNumber.toFixed(1)
+          : '—';
 
       setOverviewStats({
         totalEarnings: `₱${completed.reduce((sum, b) => sum + parseFloat(b.total_price || 0), 0).toLocaleString()}`,
-        totalBookings: arr.length.toString(),
+        totalBookings: bookings.length.toString(),
         pendingRequests: pending.length.toString(),
-        avgRating: '—',
+        avgRating,
       });
 
       setRecentBookings(
-        arr.slice(0, 3).map((b) => ({
+        bookings.slice(0, 3).map((b) => ({
           id: b.id,
           client: b.client_name || 'Client',
           client_phone: b.client_phone || '—',
@@ -91,7 +113,9 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
           status: normalizeStatus(b.status),
         })),
       );
-    }).catch(console.error);
+    };
+
+    fetchOverview().catch(console.error);
   }, []);
 
   const adjustPendingCount = (fromStatus, toStatus) => {

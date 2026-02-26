@@ -132,9 +132,17 @@ const ProviderReviews = () => {
           <Card key={r.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
-                  {(r.reviewer_name || '?')[0]}
-                </div>
+                {r.reviewer_profile_image ? (
+                  <img
+                    src={r.reviewer_profile_image}
+                    alt={r.reviewer_name || 'Reviewer'}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-semibold">
+                    {(r.reviewer_name || '?')[0]}
+                  </div>
+                )}
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 dark:text-gray-100">{r.reviewer_name || 'Unknown reviewer'}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">

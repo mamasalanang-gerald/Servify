@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import UserSidebar from '../components/UserSidebar';
 import UserOverview from '../components/UserOverview';
 import UserBookings from '../components/UserBookings';
@@ -12,8 +12,22 @@ import useTheme from '../hooks/useTheme';
 import { userService } from '../services/userService';
 
 const DashboardPage = () => {
-  const [activeNav, setActiveNav] = useState('Dashboard');
-  const [quickActionContext, setQuickActionContext] = useState(null);
+  const location = useLocation();
+  const [activeNav, setActiveNav] = useState(() => {
+    const nav = location.state?.initialNav;
+    return typeof nav === 'string' && nav.length > 0 ? nav : 'Dashboard';
+  });
+  const [_quickActionContext, setQuickActionContext] = useState(null);
+  const [servicesInitialCategory] = useState(() =>
+    typeof location.state?.initialCategory === 'string'
+      ? location.state.initialCategory
+      : null,
+  );
+  const [servicesInitialSearchQuery] = useState(() =>
+    typeof location.state?.initialSearchQuery === 'string'
+      ? location.state.initialSearchQuery
+      : '',
+  );
   const { user, updateUserRole } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -65,6 +79,11 @@ const DashboardPage = () => {
   };
 
   const handleQuickAction = (actionId) => {
+    if (actionId === 'browse-services') {
+      setActiveNav('Services');
+      setQuickActionContext(null);
+      return;
+    }
     if (actionId === 'view-bookings') {
       setActiveNav('Bookings');
       setQuickActionContext('view-bookings');
@@ -81,7 +100,13 @@ const DashboardPage = () => {
       case 'Dashboard':
         return <UserOverview onQuickAction={handleQuickAction} />;
       case 'Services':
-        return <ServicesPanel onNavigate={handleSidebarNavChange} />;
+        return (
+          <ServicesPanel
+            initialCategory={servicesInitialCategory}
+            initialSearchQuery={servicesInitialSearchQuery}
+            onNavigate={handleSidebarNavChange}
+          />
+        );
       case 'Bookings':
         return <UserBookings />;
       case 'Saved Services':

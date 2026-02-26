@@ -4,8 +4,10 @@ import ServicesGrid from './ServicesGrid';
 import ServiceDetailPage from './ServiceDetailPage';
 import { Input } from './ui/input';
 
-const ServicesPanel = ({ initialCategory = null, onNavigate }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const ServicesPanel = ({ initialCategory = null, initialSearchQuery = '', onNavigate }) => {
+  const [searchQuery, setSearchQuery] = useState(
+    typeof initialSearchQuery === 'string' ? initialSearchQuery.trim() : '',
+  );
   const [selectedService, setSelectedService] = useState(null);
 
   const [filters, setFilters] = useState({

@@ -10,6 +10,7 @@ import { bookingService } from "../services/bookingService";
 import SaveButton from './SaveButton';
 import BookingConfirmation from './BookingConfirmation.jsx';
 import BookingConfirmationDialog from './BookingConfirmationDialog';
+import { BOOKING_TIME_OPTIONS } from '../utils/bookingTime';
 
 export default function ServiceDetailPage({ service, onBack, backButtonText = "Back to Services", onNavigate }) {
   const today = new Date();
@@ -28,6 +29,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
+  const [bookingSummaryError, setBookingSummaryError] = useState("");
   const [showBookingConfirmationDialog, setShowBookingConfirmationDialog] = useState(false);
   const [showBookingConfirmation, setShowBookingConfirmation] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -120,6 +122,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   const selectedDateStr = `${currentMonth.getMonth() + 1}/${selectedDate}/${currentMonth.getFullYear()}`;
   const selectedDateISO = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
   const pkg = packages[selectedPackage] || packages[0] || { name: '', price: 0, description: '', features: [] };
+  const rawServiceRating = toNumber(service?.rating ?? service?.average_rating ?? 0);
+  const displayServiceRating = rawServiceRating > 0 ? rawServiceRating.toFixed(1) : '—';
 
   const handleBooking = async () => {
     if (!user) {
@@ -144,6 +148,9 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
       setBookingError("Please set your preferred time and location.");
       return;
     }
+
+    setBookingError("");
+    setBookingSummaryError("");
 
     setPendingBookingData({
       service_id: service.id,
@@ -171,17 +178,55 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   };
 
   const handleConfirmBooking = async () => {
-    setShowBookingConfirmationDialog(false);
     setIsBooking(true);
     setBookingError("");
+    setBookingSummaryError("");
 
     try {
       await bookingService.createBooking(pendingBookingData);
+      setShowBookingConfirmationDialog(false);
       setShowBookingConfirmation(true);
       // Update block state after successful booking
       setActiveBookingBlock({ status: 'pending', provider_id: providerId });
     } catch (err) {
-      setBookingError(err.message || "Failed to create booking");
+      const message = err.message || "Failed to create booking";
+      setBookingError(message);
+      setBookingSummaryError(message);
+
+      const normalizedMessage = message.toLowerCase();
+      const isInactiveServiceError =
+        normalizedMessage.includes("no longer active") ||
+        normalizedMessage.includes("inactive") ||
+        normalizedMessage.includes("no longer available");
+
+      if (isInactiveServiceError) {
+        setBookingSummaryError(
+          `${message} Redirecting you to Services...`,
+        );
+
+        setTimeout(() => {
+          setShowBookingConfirmationDialog(false);
+          setPendingBookingData(null);
+          setBookingDetails(null);
+          let redirected = false;
+
+          if (typeof onBack === "function") {
+            onBack();
+            redirected = true;
+          }
+
+          if (typeof onNavigate === "function") {
+            onNavigate("Services");
+            redirected = true;
+          }
+
+          if (redirected) {
+            return;
+          }
+
+          navigate("/dashboard");
+        }, 1400);
+      }
     } finally {
       setIsBooking(false);
     }
@@ -191,6 +236,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
     setShowBookingConfirmationDialog(false);
     setPendingBookingData(null);
     setBookingDetails(null);
+    setBookingSummaryError("");
   };
 
   const isBlocked = !!activeBookingBlock;
@@ -230,6 +276,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
         onConfirm={handleConfirmBooking}
         onCancel={handleCancelBooking}
         bookingData={bookingDetails}
+        errorMessage={bookingSummaryError}
+        isSubmitting={isBooking}
       />
 
       <BookingConfirmation
@@ -266,7 +314,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
-              {service?.rating ?? 4.9} ({displayedReviewCount} reviews)
+              {displayServiceRating} ({displayedReviewCount} reviews)
             </span>
           </div>
 
@@ -277,8 +325,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
 
           <Card className="p-5">
             <div className="flex items-center gap-3">
-              {service?.providerImage || service?.provider_image ? (
-                <img src={service.providerImage || service.provider_image} alt={service?.providerName} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+              {service?.providerImage ? (
+                <img src={service.providerImage} alt={service?.providerName} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {service?.providerInitial ?? service?.initials ?? "SJ"}
@@ -296,7 +344,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
-                  {service?.rating ?? 4.9} rating · {service?.jobs ?? 342} jobs completed
+                  {displayServiceRating} rating · {service?.jobs ?? 342} jobs completed
                 </div>
               </div>
               <Button variant="outline" size="sm">Contact</Button>
@@ -320,9 +368,17 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
               {reviews.map((r, i) => (
                 <Card key={r.id || i} className="p-5">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                      {(r.reviewer_name || r.name || "?")[0]}
-                    </div>
+                    {r.reviewer_profile_image ? (
+                      <img
+                        src={r.reviewer_profile_image}
+                        alt={r.reviewer_name || r.name || 'Reviewer'}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                        {(r.reviewer_name || r.name || "?")[0]}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="font-semibold text-slate-900 dark:text-slate-100">{r.reviewer_name || r.name}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -416,7 +472,17 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
 
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">Preferred Time</h3>
-              <input type="time" className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600" value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} />
+              <select
+                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                value={bookingTime}
+                onChange={(e) => setBookingTime(e.target.value)}
+              >
+                {BOOKING_TIME_OPTIONS.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

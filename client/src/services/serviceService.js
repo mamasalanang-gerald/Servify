@@ -41,8 +41,14 @@ export const serviceService = {
 
   async deleteService(id) {
     const response = await api.delete(`/services/${id}`);
-    if (!response.ok) throw new Error("Failed to delete service");
-    return await response.json();
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorDetails = [data.message, data.error].filter(Boolean).join(" - ");
+      throw new Error(errorDetails || "Failed to delete service");
+    }
+
+    return data;
   },
 
   async updateServiceStatus(id, is_active) {
