@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
+import { formatBookingTime } from '../utils/bookingTime';
 
 const statusConfig = {
   pending:   { label: 'Pending',   variant: 'warning' },
@@ -83,7 +84,7 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
             day: 'numeric',
             year: 'numeric',
           }),
-          time: b.booking_time ? String(b.booking_time).slice(0, 5) : '—',
+          time: formatBookingTime(b.booking_time),
           location: b.user_location || '—',
           notes: b.notes || '—',
           amount: `₱${Number(b.total_price || 0).toLocaleString()}`,

@@ -11,6 +11,7 @@ import {
   toApiBookingStatus,
   formatBookingStatus,
 } from '../utils/bookingStatus';
+import { formatBookingTime } from '../utils/bookingTime';
 
 const UserBookings = () => {
   const { user } = useAuth();
@@ -240,7 +241,7 @@ const UserBookings = () => {
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="12 6 12 12 16 14" />
                         </svg>
-                        <span>{booking.booking_time || 'Time not set'}</span>
+                        <span>{formatBookingTime(booking.booking_time)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -321,7 +322,7 @@ const UserBookings = () => {
                 {[
                   ['Service', detailModal.service_name || 'Service'],
                   ['Date', detailModal.booking_date ? new Date(detailModal.booking_date).toLocaleDateString() : '—'],
-                  ['Time', detailModal.booking_time ? String(detailModal.booking_time).slice(0, 5) : '—'],
+                  ['Time', formatBookingTime(detailModal.booking_time)],
                   ['Provider', detailModal.provider_name || 'Unknown'],
                   ['Location', detailModal.user_location || '—'],
                   ['Total', `₱${parseFloat(detailModal.total_price || 0).toFixed(2)}`],
