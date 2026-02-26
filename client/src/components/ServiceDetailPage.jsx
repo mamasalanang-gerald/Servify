@@ -32,8 +32,28 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   const [showBookingConfirmation, setShowBookingConfirmation] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
   const [pendingBookingData, setPendingBookingData] = useState(null);
-
   const [reviews, setReviews] = useState([]);
+
+  // Check if user already has an active booking with this provider
+  const [activeBookingBlock, setActiveBookingBlock] = useState(null); // null = no block, object = blocked booking
+
+  const providerId = service?.provider_id || service?.providerId;
+
+  useEffect(() => {
+    if (!user?.id || !providerId) return;
+
+    bookingService.getClientBookings(user.id)
+      .then((bookings) => {
+        const blocked = bookings.find(
+          (b) =>
+            String(b.provider_id) === String(providerId) &&
+            (b.status === 'pending' || b.status === 'confirmed')
+        );
+        setActiveBookingBlock(blocked || null);
+      })
+      .catch(() => setActiveBookingBlock(null));
+  }, [user?.id, providerId]);
+
   const displayedReviewCount =
     Number.isFinite(Number(service?.reviewCount))
       ? Number(service?.reviewCount)
@@ -42,9 +62,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
         : reviews.length;
 
   const toNumber = (value) => {
-    if (typeof value === "number") {
-      return Number.isFinite(value) ? value : 0;
-    }
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
     if (typeof value === "string") {
       const cleaned = value.replace(/[^0-9.-]/g, "");
       const parsed = Number(cleaned);
@@ -59,38 +77,26 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
       try {
         const parsed = JSON.parse(value);
         return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
+      } catch { return []; }
     }
     return [];
   };
 
-  const formatPeso = (value) => {
-    const amount = toNumber(value);
-    return `₱${amount.toLocaleString()}`;
-  };
+  const formatPeso = (value) => `₱${toNumber(value).toLocaleString()}`;
 
   const packages = useMemo(() => {
     const normalizedPackages = parsePackages(service?.packages)
-      .map((pkg) => ({
-        ...pkg,
-        price: toNumber(pkg?.price),
-      }))
+      .map((pkg) => ({ ...pkg, price: toNumber(pkg?.price) }))
       .filter((pkg) => pkg.name || pkg.description || pkg.price > 0);
 
-    if (normalizedPackages.length > 0) {
-      return normalizedPackages;
-    }
+    if (normalizedPackages.length > 0) return normalizedPackages;
 
-    return [
-      {
-        name: service?.title || "Standard",
-        price: toNumber(service?.priceNum ?? service?.price ?? 0),
-        description: service?.description || "",
-        features: [],
-      },
-    ];
+    return [{
+      name: service?.title || "Standard",
+      price: toNumber(service?.priceNum ?? service?.price ?? 0),
+      description: service?.description || "",
+      features: [],
+    }];
   }, [service]);
 
   useEffect(() => {
@@ -112,9 +118,7 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
   const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
 
   const selectedDateStr = `${currentMonth.getMonth() + 1}/${selectedDate}/${currentMonth.getFullYear()}`;
-  const selectedDateISO = `${currentMonth.getFullYear()}-${String(
-    currentMonth.getMonth() + 1,
-  ).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
+  const selectedDateISO = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(selectedDate).padStart(2, "0")}`;
   const pkg = packages[selectedPackage] || packages[0] || { name: '', price: 0, description: '', features: [] };
 
   const handleBooking = async () => {
@@ -123,7 +127,14 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
       return;
     }
 
-    const providerId = service?.provider_id || service?.providerId;
+    // Block if there's already an active booking with this provider
+    if (activeBookingBlock) {
+      setBookingError(
+        `You already have a ${activeBookingBlock.status} booking with this provider. Please wait for it to be completed or cancelled before booking again.`
+      );
+      return;
+    }
+
     if (!service?.id || !providerId) {
       setBookingError("Missing service/provider data. Please refresh and try again.");
       return;
@@ -147,16 +158,15 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
         .join(" | "),
     });
 
-    const dialogData = {
+    setBookingDetails({
       serviceName: service.title,
       providerName: service?.providerName || service?.provider || 'Service Provider',
       date: selectedDateISO,
       time: bookingTime,
       location: userLocation.trim(),
       totalAmount: toNumber(pkg.price),
-    };
+    });
 
-    setBookingDetails(dialogData);
     setShowBookingConfirmationDialog(true);
   };
 
@@ -168,6 +178,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
     try {
       await bookingService.createBooking(pendingBookingData);
       setShowBookingConfirmation(true);
+      // Update block state after successful booking
+      setActiveBookingBlock({ status: 'pending', provider_id: providerId });
     } catch (err) {
       setBookingError(err.message || "Failed to create booking");
     } finally {
@@ -180,6 +192,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
     setPendingBookingData(null);
     setBookingDetails(null);
   };
+
+  const isBlocked = !!activeBookingBlock;
 
   return (
     <div className="w-full min-h-screen bg-slate-50 dark:bg-[#0b1220] transition-colors">
@@ -204,37 +218,28 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
               You need to be logged in to book a service. Please log in or create an account to continue.
             </p>
             <div className="flex gap-2.5">
-              <Button className="flex-1 bg-gradient-to-br from-blue-900 to-blue-600 text-white" onClick={() => navigate("/login")}>
-                Log In
-              </Button>
-              <Button variant="outline" className="flex-1" onClick={() => navigate("/signup")}>
-                Create Account
-              </Button>
+              <Button className="flex-1 bg-gradient-to-br from-blue-900 to-blue-600 text-white" onClick={() => navigate("/login")}>Log In</Button>
+              <Button variant="outline" className="flex-1" onClick={() => navigate("/signup")}>Create Account</Button>
             </div>
           </div>
         </div>
       , document.body)}
 
-      {/* Booking Confirmation Dialog - Ask for confirmation */}
-      <BookingConfirmationDialog 
+      <BookingConfirmationDialog
         isOpen={showBookingConfirmationDialog}
         onConfirm={handleConfirmBooking}
         onCancel={handleCancelBooking}
         bookingData={bookingDetails}
       />
 
-      {/* Booking Success Confirmation Modal */}
-      <BookingConfirmation 
+      <BookingConfirmation
         isOpen={showBookingConfirmation}
         onClose={() => setShowBookingConfirmation(false)}
         bookingData={bookingDetails}
         onNavigate={(tab) => {
           setShowBookingConfirmation(false);
-          if (tab === 'Services') {
-            onBack();
-          } else {
-            onNavigate(tab);
-          }
+          if (tab === 'Services') onBack();
+          else onNavigate(tab);
         }}
       />
 
@@ -319,20 +324,12 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
                       {(r.reviewer_name || r.name || "?")[0]}
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-slate-900 dark:text-slate-100">
-                        {r.reviewer_name || r.name}
-                      </div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">{r.reviewer_name || r.name}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(r.review_date || r.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {new Date(r.review_date || r.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                       </div>
                     </div>
-                    <div className="text-amber-500">
-                      {"★".repeat(r.rating)}
-                      {"☆".repeat(5 - r.rating)}
-                    </div>
+                    <div className="text-amber-500">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</div>
                   </div>
                   <p className="text-sm text-slate-600 dark:text-slate-300">{r.comment || r.text}</p>
                 </Card>
@@ -344,6 +341,24 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
         {/* Right column */}
         <div className="lg:sticky lg:top-8 h-fit">
           <Card className="p-6 space-y-6">
+
+            {/* Active booking warning banner */}
+            {isBlocked && (
+              <div className="flex items-start gap-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Active Booking Exists</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                    You have a <span className="font-semibold capitalize">{activeBookingBlock.status}</span> booking with this provider. You can book again once it's completed or cancelled.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4">Select Package</h3>
               <div className="space-y-3">
@@ -401,35 +416,17 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
 
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">Preferred Time</h3>
-              <input
-                type="time"
-                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                value={bookingTime}
-                onChange={(e) => setBookingTime(e.target.value)}
-              />
+              <input type="time" className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600" value={bookingTime} onChange={(e) => setBookingTime(e.target.value)} />
             </div>
 
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">Service Location</h3>
-              <input
-                type="text"
-                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="Enter your address/location"
-                value={userLocation}
-                onChange={(e) => setUserLocation(e.target.value)}
-              />
+              <input type="text" className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Enter your address/location" value={userLocation} onChange={(e) => setUserLocation(e.target.value)} />
             </div>
 
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">Add a Note</h3>
-              <textarea
-                className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="Any special instructions or requests for the provider..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                rows={3}
-                maxLength={300}
-              />
+              <textarea className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Any special instructions or requests for the provider..." value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={300} />
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{note.length}/300</p>
             </div>
 
@@ -439,20 +436,18 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
               <div className="flex justify-between text-lg font-bold pt-2 text-slate-900 dark:text-slate-100"><span>Total</span><span className="text-blue-600">{formatPeso(pkg.price)}</span></div>
             </div>
 
-            {bookingError ? (
-              <p className="text-sm text-red-600">{bookingError}</p>
-            ) : null}
+            {bookingError && <p className="text-sm text-red-600">{bookingError}</p>}
 
             <Button
-              className="w-full bg-gradient-to-br from-blue-900 to-blue-600 text-white gap-2"
+              className={`w-full gap-2 ${isBlocked ? 'opacity-60 cursor-not-allowed' : 'bg-gradient-to-br from-blue-900 to-blue-600'} text-white`}
               onClick={handleBooking}
-              disabled={isBooking}
+              disabled={isBooking || isBlocked}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
               </svg>
-              {isBooking ? "Booking..." : "Book Service"}
+              {isBlocked ? `Booking Unavailable (${activeBookingBlock.status})` : isBooking ? "Booking..." : "Book Service"}
             </Button>
             <p className="text-xs text-center text-slate-500 dark:text-slate-400">You won't be charged yet</p>
           </Card>

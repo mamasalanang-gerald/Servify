@@ -8,12 +8,14 @@ import ProfileSettings from '../components/ProfileSettings';
 import AccountSettings from '../components/AccountSettings';
 import ServicesPanel from '../components/ServicesPanel';
 import useAuth from '../hooks/useAuth';
+import useTheme from '../hooks/useTheme';
 import { userService } from '../services/userService';
 
 const DashboardPage = () => {
   const [activeNav, setActiveNav] = useState('Dashboard');
   const [quickActionContext, setQuickActionContext] = useState(null);
   const { user, updateUserRole } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
 
@@ -96,16 +98,18 @@ const DashboardPage = () => {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <UserSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
-      <div className="ml-64 flex-1 flex flex-col min-h-screen">
-        <div className="bg-white/90 backdrop-blur-2xl border-b border-slate-200 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
-          <div>
-            <div className="text-lg font-bold text-slate-900">{meta.title}</div>
-            <div className="text-xs text-slate-500 mt-0.5">{meta.sub}</div>
+    <div className={isDark ? 'dark' : ''}>
+      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
+        <UserSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
+        <div className="ml-64 flex-1 flex flex-col min-h-screen">
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border-b border-slate-200 dark:border-slate-700 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
+            <div>
+              <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{meta.title}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{meta.sub}</div>
+            </div>
           </div>
+          <div className="px-8 py-7 flex-1 text-slate-900 dark:text-slate-100">{renderContent()}</div>
         </div>
-        <div className="px-8 py-7 flex-1">{renderContent()}</div>
       </div>
     </div>
   );
