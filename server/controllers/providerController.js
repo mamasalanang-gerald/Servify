@@ -28,8 +28,18 @@ const getEarningsSummary = async (req, res) => {
     // Calculate pending payout (completed but not yet paid out)
     const pendingPayout = thisMonthBookings.rows[0]?.month_earned || 0;
 
+    // Get provider rating summary from raw reviews
+    const reviewSummary = await db.query(
+      `SELECT COALESCE(AVG(rating), 0) as avg_rating, COUNT(*) as review_count
+       FROM reviews
+       WHERE provider_id = $1`,
+      [providerId]
+    );
+
     const totalEarned = parseFloat(completedBookings.rows[0]?.total_earned || 0);
     const monthEarned = parseFloat(thisMonthBookings.rows[0]?.month_earned || 0);
+    const avgRating = parseFloat(reviewSummary.rows[0]?.avg_rating || 0);
+    const reviewCount = parseInt(reviewSummary.rows[0]?.review_count || 0);
 
     res.status(200).json({
       totalEarned,
@@ -37,6 +47,8 @@ const getEarningsSummary = async (req, res) => {
       monthEarned,
       monthBookings: parseInt(thisMonthBookings.rows[0]?.month_bookings || 0),
       pendingPayout: parseFloat(pendingPayout),
+      avgRating,
+      reviewCount,
     });
   } catch (err) {
     console.error('Error fetching earnings summary:', err);

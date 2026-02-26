@@ -55,6 +55,7 @@ const getReviewsByProvider = async (provider_id) => {
         const result = await pool.query(
             `SELECT r.id, r.booking_id, r.client_id, r.provider_id, r.rating, r.comment, r.review_date,
                     u.full_name AS reviewer_name,
+                    u.profile_image AS reviewer_profile_image,
                     b.service_id,
                     s.title AS service_name
              FROM reviews r
