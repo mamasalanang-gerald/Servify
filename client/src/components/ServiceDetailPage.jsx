@@ -10,6 +10,7 @@ import { bookingService } from "../services/bookingService";
 import SaveButton from './SaveButton';
 import BookingConfirmation from './BookingConfirmation.jsx';
 import BookingConfirmationDialog from './BookingConfirmationDialog';
+import { BOOKING_TIME_OPTIONS } from '../utils/bookingTime';
 
 export default function ServiceDetailPage({ service, onBack, backButtonText = "Back to Services", onNavigate }) {
   const today = new Date();
@@ -401,12 +402,17 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
 
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3">Preferred Time</h3>
-              <input
-                type="time"
+              <select
                 className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl p-3 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 value={bookingTime}
                 onChange={(e) => setBookingTime(e.target.value)}
-              />
+              >
+                {BOOKING_TIME_OPTIONS.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
