@@ -320,8 +320,8 @@ export default function ServiceDetailPage({ service, onBack, backButtonText = "B
 
           <Card className="p-5">
             <div className="flex items-center gap-3">
-              {service?.providerImage || service?.provider_image ? (
-                <img src={service.providerImage || service.provider_image} alt={service?.providerName} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+              {service?.providerImage ? (
+                <img src={service.providerImage} alt={service?.providerName} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {service?.providerInitial ?? service?.initials ?? "SJ"}

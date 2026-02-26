@@ -20,7 +20,13 @@ const SavedServices = ({ onNavigate }) => {
     try {
       setLoading(true);
       const data = await savedServiceService.getSaved();
-      setSavedServices(Array.isArray(data) ? data : []);
+      const normalized = Array.isArray(data)
+        ? data.map((service) => ({
+            ...service,
+            providerImage: service.provider_image || null,
+          }))
+        : [];
+      setSavedServices(normalized);
     } catch (error) {
       console.error('Failed to load saved services:', error);
       toast({
@@ -75,8 +81,7 @@ const SavedServices = ({ onNavigate }) => {
         priceNum: parseFloat(savedService.price) || 0,
         providerName: savedService.provider_name,
         provider: savedService.provider_name,
-        providerImage: savedService.provider_image || null,
-        provider_image: savedService.provider_image || null,
+        providerImage: savedService.providerImage || savedService.provider_image || null,
         provider_id: savedService.provider_id,
         providerId: savedService.provider_id,
         description: savedService.description,
@@ -243,8 +248,8 @@ const SavedServices = ({ onNavigate }) => {
                 <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">{service.title}</h3>
 
                 <div className="flex items-center gap-2.5">
-                  {service.provider_image ? (
-                    <img src={service.provider_image} alt={service.provider_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                  {service.providerImage ? (
+                    <img src={service.providerImage} alt={service.provider_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                       {service.provider_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'SP'}
