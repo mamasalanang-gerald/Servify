@@ -13,6 +13,31 @@ import {
 } from '../utils/bookingStatus';
 import { formatBookingTime } from '../utils/bookingTime';
 
+// Sort order: pending (oldest first) → confirmed → completed → cancelled (newest first)
+const STATUS_ORDER = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 };
+
+const sortBookings = (bookings) => {
+  return [...bookings].sort((a, b) => {
+    const aOrder = STATUS_ORDER[a.status?.toLowerCase()] ?? 99;
+    const bOrder = STATUS_ORDER[b.status?.toLowerCase()] ?? 99;
+
+    if (aOrder !== bOrder) return aOrder - bOrder;
+
+    // Within pending: oldest booking_date first (longest waiting)
+    if (a.status === 'pending') {
+      return new Date(a.booking_date) - new Date(b.booking_date);
+    }
+
+    // Within cancelled: newest first
+    if (a.status === 'cancelled') {
+      return new Date(b.booking_date) - new Date(a.booking_date);
+    }
+
+    // Everything else: newest first
+    return new Date(b.booking_date) - new Date(a.booking_date);
+  });
+};
+
 const UserBookings = () => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
@@ -56,9 +81,11 @@ const UserBookings = () => {
 
   const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
-  const filteredBookings = activeTab === 'All'
-    ? bookings 
-    : bookings.filter(b => b.status.toLowerCase() === activeTab.toLowerCase());
+  const filteredBookings = sortBookings(
+    activeTab === 'All'
+      ? bookings
+      : bookings.filter(b => b.status.toLowerCase() === activeTab.toLowerCase())
+  );
 
   const getStatusColor = (status) => {
     const colors = {
@@ -289,11 +316,7 @@ const UserBookings = () => {
                         </Button>
                       )}
                       {booking.status === 'completed' && booking.has_review && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled
-                        >
+                        <Button variant="outline" size="sm" disabled>
                           Reviewed
                         </Button>
                       )}
@@ -337,7 +360,6 @@ const UserBookings = () => {
                   </div>
                 ))}
               </div>
-
               <DialogFooter>
                 {detailModal.status === 'pending' && (
                   <Button
@@ -361,9 +383,7 @@ const UserBookings = () => {
                   </Button>
                 )}
                 {detailModal.status === 'completed' && !detailModal.has_review && (
-                  <Button
-                    onClick={() => openReviewModal(detailModal)}
-                  >
+                  <Button onClick={() => openReviewModal(detailModal)}>
                     Leave Review
                   </Button>
                 )}
@@ -412,17 +432,10 @@ const UserBookings = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setReviewModal(null)}
-                  disabled={submittingReview}
-                >
+                <Button variant="outline" onClick={() => setReviewModal(null)} disabled={submittingReview}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmitReview}
-                  disabled={submittingReview}
-                >
+                <Button onClick={handleSubmitReview} disabled={submittingReview}>
                   {submittingReview ? 'Submitting...' : 'Submit Review'}
                 </Button>
               </DialogFooter>
@@ -430,7 +443,7 @@ const UserBookings = () => {
           )}
         </DialogContent>
       </Dialog>
-      {/* Cancel Confirmation Dialog */}
+
       <Dialog open={!!cancelConfirmModal} onOpenChange={() => setCancelConfirmModal(null)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
