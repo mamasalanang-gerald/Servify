@@ -200,6 +200,13 @@ const ProviderServices = ({ openAddOnMount = false }) => {
   const handleSave = async () => {
     if (!form.title || !form.category_id) return;
 
+    const hasServicePhoto =
+      Boolean(imageFile) || Boolean(String(form.image_url || '').trim());
+    if (!hasServicePhoto) {
+      setUploadError('Service photo is required before saving.');
+      return;
+    }
+
     const packageTiers = normalizePackages(form.packages);
     if (packageTiers.length > MAX_PACKAGES) return;
 
@@ -338,7 +345,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
           <div className="hide-scrollbar space-y-4 px-2 py-4 max-h-[70vh] overflow-y-auto overflow-x-hidden">
             {/* Image Upload */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo *</label>
               {imagePreview ? (
                 <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                   <img src={imagePreview} alt="Preview" className="w-full h-[180px] object-cover" />
@@ -392,10 +399,16 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Base Price (₱)</label>
                 <Input 
                   type="number" 
-                  placeholder="Required (if no package tier is added)" 
+                  placeholder={form.packages.length > 0 ? "Disabled." : "Required (if no package tier is added)"} 
                   value={form.price} 
+                  disabled={form.packages.length > 0}
                   onChange={(e) => setForm({ ...form, price: e.target.value })} 
                 />
+                {form.packages.length > 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Base price is disabled because package pricing is being used.
+                  </p>
+                )}
               </div>
             </div>
             <div className="space-y-3">
