@@ -6,10 +6,6 @@ const createReview = async (req, res) => {
         const { booking_id, rating, comment } = req.body;
         const client_id = req.user.id; 
 
-        console.log('=== CREATE REVIEW DEBUG ===');
-        console.log('Request body:', req.body);
-        console.log('Client ID from token:', client_id);
-
         // 1. Validate required fields
         if (!booking_id || !rating) {
             return res.status(400).json({ message: "Missing required fields: booking_id and rating" });
@@ -92,11 +88,7 @@ const createReview = async (req, res) => {
             review: review
         });
 
-    } catch (error) {
-        console.error('=== CRITICAL ERROR ===');
-        console.error('Error message:', error.message);
-        console.error('Error code:', error.code);
-        
+    } catch (error) {    
         res.status(500).json({ 
             message: "Error creating review",
             error: error.message

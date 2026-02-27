@@ -5,8 +5,10 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
+import { formatBookingTime } from '../utils/bookingTime';
 
 const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
+const PAGE_SIZE = 10;
 
 const statusMap = {
   pending:   { label: 'Pending',   variant: 'warning' },
@@ -25,6 +27,25 @@ const toApiStatus = (uiStatus) => (
   uiStatus === 'confirmed' ? 'accepted' : uiStatus
 );
 
+const STATUS_ORDER = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 };
+
+const sortBookings = (bookings) => {
+  return [...bookings].sort((a, b) => {
+    const aOrder = STATUS_ORDER[a.status] ?? 99;
+    const bOrder = STATUS_ORDER[b.status] ?? 99;
+
+    if (aOrder !== bOrder) return aOrder - bOrder;
+
+    // Pending: oldest booking_date first (longest waiting)
+    if (a.status === 'pending') {
+      return new Date(a.booking_date) - new Date(b.booking_date);
+    }
+
+    // Everything else (including cancelled): newest first
+    return new Date(b.booking_date) - new Date(a.booking_date);
+  });
+};
+
 const mapProviderBooking = (booking) => {
   const clientName = booking.client_name || 'Unknown Client';
   return {
@@ -38,7 +59,7 @@ const mapProviderBooking = (booking) => {
           year: 'numeric',
         })
       : '—',
-    time: booking.booking_time ? String(booking.booking_time).slice(0, 5) : '—',
+    time: formatBookingTime(booking.booking_time),
     amount: `₱${Number(booking.total_price || 0).toLocaleString()}`,
     location: booking.user_location || '—',
     avatar: clientName
@@ -56,6 +77,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
   const [activeTab, setActiveTab]     = useState(defaultTab);
   const [bookings, setBookings]       = useState([]);
   const [detailModal, setDetailModal] = useState(null);
+  const [page, setPage]               = useState(1);
 
   useEffect(() => {
     const user = authService.getUser();
@@ -64,21 +86,29 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
         .getProviderBookings(user.id)
         .then((data) => {
           const source = Array.isArray(data) ? data : [];
-          setBookings(source.map(mapProviderBooking));
+          setBookings(sortBookings(source.map(mapProviderBooking)));
         })
         .catch(console.error);
     }
   }, []);
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
   const filtered = activeTab === 'All'
     ? bookings
     : bookings.filter((b) => b.status === activeTab.toLowerCase());
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const updateStatus = async (id, newStatus) => {
     try {
       await bookingService.updateBookingStatus(id, toApiStatus(newStatus));
       setBookings((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)),
+        sortBookings(prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)))
       );
       setDetailModal(null);
     } catch (err) { console.error(err); }
@@ -101,7 +131,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
                 ? 'text-blue-600 dark:text-blue-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
           >
             {tab}
             <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
@@ -128,7 +158,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             </CardContent>
           </Card>
         )}
-        {filtered.map((b) => {
+        {paginated.map((b) => {
           const s = statusMap[b.status] || statusMap.pending;
           return (
             <Card key={b.id} className="hover:shadow-md transition-shadow">
@@ -185,6 +215,23 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
         })}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {page} of {totalPages} &mdash; {filtered.length} total
+          </span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+              Previous
+            </Button>
+            <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Detail modal */}
       <Dialog open={!!detailModal} onOpenChange={() => setDetailModal(null)}>
         <DialogContent className="sm:max-w-[450px]">
@@ -195,13 +242,13 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
             <>
               <div className="space-y-3 py-4">
                 {[
-                  ['Client',  detailModal.client],
-                  ['Service', detailModal.service],
+                  ['Client',   detailModal.client],
+                  ['Service',  detailModal.service],
                   ['Location', detailModal.location],
-                  ['Date',    detailModal.date],
-                  ['Time',    detailModal.time],
-                  ['Amount',  detailModal.amount],
-                  ['Status',  detailModal.status.charAt(0).toUpperCase() + detailModal.status.slice(1)],
+                  ['Date',     detailModal.date],
+                  ['Time',     detailModal.time],
+                  ['Amount',   detailModal.amount],
+                  ['Status',   detailModal.status.charAt(0).toUpperCase() + detailModal.status.slice(1)],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{k}</span>

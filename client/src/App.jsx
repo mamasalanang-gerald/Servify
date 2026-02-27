@@ -15,6 +15,17 @@ import BecomeProviderPage from './pages/BecomeProviderPage';
 import { SavedServicesProvider } from './contexts/SavedServicesContext';
 import { initializeTheme } from './hooks/useTheme';
 
+const getDashboardPath = (role) => {
+  if (role === 'admin') return '/admin';
+  if (role === 'provider') return '/provider';
+  return '/dashboard';
+};
+
+const getAuthenticatedRedirectPath = () => {
+  if (!authService.isAuthenticated()) return '/';
+  return getDashboardPath(authService.getUser()?.role);
+};
+
 function App() {
   useEffect(() => {
     initializeTheme();
@@ -25,7 +36,16 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/"
+            element={
+              authService.isAuthenticated() ? (
+                <Navigate to={getAuthenticatedRedirectPath()} replace />
+              ) : (
+                <LandingPage />
+              )
+            }
+          />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<RegisterPage />} />
           
@@ -73,16 +93,7 @@ function App() {
             path="*"
             element={
               authService.isAuthenticated() ? (
-                <Navigate 
-                  to={
-                    authService.getUser()?.role === 'admin' 
-                      ? '/admin' 
-                      : authService.getUser()?.role === 'provider' 
-                      ? '/provider' 
-                      : '/dashboard'  // client or user goes to dashboard
-                  } 
-                  replace 
-                />
+                <Navigate to={getAuthenticatedRedirectPath()} replace />
               ) : (
                 <Navigate to="/" replace />
               )

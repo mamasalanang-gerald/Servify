@@ -66,6 +66,11 @@ const resolveServicePrice = (payloadPrice, packages) => {
   return basePrice;
 };
 
+const normalizeImageUrl = (imageUrl) => {
+  if (typeof imageUrl !== "string") return "";
+  return imageUrl.trim();
+};
+
 const getServices = async (req, res) => {
   try {
     const filters = {
@@ -130,6 +135,13 @@ const createServices = async (req, res) => {
       image_url,
     } = req.body;
 
+    const normalizedImageUrl = normalizeImageUrl(image_url);
+    if (!normalizedImageUrl) {
+      return res.status(400).json({
+        message: "Service photo is required",
+      });
+    }
+
     const { data: normalizedPackages, error: packageError } =
       normalizePackagesInput(packages);
     if (packageError) {
@@ -153,7 +165,7 @@ const createServices = async (req, res) => {
       service_type,
       location,
       normalizedPackages,
-      image_url || null,
+      normalizedImageUrl,
     );
     res.status(201).json(service);
   } catch (err) {
@@ -174,6 +186,13 @@ const editServices = async (req, res) => {
         .json({ message: "You can only edit your own services" });
     const { title, description, price, service_type, location, packages, image_url } =
       req.body;
+
+    const normalizedImageUrl = normalizeImageUrl(image_url);
+    if (!normalizedImageUrl) {
+      return res.status(400).json({
+        message: "Service photo is required",
+      });
+    }
 
     const { data: normalizedPackages, error: packageError } =
       normalizePackagesInput(packages);
@@ -197,7 +216,7 @@ const editServices = async (req, res) => {
       service_type,
       location,
       normalizedPackages,
-      image_url || null,
+      normalizedImageUrl,
     );
     if (!service)
       return res.status(404).json({ message: "There are no services to edit" });

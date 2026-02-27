@@ -39,6 +39,21 @@ const createBooking = async ({
     }
 };
 
+const getServiceForBooking = async (service_id) => {
+    try {
+        const query = `
+            SELECT id, provider_id, is_active
+            FROM services
+            WHERE id = $1
+        `;
+        const { rows } = await pool.query(query, [service_id]);
+        return rows[0];
+    } catch (error) {
+        console.error("Error fetching service for booking:", error.message);
+        throw error;
+    }
+};
+
 
 const getAllBookings = async (status = null) => {
     try {
@@ -176,6 +191,7 @@ const deleteBooking = async (id) => {
 
 module.exports = {
     createBooking,
+    getServiceForBooking,
     getAllBookings,
     getBookingById,
     getBookingsByClientId,

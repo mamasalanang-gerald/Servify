@@ -53,6 +53,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
   const [editTarget, setEditTarget] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
   const [togglingIds, setTogglingIds] = useState(new Set());
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -200,6 +201,13 @@ const ProviderServices = ({ openAddOnMount = false }) => {
   const handleSave = async () => {
     if (!form.title || !form.category_id) return;
 
+    const hasServicePhoto =
+      Boolean(imageFile) || Boolean(String(form.image_url || '').trim());
+    if (!hasServicePhoto) {
+      setUploadError('Service photo is required before saving.');
+      return;
+    }
+
     const packageTiers = normalizePackages(form.packages);
     if (packageTiers.length > MAX_PACKAGES) return;
 
@@ -257,10 +265,29 @@ const ProviderServices = ({ openAddOnMount = false }) => {
   };
 
   const handleDelete = async (id) => {
-    await serviceService.deleteService(id);
-    const updated = await serviceService.getMyServices();
-    setServices(Array.isArray(updated) ? updated : []);
-    setDeleteConfirm(null);
+    try {
+      await serviceService.deleteService(id);
+      const updated = await serviceService.getMyServices();
+      setServices(Array.isArray(updated) ? updated : []);
+      setDeleteError('');
+      setDeleteConfirm(null);
+    } catch (err) {
+      const rawMessage = String(err?.message || '');
+      const normalized = rawMessage.toLowerCase();
+      const hasBookingHistory =
+        normalized.includes('bookings_service_id_fkey') ||
+        normalized.includes('still referenced') ||
+        (normalized.includes('foreign key') && normalized.includes('bookings'));
+
+      if (hasBookingHistory) {
+        setDeleteError(
+          'This service cannot be deleted because it has a booking history linked to it. Set it to Hidden instead.',
+        );
+        return;
+      }
+
+      setDeleteError(rawMessage || 'Failed to delete service. Please try again.');
+    }
   };
 
   return (
@@ -313,7 +340,16 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => openEdit(svc)}>Edit</Button>
-                  <Button variant="destructive" size="sm" onClick={() => setDeleteConfirm(svc.id)}>Delete</Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setDeleteError('');
+                      setDeleteConfirm(svc.id);
+                    }}
+                  >
+                    Delete
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -338,7 +374,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
           <div className="hide-scrollbar space-y-4 px-2 py-4 max-h-[70vh] overflow-y-auto overflow-x-hidden">
             {/* Image Upload */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Service Photo *</label>
               {imagePreview ? (
                 <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                   <img src={imagePreview} alt="Preview" className="w-full h-[180px] object-cover" />
@@ -392,10 +428,16 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Base Price (₱)</label>
                 <Input 
                   type="number" 
-                  placeholder="Required (if no package tier is added)" 
+                  placeholder={form.packages.length > 0 ? "Disabled." : "Required (if no package tier is added)"} 
                   value={form.price} 
+                  disabled={form.packages.length > 0}
                   onChange={(e) => setForm({ ...form, price: e.target.value })} 
                 />
+                {form.packages.length > 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Base price is disabled because package pricing is being used.
+                  </p>
+                )}
               </div>
             </div>
             <div className="space-y-3">
@@ -485,7 +527,15 @@ const ProviderServices = ({ openAddOnMount = false }) => {
       </Dialog>
 
       {/* Delete Confirmation Modal */}
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+      <Dialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirm(null);
+            setDeleteError('');
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Delete Service?</DialogTitle>
@@ -494,9 +544,22 @@ const ProviderServices = ({ openAddOnMount = false }) => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               This will permanently remove the service. This action cannot be undone.
             </p>
+            {deleteError ? (
+              <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+                {deleteError}
+              </p>
+            ) : null}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirm(null);
+                setDeleteError('');
+              }}
+            >
+              Cancel
+            </Button>
             <Button variant="destructive" onClick={() => handleDelete(deleteConfirm)}>Yes, Delete</Button>
           </DialogFooter>
         </DialogContent>

@@ -11,12 +11,24 @@ import useAuth from '../hooks/useAuth';
 import { userService } from '../services/userService';
 
 const DashboardPage = () => {
-  const [activeNav, setActiveNav] = useState('Dashboard');
-  const [quickActionContext, setQuickActionContext] = useState(null);
-  const [servicesInitialCategory, setServicesInitialCategory] = useState(null);
+  const location = useLocation();
+  const [activeNav, setActiveNav] = useState(() => {
+    const nav = location.state?.initialNav;
+    return typeof nav === 'string' && nav.length > 0 ? nav : 'Dashboard';
+  });
+  const [_quickActionContext, setQuickActionContext] = useState(null);
+  const [servicesInitialCategory] = useState(() =>
+    typeof location.state?.initialCategory === 'string'
+      ? location.state.initialCategory
+      : null,
+  );
+  const [servicesInitialSearchQuery] = useState(() =>
+    typeof location.state?.initialSearchQuery === 'string'
+      ? location.state.initialSearchQuery
+      : '',
+  );
   const { user, updateUserRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
 
   // Redirect if not logged in
@@ -30,7 +42,6 @@ const DashboardPage = () => {
   useEffect(() => {
     const refreshUserData = async () => {
       if (!user) return;
-
       try {
         const userData = await userService.getCurrentUser();
         if (userData.role !== user.role) {
@@ -49,28 +60,6 @@ const DashboardPage = () => {
     return () => window.removeEventListener('focus', handleFocus);
   }, [user, updateUserRole]);
 
-  // Handle dashboard deep-links (e.g., from landing page popular categories)
-  useEffect(() => {
-    const navFromState = location.state?.initialNav;
-    const categoryFromState = location.state?.initialCategory;
-
-    if (!navFromState && !categoryFromState) return;
-
-    const nextNav = categoryFromState ? 'Services' : navFromState;
-    if (nextNav) {
-      setQuickActionContext(null);
-      setActiveNav(nextNav);
-    }
-
-    if (categoryFromState) {
-      setServicesInitialCategory(categoryFromState);
-    } else if (nextNav && nextNav !== 'Services') {
-      setServicesInitialCategory(null);
-    }
-
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
-
   const pageMeta = {
     Dashboard:        { title: 'Dashboard',        sub: `Welcome back, ${firstName}! Here's your overview.` },
     Services:         { title: 'Services',          sub: 'Browse and book services.' },
@@ -84,17 +73,13 @@ const DashboardPage = () => {
 
   const handleSidebarNavChange = (nextNav) => {
     setQuickActionContext(null);
-    if (nextNav !== 'Services') {
-      setServicesInitialCategory(null);
-    }
     setActiveNav(nextNav);
   };
 
   const handleQuickAction = (actionId) => {
     if (actionId === 'browse-services') {
-      setQuickActionContext(null);
-      setServicesInitialCategory(null);
       setActiveNav('Services');
+      setQuickActionContext(null);
       return;
     }
     if (actionId === 'view-bookings') {
@@ -113,11 +98,17 @@ const DashboardPage = () => {
       case 'Dashboard':
         return <UserOverview onQuickAction={handleQuickAction} />;
       case 'Services':
-        return <ServicesPanel initialCategory={servicesInitialCategory} />;
+        return (
+          <ServicesPanel
+            initialCategory={servicesInitialCategory}
+            initialSearchQuery={servicesInitialSearchQuery}
+            onNavigate={handleSidebarNavChange}
+          />
+        );
       case 'Bookings':
         return <UserBookings />;
       case 'Saved Services':
-        return <SavedServices />;
+        return <SavedServices onNavigate={handleSidebarNavChange} />;
       case 'Profile':
         return <ProfileSettings />;
       case 'Settings':
@@ -130,16 +121,16 @@ const DashboardPage = () => {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
       <UserSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
       <div className="ml-64 flex-1 flex flex-col min-h-screen">
-        <div className="bg-card/90 backdrop-blur-2xl border-b border-border px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
+        <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border-b border-slate-200 dark:border-slate-700 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
           <div>
-            <div className="text-lg font-bold text-foreground">{meta.title}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{meta.sub}</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{meta.title}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{meta.sub}</div>
           </div>
         </div>
-        <div className="px-8 py-7 flex-1">{renderContent()}</div>
+        <div className="px-8 py-7 flex-1 text-slate-900 dark:text-slate-100">{renderContent()}</div>
       </div>
     </div>
   );

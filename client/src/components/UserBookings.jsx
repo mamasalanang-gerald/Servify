@@ -11,6 +11,32 @@ import {
   toApiBookingStatus,
   formatBookingStatus,
 } from '../utils/bookingStatus';
+import { formatBookingTime } from '../utils/bookingTime';
+
+// Sort order: pending (oldest first) → confirmed → completed → cancelled (newest first)
+const STATUS_ORDER = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 };
+
+const sortBookings = (bookings) => {
+  return [...bookings].sort((a, b) => {
+    const aOrder = STATUS_ORDER[a.status?.toLowerCase()] ?? 99;
+    const bOrder = STATUS_ORDER[b.status?.toLowerCase()] ?? 99;
+
+    if (aOrder !== bOrder) return aOrder - bOrder;
+
+    // Within pending: oldest booking_date first (longest waiting)
+    if (a.status === 'pending') {
+      return new Date(a.booking_date) - new Date(b.booking_date);
+    }
+
+    // Within cancelled: newest first
+    if (a.status === 'cancelled') {
+      return new Date(b.booking_date) - new Date(a.booking_date);
+    }
+
+    // Everything else: newest first
+    return new Date(b.booking_date) - new Date(a.booking_date);
+  });
+};
 
 const UserBookings = () => {
   const { user } = useAuth();
@@ -24,6 +50,7 @@ const UserBookings = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState('');
+  const [cancelConfirmModal, setCancelConfirmModal] = useState(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -54,9 +81,11 @@ const UserBookings = () => {
 
   const tabs = ['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
 
-  const filteredBookings = activeTab === 'All'
-    ? bookings 
-    : bookings.filter(b => b.status.toLowerCase() === activeTab.toLowerCase());
+  const filteredBookings = sortBookings(
+    activeTab === 'All'
+      ? bookings
+      : bookings.filter(b => b.status.toLowerCase() === activeTab.toLowerCase())
+  );
 
   const getStatusColor = (status) => {
     const colors = {
@@ -240,7 +269,7 @@ const UserBookings = () => {
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="12 6 12 12 16 14" />
                         </svg>
-                        <span>{booking.booking_time || 'Time not set'}</span>
+                        <span>{formatBookingTime(booking.booking_time)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -260,10 +289,11 @@ const UserBookings = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateStatus(booking.id, 'cancelled')}
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                          onClick={() => setCancelConfirmModal(booking)}
                           disabled={updatingId === booking.id}
                         >
-                          {updatingId === booking.id ? 'Updating...' : 'Cancel'}
+                          Cancel
                         </Button>
                       )}
                       {booking.status === 'confirmed' && (
@@ -286,11 +316,7 @@ const UserBookings = () => {
                         </Button>
                       )}
                       {booking.status === 'completed' && booking.has_review && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled
-                        >
+                        <Button variant="outline" size="sm" disabled>
                           Reviewed
                         </Button>
                       )}
@@ -321,7 +347,7 @@ const UserBookings = () => {
                 {[
                   ['Service', detailModal.service_name || 'Service'],
                   ['Date', detailModal.booking_date ? new Date(detailModal.booking_date).toLocaleDateString() : '—'],
-                  ['Time', detailModal.booking_time ? String(detailModal.booking_time).slice(0, 5) : '—'],
+                  ['Time', formatBookingTime(detailModal.booking_time)],
                   ['Provider', detailModal.provider_name || 'Unknown'],
                   ['Location', detailModal.user_location || '—'],
                   ['Total', `₱${parseFloat(detailModal.total_price || 0).toFixed(2)}`],
@@ -334,15 +360,18 @@ const UserBookings = () => {
                   </div>
                 ))}
               </div>
-
               <DialogFooter>
                 {detailModal.status === 'pending' && (
                   <Button
                     variant="outline"
-                    onClick={() => updateStatus(detailModal.id, 'cancelled')}
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                    onClick={() => {
+                      setDetailModal(null);
+                      setCancelConfirmModal(detailModal);
+                    }}
                     disabled={updatingId === detailModal.id}
                   >
-                    {updatingId === detailModal.id ? 'Updating...' : 'Cancel Booking'}
+                    Cancel Booking
                   </Button>
                 )}
                 {detailModal.status === 'confirmed' && (
@@ -354,9 +383,7 @@ const UserBookings = () => {
                   </Button>
                 )}
                 {detailModal.status === 'completed' && !detailModal.has_review && (
-                  <Button
-                    onClick={() => openReviewModal(detailModal)}
-                  >
+                  <Button onClick={() => openReviewModal(detailModal)}>
                     Leave Review
                   </Button>
                 )}
@@ -405,18 +432,61 @@ const UserBookings = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setReviewModal(null)}
-                  disabled={submittingReview}
-                >
+                <Button variant="outline" onClick={() => setReviewModal(null)} disabled={submittingReview}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmitReview}
-                  disabled={submittingReview}
-                >
+                <Button onClick={handleSubmitReview} disabled={submittingReview}>
                   {submittingReview ? 'Submitting...' : 'Submit Review'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!cancelConfirmModal} onOpenChange={() => setCancelConfirmModal(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Cancel Booking</DialogTitle>
+          </DialogHeader>
+          {cancelConfirmModal && (
+            <>
+              <div className="py-3 space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to cancel this booking?
+                </p>
+                <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {cancelConfirmModal.service_name || 'Service'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {cancelConfirmModal.booking_date
+                      ? new Date(cancelConfirmModal.booking_date).toLocaleDateString()
+                      : '—'}{' '}
+                    {cancelConfirmModal.booking_time
+                      ? `at ${String(cancelConfirmModal.booking_time).slice(0, 5)}`
+                      : ''}
+                  </p>
+                </div>
+                <p className="text-xs text-red-500">This action cannot be undone.</p>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setCancelConfirmModal(null)}
+                  disabled={updatingId === cancelConfirmModal.id}
+                >
+                  Keep Booking
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    await updateStatus(cancelConfirmModal.id, 'cancelled');
+                    setCancelConfirmModal(null);
+                  }}
+                  disabled={updatingId === cancelConfirmModal.id}
+                >
+                  {updatingId === cancelConfirmModal.id ? 'Cancelling...' : 'Yes, Cancel'}
                 </Button>
               </DialogFooter>
             </>

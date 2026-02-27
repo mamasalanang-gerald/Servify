@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ServicesFilter from './ServicesFilter';
 import ServicesGrid from './ServicesGrid';
 import ServiceDetailPage from './ServiceDetailPage';
 import { Input } from './ui/input';
 
-const ServicesPanel = ({ initialCategory = null }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const ServicesPanel = ({ initialCategory = null, initialSearchQuery = '', onNavigate }) => {
+  const [searchQuery, setSearchQuery] = useState(
+    typeof initialSearchQuery === 'string' ? initialSearchQuery.trim() : '',
+  );
   const [selectedService, setSelectedService] = useState(null);
 
   const [filters, setFilters] = useState({
@@ -14,25 +16,6 @@ const ServicesPanel = ({ initialCategory = null }) => {
     selectedCategories: initialCategory ? [initialCategory] : [],
   });
 
-  useEffect(() => {
-    setFilters((prev) => {
-      const nextCategories = initialCategory ? [initialCategory] : [];
-      const current = prev.selectedCategories || [];
-      const isSameLength = current.length === nextCategories.length;
-      const isSameValue =
-        isSameLength && current.every((value, index) => value === nextCategories[index]);
-
-      if (isSameValue) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        selectedCategories: nextCategories,
-      };
-    });
-  }, [initialCategory]);
-
   const handleFilterChange = (updated) => setFilters(updated);
 
   if (selectedService) {
@@ -40,6 +23,7 @@ const ServicesPanel = ({ initialCategory = null }) => {
       <ServiceDetailPage
         service={selectedService}
         onBack={() => setSelectedService(null)}
+        onNavigate={onNavigate}
       />
     );
   }
