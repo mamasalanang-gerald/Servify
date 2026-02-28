@@ -17,6 +17,28 @@ import { authService } from '../services/authService';
 import { providerService } from '../services/providerService';
 import { formatBookingTime } from '../utils/bookingTime';
 
+const defaultWeekChartData = [
+  { label: 'Mon', amount: 0 },
+  { label: 'Tue', amount: 0 },
+  { label: 'Wed', amount: 0 },
+  { label: 'Thu', amount: 0 },
+  { label: 'Fri', amount: 0 },
+  { label: 'Sat', amount: 0 },
+  { label: 'Sun', amount: 0 },
+];
+
+const defaultMonthChartData = [
+  { label: 'W1', amount: 0 },
+  { label: 'W2', amount: 0 },
+  { label: 'W3', amount: 0 },
+  { label: 'W4', amount: 0 },
+  { label: 'W5', amount: 0 },
+];
+
+const getFallbackChartData = (period) => (
+  period === 'month' ? defaultMonthChartData : defaultWeekChartData
+);
+
 const statusConfig = {
   pending:   { label: 'Pending',   variant: 'warning' },
   confirmed: { label: 'Confirmed', variant: 'default' },
@@ -45,27 +67,24 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
     pendingRequests: '0',
     avgRating: '—',
   });
+  const [chartData, setChartData] = useState(defaultWeekChartData);
+  const [chartSummary, setChartSummary] = useState({
+    label: 'This week',
+    total: '₱0',
+  });
   const [recentBookings, setRecentBookings] = useState([]);
   const [updatingBookingIds, setUpdatingBookingIds] = useState(new Set());
   const [detailModal, setDetailModal] = useState(null);
-  const [weeklyData] = useState([
-    { day: 'Mon', amount: 0 },
-    { day: 'Tue', amount: 0 },
-    { day: 'Wed', amount: 0 },
-    { day: 'Thu', amount: 0 },
-    { day: 'Fri', amount: 0 },
-    { day: 'Sat', amount: 0 },
-    { day: 'Sun', amount: 0 },
-  ]);
+  const user = authService.getUser();
+  const userId = user?.id;
 
   useEffect(() => {
-    const user = authService.getUser();
-    if (!user?.id) return;
+    if (!userId) return;
 
     const fetchOverview = async () => {
       const [bookingsResult, summaryResult] = await Promise.allSettled([
-        bookingService.getProviderBookings(user.id),
-        providerService.getEarningsSummary(user.id),
+        bookingService.getProviderBookings(userId),
+        providerService.getEarningsSummary(userId),
       ]);
 
       const bookings =
@@ -116,7 +135,52 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
     };
 
     fetchOverview().catch(console.error);
-  }, []);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    let isCancelled = false;
+    const periodKey = chartPeriod === 'Month' ? 'month' : 'week';
+
+    const fetchEarningsOverview = async () => {
+      const data = await providerService.getEarningsOverview(userId, periodKey);
+      if (isCancelled) return;
+
+      const fallbackData = getFallbackChartData(periodKey);
+      const sourceBuckets =
+        Array.isArray(data?.buckets) && data.buckets.length > 0
+          ? data.buckets
+          : fallbackData;
+
+      const buckets = sourceBuckets.map((bucket, index) => ({
+        label: bucket?.label || fallbackData[index]?.label || '',
+        amount: Number(bucket?.amount) || 0,
+      }));
+
+      setChartData(buckets);
+      setChartSummary({
+        label: data?.label || (periodKey === 'month' ? 'This month' : 'This week'),
+        total: `₱${(Number(data?.total) || 0).toLocaleString()}`,
+      });
+    };
+
+    fetchEarningsOverview().catch((error) => {
+      if (isCancelled) return;
+
+      const fallbackData = getFallbackChartData(periodKey);
+      setChartData(fallbackData);
+      setChartSummary({
+        label: periodKey === 'month' ? 'This month' : 'This week',
+        total: '₱0',
+      });
+      console.error('Failed to fetch earnings overview:', error);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [chartPeriod, userId]);
 
   const adjustPendingCount = (fromStatus, toStatus) => {
     if (fromStatus === toStatus) return;
@@ -189,7 +253,7 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
     }
   };
 
-  const maxVal = Math.max(...weeklyData.map((d) => d.amount), 1);
+  const maxVal = Math.max(...chartData.map((d) => d.amount), 1);
 
   const stats = [
     {
@@ -279,8 +343,8 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between gap-2 h-48 mb-4">
-              {weeklyData.map((d) => (
-                <div key={d.day} className="flex flex-col items-center flex-1 h-full">
+              {chartData.map((d) => (
+                <div key={d.label} className="flex flex-col items-center flex-1 h-full">
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 h-5">
                     {d.amount > 0 ? `₱${d.amount}` : ''}
                   </span>
@@ -295,14 +359,14 @@ const ProviderOverview = ({ onQuickAction = () => {} }) => {
                     />
                   </div>
                   <span className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                    {d.day}
+                    {d.label}
                   </span>
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400">This week</span>
-              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{overviewStats.totalEarnings}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{chartSummary.label}</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{chartSummary.total}</span>
             </div>
           </CardContent>
         </Card>
