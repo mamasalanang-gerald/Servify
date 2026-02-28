@@ -17,7 +17,7 @@ const ProviderProfile = ({ defaultTab = 'Profile' }) => {
   const [newSkill, setNewSkill]   = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [uploading, setUploading] = useState(false);
+  const [_uploading, _setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [form, setForm]           = useState({
     name: '', bio: '', phone: '', email: '', address: '', experience: '', profile_image: '',
@@ -75,22 +75,22 @@ const ProviderProfile = ({ defaultTab = 'Profile' }) => {
 
   const handleSave = async () => {
     try {
-      setUploading(false);
+      _setUploading(false);
       let profileImageUrl = form.profile_image || null;
 
       // Upload new photo to Cloudinary if selected
       if (imageFile) {
-        setUploading(true);
+        _setUploading(true);
         setUploadError('');
         try {
           profileImageUrl = await uploadServiceImage(imageFile);
           setImageFile(null);
         } catch (err) {
           setUploadError(err.message || 'Image upload failed');
-          setUploading(false);
+          _setUploading(false);
           return;
         }
-        setUploading(false);
+        _setUploading(false);
       }
 
       await userService.updateProfile({

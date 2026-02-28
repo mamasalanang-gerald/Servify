@@ -28,7 +28,7 @@ export const validatePhoneNumber = (phoneNumber) => {
     return 'Phone number is required';
   }
   // Allow digits, spaces, dashes, plus signs, and parentheses
-  if (!/^[\d\s\-\+\(\)]+$/.test(phoneNumber)) {
+  if (!/^[\d\s\-+()]+$/.test(phoneNumber)) {
     return 'Please enter a valid phone number';
   }
   return null;
