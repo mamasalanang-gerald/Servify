@@ -1,10 +1,17 @@
-const bookingModel = require('../models/bookingModel');
 const db = require('../config/DB');
+const PLATFORM_FEE_RATE = 0.1;
+
+const canAccessProviderEarnings = (req, providerId) => (
+  req.user?.role === 'admin' || req.user?.id === providerId
+);
 
 // Get earnings summary for a provider
 const getEarningsSummary = async (req, res) => {
   try {
     const { providerId } = req.params;
+    if (!canAccessProviderEarnings(req, providerId)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
     // Get all completed bookings for the provider
     const completedBookings = await db.query(
@@ -60,6 +67,9 @@ const getEarningsSummary = async (req, res) => {
 const getTransactions = async (req, res) => {
   try {
     const { providerId } = req.params;
+    if (!canAccessProviderEarnings(req, providerId)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
     const transactions = await db.query(
       `SELECT 
@@ -109,6 +119,9 @@ const getTransactions = async (req, res) => {
 const getPayouts = async (req, res) => {
   try {
     const { providerId } = req.params;
+    if (!canAccessProviderEarnings(req, providerId)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
     // For now, return mock payouts
     // In a real system, you'd have a payouts table
@@ -137,6 +150,10 @@ const getPayouts = async (req, res) => {
 const getMonthlyEarnings = async (req, res) => {
   try {
     const { providerId } = req.params;
+    if (!canAccessProviderEarnings(req, providerId)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
     const months = parseInt(req.query.months) || 6;
     if (!Number.isFinite(months) || months < 1 || months > 24) {
       return res.status(400).json({ message: 'months must be an integer between 1 and 24' });
@@ -158,7 +175,7 @@ const getMonthlyEarnings = async (req, res) => {
 
     const formattedData = monthlyData.rows.map(d => ({
       month: d.month,
-      net: Math.round(parseFloat(d.net) * 0.9) // After 10% platform fee
+      net: Math.round(parseFloat(d.net) * (1 - PLATFORM_FEE_RATE))
     }));
 
     res.status(200).json(formattedData);
@@ -168,9 +185,98 @@ const getMonthlyEarnings = async (req, res) => {
   }
 };
 
+// Get chart-ready earnings overview data for provider dashboard
+const getEarningsOverview = async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    if (!canAccessProviderEarnings(req, providerId)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const period = String(req.query.period || 'week').toLowerCase();
+    if (!['week', 'month'].includes(period)) {
+      return res.status(400).json({ message: 'period must be either week or month' });
+    }
+
+    let rows = [];
+
+    if (period === 'week') {
+      const weeklyResult = await db.query(
+        `WITH week_days AS (
+          SELECT generate_series(
+            date_trunc('week', CURRENT_DATE)::date,
+            (date_trunc('week', CURRENT_DATE)::date + INTERVAL '6 day')::date,
+            INTERVAL '1 day'
+          )::date AS day_date
+        )
+        SELECT
+          TRIM(TO_CHAR(wd.day_date, 'Dy')) AS label,
+          COALESCE(ROUND(SUM(b.total_price) * $2), 0) AS amount
+        FROM week_days wd
+        LEFT JOIN bookings b
+          ON b.provider_id = $1
+         AND b.status = 'completed'
+         AND b.booking_date = wd.day_date
+        GROUP BY wd.day_date
+        ORDER BY wd.day_date`,
+        [providerId, 1 - PLATFORM_FEE_RATE]
+      );
+      rows = weeklyResult.rows;
+    }
+
+    if (period === 'month') {
+      const monthlyResult = await db.query(
+        `WITH month_days AS (
+          SELECT generate_series(
+            date_trunc('month', CURRENT_DATE)::date,
+            (date_trunc('month', CURRENT_DATE) + INTERVAL '1 month - 1 day')::date,
+            INTERVAL '1 day'
+          )::date AS day_date
+        ),
+        booking_totals AS (
+          SELECT
+            ((EXTRACT(DAY FROM md.day_date)::int - 1) / 7 + 1) AS week_index,
+            COALESCE(SUM(b.total_price), 0) AS gross
+          FROM month_days md
+          LEFT JOIN bookings b
+            ON b.provider_id = $1
+           AND b.status = 'completed'
+           AND b.booking_date = md.day_date
+          GROUP BY week_index
+        )
+        SELECT
+          CONCAT('W', w.week_index) AS label,
+          COALESCE(ROUND(bt.gross * $2), 0) AS amount
+        FROM generate_series(1, 5) AS w(week_index)
+        LEFT JOIN booking_totals bt ON bt.week_index = w.week_index
+        ORDER BY w.week_index`,
+        [providerId, 1 - PLATFORM_FEE_RATE]
+      );
+      rows = monthlyResult.rows;
+    }
+
+    const buckets = rows.map((row) => ({
+      label: row.label,
+      amount: Number(row.amount) || 0,
+    }));
+    const total = buckets.reduce((sum, bucket) => sum + bucket.amount, 0);
+
+    res.status(200).json({
+      period,
+      label: period === 'month' ? 'This month' : 'This week',
+      total,
+      buckets,
+    });
+  } catch (err) {
+    console.error('Error fetching earnings overview:', err);
+    res.status(500).json({ message: 'Error fetching earnings overview', error: err.message });
+  }
+};
+
 module.exports = {
   getEarningsSummary,
   getTransactions,
   getPayouts,
   getMonthlyEarnings,
+  getEarningsOverview,
 };
