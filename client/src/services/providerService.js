@@ -21,6 +21,12 @@ export const providerService = {
     return providerService.parseResponse(response, 'Failed to fetch transactions');
   },
 
+  // Get provider dashboard chart data
+  getEarningsOverview: async (providerId, period = 'week') => {
+    const response = await api.get(`/providers/${providerId}/earnings/overview?period=${period}`);
+    return providerService.parseResponse(response, 'Failed to fetch earnings overview');
+  },
+
   // Get provider payouts
   getPayouts: async (providerId) => {
     const response = await api.get(`/providers/${providerId}/earnings/payouts`);
