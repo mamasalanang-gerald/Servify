@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { savedServiceService } from '../services/savedServiceService';
 import useAuth from '../hooks/useAuth';
@@ -99,10 +100,10 @@ export const SavedServicesProvider = ({ children }) => {
   );
 };
 
-export const useSavedServices = () => {
+export function useSavedServices() {
   const context = useContext(SavedServicesContext);
   if (!context) {
     throw new Error('useSavedServices must be used within SavedServicesProvider');
   }
   return context;
-};
+}

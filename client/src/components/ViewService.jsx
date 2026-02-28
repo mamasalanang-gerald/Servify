@@ -8,6 +8,28 @@ import { toast } from '../hooks/use-toast';
 const ViewService = ({ service, onBack }) => {
   const { unsaveService } = useSavedServices();
 
+  // Ensure packages exist
+  const safePackages = Array.isArray(service?.packages) && service.packages.length > 0
+    ? service.packages
+    : [
+        {
+          id: 'standard',
+          label: 'Standard Service',
+          price: service?.basePrice || 0,
+          duration: '2 hours',
+          desc: service?.description || 'Professional service',
+        },
+      ];
+
+  const [selectedPackage, setSelectedPackage] = useState(safePackages[0]?.id || 'standard');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [activeTab, setActiveTab] = useState('description');
+  const [isSaved, setIsSaved] = useState(true);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [userLocation, setUserLocation] = useState(service?.location || 'San Diego, CA');
+  const [note, setNote] = useState('');
+
   // Safety checks - ensure we have valid data
   if (!service) {
     return (
@@ -19,28 +41,6 @@ const ViewService = ({ service, onBack }) => {
       </div>
     );
   }
-
-  // Ensure packages exist
-  const safePackages = Array.isArray(service.packages) && service.packages.length > 0
-    ? service.packages
-    : [
-        {
-          id: 'standard',
-          label: 'Standard Service',
-          price: service.basePrice || 0,
-          duration: '2 hours',
-          desc: service.description || 'Professional service',
-        },
-      ];
-
-  const [selectedPackage, setSelectedPackage] = useState(safePackages[0]?.id || 'standard');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [activeTab, setActiveTab] = useState('description');
-  const [isSaved, setIsSaved] = useState(true);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [userLocation, setUserLocation] = useState(service.location || 'San Diego, CA');
-  const [note, setNote] = useState('');
 
   const availableTimes = ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
   
@@ -100,7 +100,6 @@ const ViewService = ({ service, onBack }) => {
   const providerJobs = service.providerJobs || 0;
   const providerJoined = service.providerJoined || new Date().getFullYear();
   const description = service.description || 'Professional service provider';
-  const serviceLocation = service.location ;
   const safeIncludes = Array.isArray(service.includes) ? service.includes : ['Professional service', 'Quality guaranteed', 'On-time delivery'];
   const safeReviews = Array.isArray(service.reviews) ? service.reviews : [];
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { adminApplicationService } from '../../services/adminApplicationService';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -32,7 +32,7 @@ const ApplicationManagement = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -58,11 +58,11 @@ const ApplicationManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, searchQuery]);
 
   useEffect(() => {
     fetchApplications();
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, fetchApplications]);
 
   const handleSearch = (e) => {
     e.preventDefault();
