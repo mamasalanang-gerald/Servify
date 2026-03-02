@@ -1,12 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import LogoutButton from './LogoutButton';
 import { cn } from '../lib/utils';
 import useAuth from '../hooks/useAuth';
+import { userService } from '../services/userService';
 
 const UserSidebar = ({ activeNav, setActiveNav }) => {
   const { user } = useAuth();
+  const [profileImage, setProfileImage] = useState(
+    user?.profile_image || localStorage.getItem('servify_profile_image') || '',
+  );
 
   const currentPath = window.location.pathname;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      if (!user) return;
+      try {
+        const profile = await userService.getProfile();
+        const nextImage = profile?.profile_image || '';
+        if (isMounted) {
+          setProfileImage(nextImage);
+        }
+        if (nextImage) {
+          localStorage.setItem('servify_profile_image', nextImage);
+        } else {
+          localStorage.removeItem('servify_profile_image');
+        }
+      } catch {
+        // Non-critical: fallback to existing user/localStorage image.
+      }
+    };
+
+    fetchProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const handleNavClick = (label) => {
     if (currentPath !== '/dashboard') {
@@ -25,7 +56,6 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
           <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
         </svg>
       ),
-      href: '/services',
     },
     {
       label: 'Dashboard',
@@ -89,9 +119,17 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
 
       {/* User info */}
       <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
-          {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || 'U'}
-        </div>
+        {profileImage ? (
+          <img
+            src={profileImage}
+            alt="Profile"
+            className="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
+          />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
+            {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || 'U'}
+          </div>
+        )}
         <div className="flex-1">
           <div className="font-semibold text-foreground">{user?.full_name || user?.email?.split('@')[0] || 'User'}</div>
           <div className="text-sm text-muted-foreground">Client</div>

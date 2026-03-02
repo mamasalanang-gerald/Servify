@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { authService } from '../services/authService';
 import { reviewService } from '../services/reviewService';
 
+import { StarOff } from 'lucide-react';
+
 const renderStars = (n, size = 'text-base') =>
   Array.from({ length: 5 }, (_, i) => (
     <span key={i} className={`${i < n ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600'} ${size}`}>★</span>
@@ -122,7 +124,7 @@ const ProviderReviews = () => {
         {!loading && !error && filtered.length === 0 && (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-4xl mb-3">⭐</div>
+              <StarOff className="mb-3 h-10 w-10 text-gray-400 dark:text-gray-500" />
               <div className="text-sm text-gray-600 dark:text-gray-400">No reviews for this rating</div>
             </CardContent>
           </Card>

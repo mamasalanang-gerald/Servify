@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Inbox } from 'lucide-react';
 import { bookingService } from '../services/bookingService';
 import { authService } from '../services/authService';
 import { formatBookingTime } from '../utils/bookingTime';
@@ -153,7 +154,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
         {filtered.length === 0 && (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-4xl mb-3">📭</div>
+              <Inbox className="mb-3 h-10 w-10 text-gray-400 dark:text-gray-500" />
               <div className="text-sm text-gray-600 dark:text-gray-400">No bookings in this category</div>
             </CardContent>
           </Card>
