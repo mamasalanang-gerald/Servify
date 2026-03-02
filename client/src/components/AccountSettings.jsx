@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 
 const AccountSettings = () => {
+  const [dark, setDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
+
   const [notifications, setNotifications] = useState({
     emailBookings: true,
     emailPromotions: false,
@@ -37,6 +51,33 @@ const AccountSettings = () => {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+
+      {/* Appearance */}
+      <div className="space-y-4 rounded-lg border border-border bg-card p-6">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Appearance</h3>
+          <p className="text-sm text-muted-foreground">Customize how Servify looks for you.</p>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-sm font-medium text-foreground">Dark Mode</span>
+            <p className="text-xs text-muted-foreground mt-0.5">{dark ? 'Currently using dark theme' : 'Currently using light theme'}</p>
+          </div>
+          <button
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+              dark ? "bg-primary" : "bg-muted"
+            )}
+            onClick={() => setDark(!dark)}
+            aria-label="Toggle dark mode"
+          >
+            <span className={cn(
+              "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+              dark ? "translate-x-6" : "translate-x-1"
+            )} />
+          </button>
+        </div>
+      </div>
 
       {/* Notifications */}
       <div className="space-y-4 rounded-lg border border-border bg-card p-6">
