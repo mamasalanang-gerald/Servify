@@ -16,9 +16,9 @@ export const uploadServiceImage = async (file) => {
     throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
   }
 
-  const maxSize = 5 * 1024 * 1024;
+  const maxSize = 10 * 1024 * 1024;
   if (file.size > maxSize) {
-    throw new Error('File too large. Maximum size is 5MB.');
+    throw new Error('File too large. Maximum size is 10MB.');
   }
 
   const formData = new FormData();
