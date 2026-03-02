@@ -251,7 +251,9 @@ const UserBookings = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold">{booking.service_name || 'Service'}</h3>
                       <Badge className={getStatusColor(booking.status)}>
-                        {booking.status}
+                        {booking.status
+                        ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+                        : ""}
                       </Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
