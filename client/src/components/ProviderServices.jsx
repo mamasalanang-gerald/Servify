@@ -117,8 +117,8 @@ const ProviderServices = ({ openAddOnMount = false }) => {
       setUploadError('Invalid file type. Use JPEG, PNG, or WebP.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('File too large. Maximum 5MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File too large. Maximum 10MB.');
       return;
     }
 
@@ -390,7 +390,7 @@ const ProviderServices = ({ openAddOnMount = false }) => {
                 <label className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-all cursor-pointer">
                   <ImageIcon className="h-8 w-8 text-gray-400" />
                   <span className="text-sm text-gray-500">Click to upload a photo</span>
-                  <span className="text-xs text-gray-400">JPEG, PNG, or WebP · Max 5MB</span>
+                  <span className="text-xs text-gray-400">JPEG, PNG, or WebP · Max 10MB</span>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"

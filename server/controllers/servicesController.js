@@ -184,7 +184,16 @@ const editServices = async (req, res) => {
       return res
         .status(403)
         .json({ message: "You can only edit your own services" });
-    const { title, description, price, service_type, location, packages, image_url } =
+    const {
+      category_id,
+      title,
+      description,
+      price,
+      service_type,
+      location,
+      packages,
+      image_url,
+    } =
       req.body;
 
     const normalizedImageUrl = normalizeImageUrl(image_url);
@@ -210,6 +219,7 @@ const editServices = async (req, res) => {
 
     const service = await editServiceInDB(
       req.params.id,
+      category_id,
       title,
       description,
       resolvedPrice,
