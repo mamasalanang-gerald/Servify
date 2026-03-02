@@ -13,6 +13,7 @@ const ROLE_HOME = {
 };
 
 const LoginBox = () => {
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,8 +48,15 @@ const LoginBox = () => {
         redirectState.redirectAfterLogin === '/dashboard' &&
         redirectState.initialNav === 'Services';
 
+
+
       const destination = ROLE_HOME[role] || '/dashboard';
       console.log('Navigating to:', destination);
+
+      if (role === 'admin' || role === 'provider') {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
       setLoading(false);
       navigate(
         destination,
