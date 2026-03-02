@@ -124,6 +124,7 @@ const createServices = async (
 
 const editServices = async (
   id,
+  category_id,
   title,
   description,
   price,
@@ -133,10 +134,11 @@ const editServices = async (
   image_url = null,
 ) => {
   const result = await pool.query(
-    `UPDATE services SET title = $1, description = $2, price = $3, service_type = $4, 
-         location = $5, packages = $6, image_url = $7, updated_at = NOW()
-         WHERE id = $8 RETURNING *`,
+    `UPDATE services SET category_id = $1, title = $2, description = $3, price = $4, service_type = $5, 
+         location = $6, packages = $7, image_url = $8, updated_at = NOW()
+         WHERE id = $9 RETURNING *`,
     [
+      category_id,
       title,
       description,
       price,
