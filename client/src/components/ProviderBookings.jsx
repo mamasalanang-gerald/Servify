@@ -155,7 +155,7 @@ const ProviderBookings = ({ defaultTab = 'All' }) => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto mb-3 opacity-50"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              
+              {/* <Inbox className="mb-3 h-10 w-10 text-gray-400 dark:text-gray-500" />   */}
               <div className="text-sm text-gray-600 dark:text-gray-400">No bookings in this category</div>
             </CardContent>
           </Card>
