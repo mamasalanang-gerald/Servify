@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import UserSidebar from '../components/UserSidebar';
 import UserOverview from '../components/UserOverview';
@@ -27,6 +27,7 @@ const DashboardPage = () => {
       ? location.state.initialSearchQuery
       : '',
   );
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const { user, updateUserRole } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
@@ -122,8 +123,19 @@ const DashboardPage = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
-      <UserSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
-      <div className="ml-64 flex-1 flex flex-col min-h-screen">
+      <UserSidebar
+        activeNav={activeNav}
+        setActiveNav={handleSidebarNavChange}
+        isExpanded={isSidebarExpanded}
+        setIsExpanded={setIsSidebarExpanded}
+      />
+      <div
+        style={{
+          marginLeft: isSidebarExpanded ? '16rem' : '4rem',
+          transition: 'margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+        className="flex-1 flex flex-col min-h-screen"
+      >
         <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl border-b border-slate-200 dark:border-slate-700 px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
           <div>
             <div className="text-lg font-bold text-slate-900 dark:text-slate-100">{meta.title}</div>

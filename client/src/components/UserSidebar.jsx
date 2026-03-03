@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import LogoutButton from './LogoutButton';
 import { cn } from '../lib/utils';
 import useAuth from '../hooks/useAuth';
 
-const UserSidebar = ({ activeNav, setActiveNav }) => {
+const UserSidebar = ({ activeNav, setActiveNav, isExpanded, setIsExpanded }) => {
   const { user } = useAuth();
+  const sidebarRef = useRef(null);
 
   const currentPath = window.location.pathname;
+
+  // Collapse when clicking outside the sidebar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleNavClick = (label) => {
     if (currentPath !== '/dashboard') {
@@ -14,6 +27,10 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
     } else {
       setActiveNav(label);
     }
+  };
+
+  const handleSidebarClick = () => {
+    setIsExpanded(true);
   };
 
   const navItems = [
@@ -25,7 +42,7 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
           <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
         </svg>
       ),
-      href: '/services',
+      // href removed — now uses handleNavClick like other items
     },
     {
       label: 'Dashboard',
@@ -77,44 +94,65 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
     },
   ];
 
+  const labelStyle = {
+    opacity: isExpanded ? 1 : 0,
+    transition: 'opacity 150ms ease',
+    transitionDelay: isExpanded ? '90ms' : '0ms',
+  };
+
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-border bg-card z-[110]">
+    <aside
+      ref={sidebarRef}
+      onClick={handleSidebarClick}
+      style={{
+        width: isExpanded ? '16rem' : '4rem',
+        transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+      className="fixed left-0 top-0 flex h-screen flex-col border-r border-border bg-card z-[110] overflow-hidden cursor-pointer"
+    >
       {/* Brand */}
-      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
+      <div className="flex items-center gap-3 border-b border-border px-3 py-5" style={{ minHeight: '72px' }}>
+        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
           S
         </div>
-        <span className="text-xl font-bold text-foreground">Servify</span>
+        <span className="text-xl font-bold text-foreground whitespace-nowrap overflow-hidden" style={labelStyle}>
+          Servify
+        </span>
       </div>
 
       {/* User info */}
-      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
+      <div className="flex items-center gap-3 border-b border-border px-3 py-4" style={{ minHeight: '72px' }}>
+        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
           {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || user?.email?.slice(0, 2).toUpperCase() || 'U'}
         </div>
-        <div className="flex-1">
-          <div className="font-semibold text-foreground">{user?.full_name || user?.email?.split('@')[0] || 'User'}</div>
+        <div className="flex-1 overflow-hidden" style={labelStyle}>
+          <div className="font-semibold text-foreground whitespace-nowrap truncate">
+            {user?.full_name || user?.email?.split('@')[0] || 'User'}
+          </div>
           <div className="text-sm text-muted-foreground">Client</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-1 p-2">
         {navItems.map((item) => {
           if (item.href) {
             return (
               <a
                 key={item.label}
                 href={item.href}
+                title={!isExpanded ? item.label : undefined}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors no-underline",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors no-underline",
                   currentPath === item.href
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
                 <span className="flex-shrink-0">{item.icon}</span>
-                <span className="flex-1 text-left">{item.label}</span>
+                <span className="flex-1 text-left whitespace-nowrap overflow-hidden" style={labelStyle}>
+                  {item.label}
+                </span>
               </a>
             );
           }
@@ -122,8 +160,9 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
           return (
             <button
               key={item.label}
+              title={!isExpanded ? item.label : undefined}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
                 activeNav === item.label && currentPath === '/dashboard'
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -131,7 +170,9 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
               onClick={() => handleNavClick(item.label)}
             >
               <span className="flex-shrink-0">{item.icon}</span>
-              <span className="flex-1 text-left">{item.label}</span>
+              <span className="flex-1 text-left whitespace-nowrap overflow-hidden" style={labelStyle}>
+                {item.label}
+              </span>
             </button>
           );
         })}
@@ -141,8 +182,9 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
             <div className="my-2 border-t border-border" />
             <a
               href="/become-provider"
+              title={!isExpanded ? 'Become a Provider' : undefined}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors no-underline",
+                "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors no-underline",
                 currentPath === '/become-provider'
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -155,15 +197,32 @@ const UserSidebar = ({ activeNav, setActiveNav }) => {
                   <polyline points="17 11 19 13 23 9" />
                 </svg>
               </span>
-              <span className="flex-1 text-left">Become a Provider</span>
+              <span className="flex-1 text-left whitespace-nowrap overflow-hidden" style={labelStyle}>
+                Become a Provider
+              </span>
             </a>
           </>
         )}
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border p-4">
-        <LogoutButton />
+      <div className="border-t border-border p-2">
+        {isExpanded ? (
+          <div style={labelStyle}>
+            <LogoutButton />
+          </div>
+        ) : (
+          <button
+            title="Logout"
+            className="flex w-full items-center justify-center rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        )}
       </div>
     </aside>
   );

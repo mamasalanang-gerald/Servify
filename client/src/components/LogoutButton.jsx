@@ -39,7 +39,11 @@ const LogoutButton = ({ confirm = true, className = '' }) => {
 
       {/* Modal — portaled to document.body so it always covers the full screen */}
       {show && createPortal(
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[9999] p-5 animate-in fade-in duration-200" onClick={() => setShow(false)}>
+        <div
+          className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[9999] p-5 animate-in fade-in duration-200"
+          onClick={() => setShow(false)}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <div className="bg-white rounded-2xl p-8 pt-9 w-full max-w-[340px] text-center shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={(e) => e.stopPropagation()}>
             <div className="w-14 h-14 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

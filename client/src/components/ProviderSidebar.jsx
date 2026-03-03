@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import LogoutButton from './LogoutButton';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/badge';
@@ -6,10 +6,11 @@ import useAuth from '../hooks/useAuth';
 import { bookingService } from '../services/bookingService';
 import { userService } from '../services/userService';
 
-const ProviderSidebar = ({ activeNav, setActiveNav }) => {
+const ProviderSidebar = ({ activeNav, setActiveNav, isExpanded, setIsExpanded }) => {
   const { user } = useAuth();
   const [bookingCount, setBookingCount] = useState(0);
   const [profileImage, setProfileImage] = useState(user?.profile_image || '');
+  const sidebarRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -43,6 +44,22 @@ const ProviderSidebar = ({ activeNav, setActiveNav }) => {
 
     return () => { isMounted = false; };
   }, [user?.id]);
+
+  // Collapse when clicking outside the sidebar
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSidebarClick = () => {
+    setIsExpanded(true);
+  };
 
   const navItems = [
     {
@@ -106,39 +123,69 @@ const ProviderSidebar = ({ activeNav, setActiveNav }) => {
     },
   ];
 
+  const labelStyle = {
+    opacity: isExpanded ? 1 : 0,
+    transition: 'opacity 150ms ease',
+    transitionDelay: isExpanded ? '90ms' : '0ms',
+  };
+
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-border bg-card">
+    <aside
+      ref={sidebarRef}
+      onClick={handleSidebarClick}
+      style={{
+        width: isExpanded ? '16rem' : '4rem',
+        transition: 'width 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+      className="fixed left-0 top-0 flex h-screen flex-col border-r border-border bg-card z-[110] overflow-hidden cursor-pointer"
+    >
       {/* Brand */}
-      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
+      <div className="flex items-center gap-3 border-b border-border px-3 py-5" style={{ minHeight: '72px' }}>
+        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
           S
         </div>
-        <span className="text-xl font-bold text-foreground">Servify</span>
-        <Badge variant="secondary" className="ml-auto bg-primary/10 text-primary hover:bg-primary/10">Pro</Badge>
+        <span className="text-xl font-bold text-foreground whitespace-nowrap overflow-hidden" style={labelStyle}>
+          Servify
+        </span>
+        <Badge
+          variant="secondary"
+          className="ml-auto bg-primary/10 text-primary hover:bg-primary/10 whitespace-nowrap overflow-hidden flex-shrink-0"
+          style={labelStyle}
+        >
+          Pro
+        </Badge>
       </div>
 
       {/* Provider info */}
-      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
+      <div className="flex items-center gap-3 border-b border-border px-3 py-4" style={{ minHeight: '72px' }}>
         {profileImage ? (
-          <img src={profileImage} alt="Profile" className="h-12 w-12 rounded-full object-cover border-2 border-gray-200" />
+          <img
+            src={profileImage}
+            alt="Profile"
+            className="flex-shrink-0 h-10 w-10 rounded-full object-cover border-2 border-gray-200"
+          />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white">
+          <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
             {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'JD'}
           </div>
         )}
-        <div className="flex-1">
-          <div className="font-semibold text-foreground">{user?.full_name || 'Juan dela Cruz'}</div>
+        <div className="flex-1 overflow-hidden" style={labelStyle}>
+          <div className="font-semibold text-foreground whitespace-nowrap truncate">
+            {user?.full_name || 'Juan dela Cruz'}
+          </div>
           <div className="text-sm text-muted-foreground">Service Provider</div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-1 p-2">
         {navItems.map((item) => (
           <button
             key={item.label}
+            title={!isExpanded ? item.label : undefined}
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+              // 'relative' added so the collapsed dot badge is scoped to its button
+              "relative flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
               activeNav === item.label
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -146,19 +193,46 @@ const ProviderSidebar = ({ activeNav, setActiveNav }) => {
             onClick={() => setActiveNav(item.label)}
           >
             <span className="flex-shrink-0">{item.icon}</span>
-            <span className="flex-1 text-left">{item.label}</span>
-            {item.badge && (
-              <Badge variant="secondary" className="ml-auto bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-400">
+            <span className="flex-1 text-left whitespace-nowrap overflow-hidden" style={labelStyle}>
+              {item.label}
+            </span>
+            {/* Expanded: full badge inline */}
+            {item.badge && isExpanded && (
+              <Badge
+                variant="secondary"
+                className="ml-auto bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-400"
+              >
                 {item.badge}
               </Badge>
+            )}
+            {/* Collapsed: small dot on the icon */}
+            {item.badge && !isExpanded && (
+              <span className="absolute top-1.5 left-6 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                {item.badge}
+              </span>
             )}
           </button>
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border p-4">
-        <LogoutButton />
+      <div className="border-t border-border p-2">
+        {isExpanded ? (
+          <div style={labelStyle}>
+            <LogoutButton />
+          </div>
+        ) : (
+          <button
+            title="Logout"
+            className="flex w-full items-center justify-center rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        )}
       </div>
     </aside>
   );

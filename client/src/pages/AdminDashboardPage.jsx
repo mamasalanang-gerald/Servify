@@ -29,6 +29,7 @@ const pageMeta = {
 
 const AdminDashboardPage = () => {
   const [activeNav, setActiveNav] = useState('Overview');
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [metrics, setMetrics] = useState(null);
   const [recentUsers, setRecentUsers] = useState([]);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
@@ -201,10 +202,21 @@ const AdminDashboardPage = () => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <AdminSidebar activeNav={activeNav} setActiveNav={setActiveNav} />
+      <AdminSidebar
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        isExpanded={isSidebarExpanded}
+        setIsExpanded={setIsSidebarExpanded}
+      />
       
       {/* Main content */}
-      <div className="ml-64 flex-1 flex flex-col min-h-screen">
+      <div
+        style={{
+          marginLeft: isSidebarExpanded ? '16rem' : '4rem',
+          transition: 'margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+        className="flex-1 flex flex-col min-h-screen"
+      >
         <AdminTopbar title={meta.title} subtitle={meta.sub} />
         <main className="flex-1 overflow-auto px-8 py-7">
           {renderContent()}

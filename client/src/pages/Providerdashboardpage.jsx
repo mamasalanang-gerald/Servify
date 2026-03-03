@@ -11,6 +11,7 @@ import useAuth from '../hooks/useAuth';
 const ProviderDashboardPage = () => {
   const [activeNav, setActiveNav] = useState('Dashboard');
   const [quickActionContext, setQuickActionContext] = useState(null);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const { user } = useAuth();
   const firstName = user?.full_name?.split(' ')[0] || 'User';
 
@@ -36,25 +37,21 @@ const ProviderDashboardPage = () => {
       setQuickActionContext('add-service');
       return;
     }
-
     if (actionId === 'view-pending') {
       setActiveNav('Bookings');
       setQuickActionContext('view-pending');
       return;
     }
-
     if (actionId === 'view-all-bookings') {
       setActiveNav('Bookings');
       setQuickActionContext('view-all-bookings');
       return;
     }
-
     if (actionId === 'update-availability') {
       setActiveNav('Profile & Portfolio');
       setQuickActionContext('update-availability');
       return;
     }
-
     if (actionId === 'view-reviews') {
       setActiveNav('Reviews');
       setQuickActionContext(null);
@@ -82,8 +79,19 @@ const ProviderDashboardPage = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <ProviderSidebar activeNav={activeNav} setActiveNav={handleSidebarNavChange} />
-      <div className="ml-64 flex-1 flex flex-col min-h-screen">
+      <ProviderSidebar
+        activeNav={activeNav}
+        setActiveNav={handleSidebarNavChange}
+        isExpanded={isSidebarExpanded}
+        setIsExpanded={setIsSidebarExpanded}
+      />
+      <div
+        style={{
+          marginLeft: isSidebarExpanded ? '16rem' : '4rem',
+          transition: 'margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+        className="flex-1 flex flex-col min-h-screen"
+      >
         <div className="bg-card/90 backdrop-blur-2xl border-b border-border px-8 py-3.5 flex items-center justify-between sticky top-0 z-50">
           <div>
             <div className="text-lg font-bold text-foreground">{meta.title}</div>
