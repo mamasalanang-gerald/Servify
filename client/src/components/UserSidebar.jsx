@@ -42,7 +42,7 @@ const UserSidebar = ({ activeNav, setActiveNav, isExpanded, setIsExpanded }) => 
           <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
         </svg>
       ),
-      href: '/services',
+      // href removed — now uses handleNavClick like other items
     },
     {
       label: 'Dashboard',
